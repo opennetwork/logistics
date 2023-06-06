@@ -14,3 +14,4 @@ export * from "./authentication-role";
 export * from "./organisation";
 export * from "./form-meta";
 export * from "./cache";
+export * from "./product";
