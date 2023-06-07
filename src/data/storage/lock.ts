@@ -39,12 +39,11 @@ export function getGlobalLock(): LockFn | undefined {
   if (existing) return existing;
   let lockFn: LockFn | undefined = undefined;
   const fn =  async (name: string) => {
+    const client = await connectGlobalRedisClient(globalRedisClient);
     if (!lockFn) {
-      const client = await globalRedisClient;
       const { default: createLockClient } = await import("redis-lock");
       lockFn = lockFn ?? createLockClient(client);
     }
-    await connectGlobalRedisClient(globalRedisClient);
     return lockFn(name);
   };
   GLOBAL_LOCKS.set(globalRedisClient, fn);
