@@ -176,6 +176,47 @@ export interface HappeningTree extends HappeningEventData {
     userId?: string;
 }
 
+export interface Identifier {
+    type: string;
+    identifier: string;
+    identifiedAt: string;
+}
+
+export interface InventoryProduct {
+  productId: string;
+  quantity: number;
+  identifiers: Identifier[];
+}
+
+export interface InventoryData {
+  products: InventoryProduct[];
+}
+
+export interface Inventory extends InventoryData {
+  inventoryId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderProduct {
+  productId: string;
+  quantity: number;
+  identifiers: Identifier[];
+}
+
+export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
+
+export interface OrderData {
+  status: OrderStatus;
+  products: OrderProduct[];
+}
+
+export interface Order extends OrderData {
+  orderId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface OrganisationBaseData extends Record<string, unknown> {
   countryCode?: string; // "NZ"
   location?: string;
@@ -220,65 +261,48 @@ export interface Partner extends PartnerData {
   approvedByUserId?: string;
 }
 
-export interface ProductSizeData extends Record<string, unknown> {
-  value: string;
-  unit: string;
-}
-
-export interface ProductInfo {
-  title?: string;
-  text: string;
-  url?: string;
-  description?: string;
-}
-
 export interface ProductData extends Record<string, unknown> {
   productName: string;
-  order?: number;
-  countryCode?: string;
-  organisationId?: string;
-  licencedOrganisationId?: string;
-  // Flag for products we don't have the exact licence date for
-  licenceApprovedBeforeGivenDate?: boolean;
-  licenceApprovedAt?: string;
-  licenceExpiredAt?: string;
-  licenceApprovalWebsite?: string;
-  // ISO 3166-1 alpha-3 country code
-  licenceCountryCode?: string;
-  // Flag for products we don't have the exact availability date for
-  availableBeforeGivenDate?: boolean;
-  availableAt?: string;
-  // For products that we will no longer have available
-  availableUntil?: string;
-  sizes?: ProductSizeData[];
-  // Direct text about the active ingredients, not specific values
-  activeIngredientDescriptions?: string[];
-  categoryId?: string;
-  generic?: boolean;
-  branded?: boolean;
-  genericSearchTerm?: string;
-  genericCategoryNames?: string[];
-  genericAcronym?: string;
-  info?: ProductInfo[];
-  obsoleteAt?: string;
-}
-
-export interface ProductActiveIngredient {
-  type: string;
-  unit: string;
-  value: string;
-  prefix?: string;
-  calculated?: boolean;
-  calculatedUnit?: string;
-  size?: ProductSizeData;
-  proportional?: boolean;
 }
 
 export interface Product extends ProductData {
   productId: string;
   createdAt: string;
   updatedAt: string;
-  activeIngredients?: ProductActiveIngredient[];
+}
+
+export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
+
+export interface ShipmentLocation {
+  locationId?: string; // Optional fixed location
+  address?: string[]; // Human-readable address
+  countryCode?: string;
+}
+
+export interface ShipmentIdentifiers {
+  identifiers?: Identifier[];
+}
+
+export interface ShipmentFrom extends ShipmentLocation, ShipmentIdentifiers {
+
+}
+
+export interface ShipmentTo extends ShipmentLocation, ShipmentIdentifiers {
+
+}
+
+export interface ShipmentData extends Record<string, unknown> {
+  status: ShipmentStatus;
+  // from is optional as you might receive with no info
+  from?: ShipmentFrom;
+  // A shipment would always have a destination
+  to: ShipmentTo;
+}
+
+export interface Shipment extends ShipmentData {
+  shipmentId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type MetaRecord = Record<string, unknown>;

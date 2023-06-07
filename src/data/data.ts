@@ -17,3 +17,5 @@ export * from "./cache";
 export * from "./product";
 export * from "./shipment";
 export * from "./identifier";
+export * from "./inventory";
+export * from "./order";
