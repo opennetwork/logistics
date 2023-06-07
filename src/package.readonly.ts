@@ -6,9 +6,9 @@ export const commitAuthor = "Fabian Cook";
 export const commitEmail = "hello@fabiancook.dev";
 export const commitMessage = "Locations, #9";
 export const commitAt = "2023-06-07T00:33:49.000Z";
-export const secondsBetweenCommitAndBuild = 772.44;
-export const minutesBetweenCommitAndBuild = 12.87;
-export const timeBetweenCommitAndBuild = "12 minutes and 52 seconds";
+export const secondsBetweenCommitAndBuild = 9302.16;
+export const minutesBetweenCommitAndBuild = 155.04;
+export const timeBetweenCommitAndBuild = "155 minutes and 2 seconds";
 // Variables to be replaced after tests
 export const secondsBetweenCommitAndTestCompletion = "";
 export const minutesBetweenCommitAndTestCompletion = "";

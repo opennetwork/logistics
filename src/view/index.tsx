@@ -188,7 +188,9 @@ export async function viewRoutes(fastify: FastifyInstance) {
       anonymous: pathsAnonymous[path] || !!ALLOW_ANONYMOUS_VIEWS,
     });
 
-    fastify.get(`${path}/fragment`, {
+    const fragmentSuffix = `${path === "/" ? "" : "/"}fragment`;
+
+    fastify.get(`${path}${fragmentSuffix}`, {
       preHandler,
       handler,
     });
@@ -198,9 +200,14 @@ export async function viewRoutes(fastify: FastifyInstance) {
     });
 
     if (pathsSubmit[path]) {
+      const submitHandler = createPathSubmitHandler(path);
       fastify.post(path, {
         preHandler,
-        handler: createPathSubmitHandler(path),
+        handler: submitHandler,
+      });
+      fastify.post(`${path}${fragmentSuffix}`, {
+        preHandler,
+        handler: submitHandler,
       });
     }
   });
