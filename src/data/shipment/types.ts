@@ -1,3 +1,5 @@
+import {Identifier} from "../identifier";
+
 export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 
 export interface ShipmentLocation {
@@ -6,11 +8,15 @@ export interface ShipmentLocation {
   countryCode?: string;
 }
 
-export interface ShipmentFrom extends ShipmentLocation {
+export interface ShipmentIdentifiers {
+  identifiers?: Identifier[];
+}
+
+export interface ShipmentFrom extends ShipmentLocation, ShipmentIdentifiers {
 
 }
 
-export interface ShipmentTo extends ShipmentLocation {
+export interface ShipmentTo extends ShipmentLocation, ShipmentIdentifiers {
 
 }
 
