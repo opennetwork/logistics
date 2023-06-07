@@ -3,9 +3,9 @@ import {
   getGlobalRedisClient,
   isRedis,
   isRedisMemory,
-  getRedisUrl
+  getRedisUrl,
+  RedisClient
 } from "./redis-client";
-import type { RedisClientType } from "redis";
 
 const DEFAULT_TIMEOUT = 2500;
 const DEFAULT_RETRY_DELAY = 25;
@@ -57,21 +57,19 @@ export interface LockFn {
   (name: string): Promise<UnlockFn>
 }
 
-async function acquire(client: RedisClientType, name: string): Promise<UnlockFn> {
+async function acquire(client: RedisClient, name: string): Promise<UnlockFn> {
   const timeout = DEFAULT_TIMEOUT;
   const timeoutAfter = Date.now() + timeout + 1;
   const key = `lock::${name}`;
   return await tryAcquire();
 
   async function unlock() {
-    const delFn = client.del.bind(client)
-    await delFn(key);
+    await client.del(key);
   }
 
   async function tryAcquire(): Promise<UnlockFn> {
     try {
-      const setFn = client.set.bind(client)
-      const result = await setFn(key, timeoutAfter, {
+      const result = await client.set(key, timeoutAfter, {
         PX: timeout,
         NX: true
       });

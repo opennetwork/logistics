@@ -1,7 +1,7 @@
 import {Background, BackgroundData} from "./types";
 import { getBackgroundStore } from "./store";
 import {v4} from "uuid";
-import {isLocking, lock} from "../lock";
+import {isLocking, lock} from "../storage/lock";
 import {getExpiresAt} from "../expiring-kv";
 
 export * from "./store";

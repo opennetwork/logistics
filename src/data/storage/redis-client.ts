@@ -1,6 +1,10 @@
 import {KeyValueStore, KeyValueStoreOptions, MetaKeyValueStore} from "./types";
-import type { RedisClientType } from "redis";
 import { ok } from "../../is";
+import { RedisClientType } from "@redis/client";
+import type { createClient } from "redis";
+import { RedisClient } from "./redis-types";
+
+export { RedisClient }
 
 const GLOBAL_CLIENTS = new Map();
 const GLOBAL_CLIENTS_PROMISE = new Map();
@@ -18,7 +22,7 @@ export function getRedisUrl() {
   return process.env.REDIS_URL;
 }
 
-export function getGlobalRedisClient() {
+export function getGlobalRedisClient(): Promise<RedisClient> {
   const url = getRedisUrl();
   // Give a stable promise result so it can be used to cache on too
   const existing = GLOBAL_CLIENTS_PROMISE.get(url);
@@ -29,11 +33,12 @@ export function getGlobalRedisClient() {
   GLOBAL_CLIENTS_PROMISE.set(url, promise);
   return promise;
 
-  async function getClient() {
+  async function getClient(): Promise<RedisClient> {
     const { createClient } = await import("redis");
-    const client = createClient({
+    const client: unknown = createClient<Record<string, never>, Record<string, never>, Record<string, never>>({
       url,
     });
+    ok<RedisClient>(client);
     client.on("error", console.warn);
     GLOBAL_CLIENTS.set(url, client);
     return client;
@@ -41,9 +46,9 @@ export function getGlobalRedisClient() {
 }
 
 export async function connectGlobalRedisClient(
-  clientPromise: Promise<RedisClientType> = getGlobalRedisClient()
-) {
-  const client: RedisClientType = await clientPromise;
+  clientPromise: Promise<RedisClient> = getGlobalRedisClient()
+): Promise<RedisClient> {
+  const client: RedisClient = await clientPromise;
   if (client.isOpen) {
     return client;
   }
@@ -153,7 +158,7 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
 
   async function has(key: string): Promise<boolean> {
     const client = await connect();
-    return client.exists(getKey(key));
+    return !!await client.exists(getKey(key));
   }
 
   async function keys(): Promise<string[]> {
