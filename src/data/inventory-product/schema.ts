@@ -1,6 +1,6 @@
 import { identifierSchema } from "../identifier";
 
-export const orderProduct = {
+export const inventoryProduct = {
   type: "object",
   properties: {
     productId: {

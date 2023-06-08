@@ -148,14 +148,8 @@ export interface Identifier {
     identifiedAt: string;
 }
 
-export interface InventoryProduct {
-  productId: string;
-  quantity: number;
-  identifiers: Identifier[];
-}
-
 export interface InventoryData {
-  products: InventoryProduct[];
+  products: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
 }
 
 export interface Inventory extends InventoryData {
@@ -163,6 +157,24 @@ export interface Inventory extends InventoryData {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface InventoryProductIdentifierData {
+  productId: string;
+  quantity?: number; // Default 1
+  identifiers?: Identifier[]; // Default []
+}
+
+export interface InventoryProductData extends InventoryProductIdentifierData {
+  inventoryId: string;
+}
+
+export interface InventoryProduct extends InventoryProductData {
+  inventoryProductId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SetInventoryProduct = InventoryProductData & Pick<InventoryProduct, "inventoryId" | "inventoryProductId"> & Partial<InventoryProduct>;
 
 export interface LocationData extends Record<string, unknown> {
   locationName: string;

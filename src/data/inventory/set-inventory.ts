@@ -1,5 +1,7 @@
 import { Inventory, InventoryData } from "./types";
 import { getInventoryStore } from "./store";
+import {v4} from "uuid";
+import {SetInventoryProduct, setInventoryProducts} from "../inventory-product";
 
 export async function setInventory(
   data: InventoryData & Pick<Inventory, "inventoryId"> & Partial<Inventory>
@@ -12,5 +14,12 @@ export async function setInventory(
     updatedAt,
   };
   await store.set(data.inventoryId, document);
+  if (data.products) {
+    await setInventoryProducts(data.products.map((product): SetInventoryProduct => ({
+      ...product,
+      inventoryId: data.inventoryId,
+      inventoryProductId: product.inventoryProductId || v4()
+    })));
+  }
   return document;
 }

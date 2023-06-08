@@ -1,13 +1,7 @@
-import {Identifier} from "../identifier";
-
-export interface InventoryProduct {
-  productId: string;
-  quantity: number;
-  identifiers: Identifier[];
-}
+import {InventoryProduct, InventoryProductIdentifierData} from "../inventory-product";
 
 export interface InventoryData {
-  products: InventoryProduct[];
+  products: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
 }
 
 export interface Inventory extends InventoryData {

@@ -1,6 +1,6 @@
 import {addOrder, addProduct, getOrder, listProducts, setOrder} from "../../data";
 import {ok} from "../../is";
-import {addOrderProduct, listOrderProducts} from "../../data/order-product";
+import {addOrderProduct, listOrderProducts} from "../../data";
 import { Chance } from "chance";
 
 const chance = new Chance();
