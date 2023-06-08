@@ -3,7 +3,27 @@ export const productData = {
   properties: {
     productName: {
       type: "string",
-    }
+    },
+    organisationText: {
+      type: "string",
+      nullable: true
+    },
+    organisationName: {
+      type: "string",
+      nullable: true
+    },
+    organisationId: {
+      type: "string",
+      nullable: true
+    },
+    generic: {
+      type: "boolean",
+      nullable: true,
+    },
+    public: {
+      type: "boolean",
+      nullable: true,
+    },
   },
   required: ["productName"],
 } as const;
