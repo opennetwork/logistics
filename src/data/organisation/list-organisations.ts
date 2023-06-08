@@ -5,10 +5,10 @@ export interface ListOrganisationsInput {
   authorizedOrganisationId?: string;
 }
 
-export async function listOrganisations({
+export async function listOrganisations<O extends Organisation = Organisation>({
   authorizedOrganisationId,
-}: ListOrganisationsInput = {}): Promise<Organisation[]> {
-  const store = getOrganisationStore();
+}: ListOrganisationsInput = {}): Promise<O[]> {
+  const store = getOrganisationStore<O>();
   const organisations = await store.values();
   return organisations.filter(
     (organisation) =>
