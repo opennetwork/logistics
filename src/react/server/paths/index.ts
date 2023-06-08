@@ -10,6 +10,7 @@ import { Errors } from "./error";
 import { HappeningPage, handler as happeningHandler } from "./happening";
 import { HappeningsPage, handler as happeningsHandler } from "./happenings";
 import { CreateHappeningPage, submit as createHappeningSubmit } from "./create-happening";
+import * as product from "./product"
 
 export const paths: Record<string, FunctionComponent> = {
   "/": Home,
@@ -23,7 +24,9 @@ export const paths: Record<string, FunctionComponent> = {
   "/error": Errors,
   "/happenings": HappeningsPage,
   "/happening/create": CreateHappeningPage,
-  "/happening/:happeningId": HappeningPage
+  "/happening/:happeningId": HappeningPage,
+  "/products": product.list.ListProducts,
+  "/product/create": product.create.CreateProduct
 };
 
 export const pathsAnonymous: Record<string, boolean> = {
@@ -33,6 +36,7 @@ export const pathsAnonymous: Record<string, boolean> = {
   "/calculator": true,
   "/login": true,
   "/happenings": true,
+  "/products": true,
   "/happening/create": true,
   "/happening/:happeningId": true
 };
@@ -43,6 +47,7 @@ export const pathsSubmit: Record<
 > = {
   "/feedback": feedbackSubmit,
   "/happening/create": createHappeningSubmit,
+  "/product/create": product.create.submit
 };
 
 export const pathsHandler: Record<
@@ -64,4 +69,5 @@ export const pathsCache: Record<string, boolean> = {
   "/login": false,
   "/logout": false,
   "/error": false,
+  "/products": true
 };

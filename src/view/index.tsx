@@ -20,7 +20,7 @@ import HappeningServer, { HappeningServerProps } from "../react/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   listOrganisations,
-  listPartners,
+  listPartners, listProducts,
 } from "../data";
 import { authenticate } from "../listen/authentication";
 import ServerCSS from "../react/server/server-css";
@@ -128,6 +128,11 @@ export async function viewRoutes(fastify: FastifyInstance) {
             })}
             organisations={await listOrganisations({
               authorizedOrganisationId: getMaybeAuthorizedForOrganisationId(),
+            })}
+            products={await listProducts({
+              // Making it obvious that if you are anonymous
+              // only public products will be visible
+              public: anonymous
             })}
             roles={state?.roles}
             query={request.query}

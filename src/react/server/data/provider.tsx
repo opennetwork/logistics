@@ -3,8 +3,9 @@ import {
   Partner,
   Organisation,
   User,
+  Product,
 } from "../../../data";
-import {createContext, PropsWithChildren, ProviderProps, useContext, useMemo} from "react";
+import {createContext, ProviderProps, useContext, useMemo} from "react";
 import { ok } from "../../../is";
 import { TimezoneProvider } from "../../client/components/happening";
 
@@ -23,8 +24,9 @@ export interface Data {
   isFragment: boolean;
   organisations: Organisation[];
   partners?: Partner[];
-  user?: User
+  user?: User;
   roles?: AuthenticationRole[];
+  products?: Product[];
 }
 
 export const DataContext = createContext<Data | undefined>(undefined);
@@ -174,4 +176,9 @@ export function useIsAdmin() {
 export function useTimezone() {
   const { timezone } = useData();
   return timezone;
+}
+
+export function useProducts() {
+  const { products } = useData();
+  return useMemo(() => products || [], [products]);
 }
