@@ -112,6 +112,7 @@ export function Home() {
       )}
       <br />
       <br />
+      <div id="react-home" />
     </>
   );
 }

@@ -12,7 +12,7 @@ import { bearerAuthentication } from "./authentication";
 import bearerAuthPlugin from "@fastify/bearer-auth";
 import authPlugin from "@fastify/auth";
 import { autoSeed, seed, stopData } from "../data";
-import {commitAt, commitShort, packageIdentifier} from "../package";
+import {commitAt, commitShort, importmapRoot, importmapRootName, packageIdentifier} from "../package";
 import cookie from "@fastify/cookie";
 import { isLike, ok } from "../is";
 import multipart from "@fastify/multipart";
@@ -102,6 +102,13 @@ export async function create() {
                 root: publicPath,
                 decorateReply: false,
                 prefix: "/public",
+            });
+            instance.register(files, {
+                // Relative to top level of this module
+                // NOT relative to cwd
+                root: importmapRoot,
+                prefix: importmapRootName,
+                decorateReply: false,
             });
         },
         { prefix: "/" }

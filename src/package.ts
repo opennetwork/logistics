@@ -28,6 +28,9 @@ export const version: string = packageInfo.version;
 export const packageIdentifier = `${name}@${version}`;
 export const homepage: string = packageInfo.homepage;
 export const bugsUrl: string = packageInfo.bugs?.url ?? homepage;
+export const importmapRootName: string = packageInfo.importmap?.root ?? "esnext/.imports";
+export const importmapRoot: string = join(directory, "../", importmapRootName);
+export const importmapPath: string = join(importmapRoot, "importmap.json");
 
 export * from "./package.readonly";
 

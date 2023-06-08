@@ -3,6 +3,7 @@ import { dirname, resolve } from "path";
 import {readFile} from "fs/promises";
 import {replaceBetween} from "./replace-between.js";
 import {writeFile} from "node:fs/promises";
+import "./importmap.js";
 
 // await import("./correct-import-extensions.js");
 // await import("./workerd-tests.js");

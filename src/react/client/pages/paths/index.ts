@@ -1,7 +1,12 @@
 
+async function home() {
+  const { home: fn } = await import("./home");
+  return fn();
+}
 
 export const paths: Record<string, () => void | Promise<void>> = {
-  // "/page/path": pageFunction,
+  "/": home,
+  "/home": home
 };
 
 export function runPath() {
