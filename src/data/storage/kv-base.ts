@@ -41,7 +41,10 @@ export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOpt
           return store;
         }
         return (store = kvsEnvStorage({
-          name,
+          // prefix === storage partition
+          // for the kvs env, we can get the same effect with a separate name
+          // which is mapped to a prefix for a file name anyway...
+          name: `${name}${nextOptions?.prefix ? `:${nextOptions.prefix}` : ""}`,
           version: DATABASE_VERSION,
         }));
       });

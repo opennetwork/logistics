@@ -1,16 +1,10 @@
-import {Identifier} from "../identifier";
-
-export interface OrderProduct {
-  productId: string;
-  quantity: number;
-  identifiers: Identifier[];
-}
+import {OrderProductIdentifierData, OrderProduct} from "../order-product";
 
 export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
 
 export interface OrderData {
   status: OrderStatus;
-  products: OrderProduct[];
+  products?: (OrderProductIdentifierData & Partial<OrderProduct>)[];
 }
 
 export interface Order extends OrderData {

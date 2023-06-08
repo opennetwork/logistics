@@ -1,6 +1,12 @@
 import { getOrderStore } from "./store";
+import { listOrderProducts } from "../order-product";
 
-export function getOrder(id: string) {
+export async function getOrder(id: string) {
   const store = getOrderStore();
-  return store.get(id);
+  const order = await store.get(id);
+  if (!order) return undefined;
+  return {
+    ...order,
+    products: await listOrderProducts(order.orderId)
+  }
 }

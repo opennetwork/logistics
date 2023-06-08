@@ -11,6 +11,7 @@ try {
 
   await import("./client");
   await import("./happening");
+  await import("./scenarios");
 
   // Ensure any data clients are closed
   await stopData();

@@ -176,17 +176,11 @@ export interface Location extends LocationData {
   updatedAt: string;
 }
 
-export interface OrderProduct {
-  productId: string;
-  quantity: number;
-  identifiers: Identifier[];
-}
-
 export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
 
 export interface OrderData {
   status: OrderStatus;
-  products: OrderProduct[];
+  products?: (OrderProductIdentifierData & Partial<OrderProduct>)[];
 }
 
 export interface Order extends OrderData {
@@ -194,6 +188,24 @@ export interface Order extends OrderData {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface OrderProductIdentifierData {
+  productId: string;
+  quantity?: number; // Default 1
+  identifiers?: Identifier[]; // Default []
+}
+
+export interface OrderProductData extends OrderProductIdentifierData {
+  orderId: string;
+}
+
+export interface OrderProduct extends OrderProductData {
+  orderProductId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SetOrderProduct = OrderProductData & Pick<OrderProduct, "orderId" | "orderProductId"> & Partial<OrderProduct>;
 
 export interface OrganisationBaseData extends Record<string, unknown> {
   countryCode?: string; // "NZ"
