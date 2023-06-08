@@ -275,6 +275,17 @@ export interface Partner extends PartnerData {
 
 export interface ProductData extends Record<string, unknown> {
   productName: string;
+  // Is the product publicly visible
+  public?: boolean;
+  // Is the related not to a specific brand
+  generic?: boolean;
+
+  // User provided organisation name associated with this product
+  organisationText?: string;
+  // System resolved organisation name associated with this product
+  organisationName?: string;
+  // System associated organisation name associated with this product
+  organisationId?: string;
 }
 
 export interface Product extends ProductData {
@@ -333,3 +344,40 @@ export interface SystemLog extends SystemLogData {
 ```
 
 [//]: # (typescript client)
+
+
+### Local Development
+
+#### Dependencies
+
+You will need to install the dependencies with [yarn](https://yarnpkg.com/)
+
+Once you have yarn installed, use the command:
+
+```bash
+yarn
+```
+
+#### `.env`
+
+First you will need to set up a `.env` file in the same directory as this README.md file
+
+Copy the [`.env.example`](./.env.example) to make your `.env` file
+
+##### Reddit
+
+To setup reddit authentication, you will need to either be provided a client ID if you're working with the
+socialbaking team, or you will need to create a [new application at the bottom of this screen](https://www.reddit.com/prefs/apps)
+
+The local redirect url is http://localhost:3000/api/authentication/reddit/callback
+
+Once created, copy the value under "web app" and set that as your `REDDIT_CLIENT_ID`
+
+Copy the "secret" and set that as `REDDIT_CLIENT_SECRET`
+
+Set the reddit community name, and associated flair, as you see fit:
+
+```
+REDDIT_NAME=MedicalCannabisNZ
+REDDIT_FLAIR="Medical Patient"
+```
