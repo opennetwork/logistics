@@ -103,7 +103,6 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
 
   async function internalGet(actualKey: string): Promise<T | undefined> {
     const client = await connect();
-    console.log(`GET ${actualKey}`)
     const value = await client.get(actualKey);
     return parseValue(value);
   }
@@ -145,7 +144,6 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
 
   async function keys(): Promise<string[]> {
     const client = await connect();
-    console.log(`KEYS ${getPrefix()}*`)
     return await client.keys(`${getPrefix()}*`);
   }
 
