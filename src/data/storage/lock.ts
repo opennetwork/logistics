@@ -1,11 +1,9 @@
 import {
   connectGlobalRedisClient,
-  getGlobalRedisClient,
-  isRedis,
-  isRedisMemory,
-  getRedisUrl,
   RedisClient
 } from "./redis-client";
+import {isRedisMemory} from "./redis-memory";
+import {getRedisUrl, isRedis} from "./redis-client-helpers";
 
 const DEFAULT_TIMEOUT = 2500;
 const DEFAULT_RETRY_DELAY = 25;

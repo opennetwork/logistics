@@ -2,7 +2,6 @@ export * from "./partner";
 export * from "./system-log";
 export * from "./access-token";
 export * from "./background";
-export * from "./storage/lock";
 export * from "./authentication-state";
 export * from "./happening";
 export * from "./attendee";

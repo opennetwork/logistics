@@ -3,24 +3,13 @@ import { ok } from "../../is";
 import { RedisClientType } from "@redis/client";
 import type { createClient } from "redis";
 import { RedisClient } from "./redis-types";
+import {getRedisPrefix, getRedisPrefixedKey, getRedisUrl, isNumberString} from "./redis-client-helpers";
 
 export { RedisClient }
 
 const GLOBAL_CLIENTS = new Map();
 const GLOBAL_CLIENTS_PROMISE = new Map();
 const GLOBAL_CLIENT_CONNECTION_PROMISE = new WeakMap();
-
-export function isRedis() {
-  return !!getRedisUrl();
-}
-
-export function isRedisMemory() {
-  return !!process.env.REDIS_MEMORY;
-}
-
-export function getRedisUrl() {
-  return process.env.REDIS_URL;
-}
 
 export function getGlobalRedisClient(): Promise<RedisClient> {
   const url = getRedisUrl();
@@ -46,7 +35,7 @@ export function getGlobalRedisClient(): Promise<RedisClient> {
 }
 
 export async function connectGlobalRedisClient(
-  clientPromise: Promise<RedisClient> = getGlobalRedisClient()
+    clientPromise: Promise<RedisClient> = getGlobalRedisClient()
 ): Promise<RedisClient> {
   const client: RedisClient = await clientPromise;
   if (client.isOpen) {
@@ -69,14 +58,6 @@ export async function connectGlobalRedisClient(
 //     await connectGlobalRedisClient(client);
 //     return client;
 // }
-
-function getRedisPrefix(name: string, options?: KeyValueStoreOptions) {
-  return `${name}::${options?.prefix ?? ""}`;
-}
-
-export function getRedisPrefixedKey(name: string, key: string, options?: KeyValueStoreOptions): string {
-  return `${getRedisPrefix(name, options)}${key}`;
-}
 
 export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStoreOptions): KeyValueStore<T> {
   const clientPromise = getGlobalRedisClient();
@@ -170,11 +151,11 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
 
   async function clear(): Promise<void> {
     await Promise.all(
-      (
-        await keys()
-      ).map(async (key) => {
-        await deleteFn(key);
-      })
+        (
+            await keys()
+        ).map(async (key) => {
+          await deleteFn(key);
+        })
     );
   }
 
@@ -184,8 +165,8 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
     await connect();
     const returnedValue = await client.incr(getKey(key));
     ok(
-      isNumberString(returnedValue),
-      "Expected redis to return number when incrementing"
+        isNumberString(returnedValue),
+        "Expected redis to return number when incrementing"
     );
     return +returnedValue;
   }
@@ -248,9 +229,3 @@ export async function stopRedis() {
 }
 
 
-export function isNumberString(value?: unknown): value is `${number}` | number {
-  return (
-      (typeof value === "string" && /^-?\d+(?:\.\d+)?$/.test(value)) ||
-      typeof value === "number"
-  );
-}

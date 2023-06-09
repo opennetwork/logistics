@@ -1,9 +1,8 @@
 import type { RedisMemoryServer } from "redis-memory-server";
-import { ok } from "../../is";
 
 export function isRedisMemory() {
   return !!process.env.REDIS_MEMORY;
-}
+}=
 
 let redisServer: RedisMemoryServer | undefined = undefined,
   initialURL: string | undefined = undefined;

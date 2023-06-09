@@ -4,7 +4,7 @@ import {
     connectGlobalRedisClient,
     getRedisPrefixedKey,
     isRedis,
-} from "./storage/redis-client";
+} from "./storage";
 import { Expiring } from "./expiring";
 
 // Added to only where redis is not in use

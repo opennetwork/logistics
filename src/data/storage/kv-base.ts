@@ -2,8 +2,9 @@ import { requestContext } from "@fastify/request-context";
 import { KVS, StorageSchema } from "@kvs/types";
 import { kvsEnvStorage } from "@kvs/env";
 import { KeyValueStore, KeyValueStoreOptions, MetaKeyValueStore } from "./types";
-import { createRedisKeyValueStore, isRedis } from "./redis-client";
+import { createRedisKeyValueStore } from "./redis-client";
 import { ok } from "../../is";
+import {isRedis} from "./redis-client-helpers";
 
 const DATABASE_VERSION = 1;
 
