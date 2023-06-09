@@ -18,7 +18,7 @@ export const STORE_NAMES = new Set<string>();
 
 export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOptions): KeyValueStore<T> {
   STORE_NAMES.add(name);
-  const key = `kvStore#${name}`;
+  const key = `kvStore#${name}${options?.prefix || ""}`;
   const store = get();
   if (store) return store;
   return create();
