@@ -34,3 +34,10 @@ export function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
       typeof value[Symbol.asyncIterator] === "function"
   );
 }
+
+export function isNumberString(value?: unknown): value is `${number}` | number {
+  return (
+      (typeof value === "string" && /^-?\d+(?:\.\d+)?$/.test(value)) ||
+      typeof value === "number"
+  );
+}

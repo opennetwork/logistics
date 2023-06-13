@@ -20,3 +20,4 @@ export * from "./inventory";
 export * from "./order";
 export * from "./order-product";
 export * from "./inventory-product";
+export * from "./file";

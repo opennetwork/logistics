@@ -1,13 +1,4 @@
 import {KeyValueStoreOptions} from "./types";
-import { } from "./redis-client-helpers";
-
-
-export function isNumberString(value?: unknown): value is `${number}` | number {
-  return (
-      (typeof value === "string" && /^-?\d+(?:\.\d+)?$/.test(value)) ||
-      typeof value === "number"
-  );
-}
 
 export function isRedis() {
   return !!getRedisUrl();

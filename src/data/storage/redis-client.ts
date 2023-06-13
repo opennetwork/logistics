@@ -1,9 +1,9 @@
 import {KeyValueStore, KeyValueStoreOptions, MetaKeyValueStore} from "./types";
-import { ok } from "../../is";
+import { ok, isNumberString } from "../../is";
 import { RedisClientType } from "@redis/client";
 import type { createClient } from "redis";
 import { RedisClient } from "./redis-types";
-import {getRedisPrefix, getRedisPrefixedKey, getRedisUrl, isNumberString} from "./redis-client-helpers";
+import {getRedisPrefix, getRedisPrefixedKey, getRedisUrl} from "./redis-client-helpers";
 
 export { RedisClient }
 

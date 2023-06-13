@@ -5,6 +5,7 @@ import {systemLogRoutes} from "./system-log";
 import {partnerRoutes} from "./partner";
 import {authenticationRoutes} from "./auth";
 import {productRoutes} from "./product";
+import {fileRoutes} from "./file";
 
 export async function routes(fastify: FastifyInstance) {
 
@@ -12,6 +13,7 @@ export async function routes(fastify: FastifyInstance) {
         fastify.register(systemLogRoutes);
         fastify.register(partnerRoutes);
         fastify.register(productRoutes);
+        fastify.register(fileRoutes);
     }
 
     fastify.register(apiRoutes, {
