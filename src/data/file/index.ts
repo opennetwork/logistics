@@ -5,3 +5,6 @@ export * from "./set-file";
 export * from "./store";
 export * from "./types";
 export * as fileSchema from "./schema";
+export * from "./r2";
+export * from "./source";
+export * from "./disk";

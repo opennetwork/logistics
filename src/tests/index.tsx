@@ -10,7 +10,9 @@ try {
   await seed();
 
   await import("./client");
-  await import("./happening");
+  console.log("after client");
+  await import("./remote");
+  console.log("after remote");
   await import("./scenarios");
 
   // Ensure any data clients are closed

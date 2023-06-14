@@ -1,18 +1,33 @@
 import { getKeyValueStore } from "../storage";
 import {File, FileType} from "./types";
 import {ok} from "../../is";
+import {isRemoteFileSourceName} from "./source";
 
 const STORE_NAME = "file";
 // productFile, namedFile
 const NAMED_STORE_SUFFIX = "File";
 
 export const NAMED_FILE_TYPE: FileType[] = [
-    "product"
+    "product",
+    "inventory"
 ];
 const FILE_NAMES: string[] = NAMED_FILE_TYPE;
 
+export function isNamedImportFileType(type: string): type is FileType & `${string}_import` {
+  return type.endsWith("_import");
+}
+
 export function isNamedFileType(type: string): type is FileType {
-  return FILE_NAMES.includes(type)
+  if (FILE_NAMES.includes(type)) {
+    return true;
+  }
+  if (isRemoteFileSourceName(type)) {
+    return true;
+  }
+  if (!isNamedImportFileType(type)) {
+    return false;
+  }
+  return isRemoteFileSourceName(type.replace(/_import$/, ""));
 }
 
 export function getFileStore() {

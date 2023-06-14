@@ -1,6 +1,6 @@
 import {File, ResolvedFile} from "./types";
 import {join} from "node:path";
-import {getSourceKey} from "./source";
+import {getRemoteSourceKey} from "./source";
 import {R2_ACCESS_KEY_ID, R2_ACCESS_KEY_SECRET, R2_BUCKET, r2Config} from "./r2";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
@@ -146,7 +146,7 @@ export async function getResolvedUrl(file: File, options?: ResolveFileOptions) {
             const url = new URL(`/api/version/1/files/watermark/named.png`, IMAGE_RESIZING_WATERMARK_ORIGIN || getOrigin());
             url.searchParams.set("cacheBust", WATERMARK_CACHE_BUST);
             url.searchParams.set("name", `Uploaded by ${file.uploadedByUsername}`);
-            const community = getSourceKey(file.source, "name");
+            const community = getRemoteSourceKey(file.source, "name");
             if (community) {
                 url.searchParams.set("community", community);
             }
@@ -186,7 +186,11 @@ export async function getResolvedUrl(file: File, options?: ResolveFileOptions) {
 
     async function getDirectURL() {
         if (file.synced === "disk") {
-            const store = getSourceKey(file.source, "store");
+            if (file.url.startsWith("file://")) {
+                // Direct path
+                return file.url;
+            }
+            const store = getRemoteSourceKey(file.source, "store");
             if (store) {
                 return `file://${join(process.cwd(), store, file.fileName)}`
             }
