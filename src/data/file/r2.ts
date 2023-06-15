@@ -1,7 +1,8 @@
-import {PutObjectCommand, S3Client, S3ClientConfig} from "@aws-sdk/client-s3";
+import {HeadObjectCommand, PutObjectCommand, S3Client, S3ClientConfig} from "@aws-sdk/client-s3";
 import {ok} from "../../is";
 import {FileData} from "./types";
 import {getRemoteSourcePrefix} from "./source";
+import {createHash} from "crypto";
 
 export const {
     R2_ACCESS_KEY_ID,
@@ -38,29 +39,99 @@ export function isR2() {
     )
 }
 
-export async function saveToR2(file: FileData, contents: Buffer | Blob): Promise<Partial<FileData>> {
+const { DISABLE_EXISTING_FILE } = process.env;
+
+const ENABLE_EXISTING_FILE = !DISABLE_EXISTING_FILE;
+
+export async function isExistingInR2(file: FileData) {
+    // Disable any functionality trying to use existing
+    if (!ENABLE_EXISTING_FILE) return false;
     const client = await getR2();
     let prefix = getRemoteSourcePrefix(file.source) ?? "";
     if (prefix && !prefix.endsWith("/")) {
         prefix = `${prefix}/`;
     }
     const key = `${prefix}${file.fileName}`
+    const headCommand = new HeadObjectCommand({
+        Key: key,
+        Bucket: R2_BUCKET,
+    });
+    try {
+        await client.send(headCommand);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export async function saveToR2(file: FileData, contents: Buffer | Blob): Promise<Partial<FileData>> {
+    const client = await getR2()
+    let prefix = getRemoteSourcePrefix(file.source) ?? "";
+    if (prefix && !prefix.endsWith("/")) {
+        prefix = `${prefix}/`;
+    }
+    const key = `${prefix}${file.fileName}`
+
     const buffer = Buffer.isBuffer(contents) ?
         contents :
         Buffer.from(await contents.arrayBuffer());
+
+    const hash256 = createHash("sha256");
+    hash256.update(buffer);
+    const hash5 = createHash("md5");
+    hash5.update(buffer);
+    const checksum = {
+        SHA256: hash256.digest().toString("base64"),
+        MD5: hash5.digest().toString("base64")
+    };
+
+    const url = new URL(
+        `/${key}`,
+        R2_ENDPOINT
+    ).toString();
+
+    if (await isExistingInR2(file)) {
+        // console.log(`Using existing uploaded file for ${file.fileName}`);
+        return {
+            synced: "r2",
+            syncedAt: file.syncedAt || new Date().toISOString(),
+            url,
+            // Allow checksum to be updated if it wasn't present!
+            checksum: {
+                ...checksum,
+                ...file.checksum
+            }
+        }
+    }
+
+    // console.log(`Uploading file ${file.fileName} to R2`, checksum);
+
     const command = new PutObjectCommand({
         Key: key,
         Bucket: R2_BUCKET,
         Body: buffer,
         ContentType: file.contentType,
+        ContentMD5: checksum.MD5
     });
-    await client.send(command);
+
+    const result = await client.send(command);
     return {
         synced: "r2",
         syncedAt: new Date().toISOString(),
-        url: new URL(
-            `/${key}`,
-            R2_ENDPOINT
-        ).toString()
+        url,
+        checksum: {
+            ...checksum,
+            ...getChecksum(result)
+        }
+    };
+}
+
+function getChecksum(result: { ChecksumCRC32?: string, ChecksumCRC32C?: string, ChecksumSHA1?: string, ChecksumSHA256?: string }) {
+    if (!result.ChecksumSHA256) return undefined;
+    return {
+        CRC32: result.ChecksumCRC32,
+        CRC32C: result.ChecksumCRC32C,
+        SHA1: result.ChecksumSHA1,
+        SHA256: result.ChecksumSHA256
     }
 }

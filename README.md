@@ -111,9 +111,12 @@ export interface ResolvedFilePart extends Record<string, unknown> {
 
 }
 
-export interface FileImageSize {
+export interface FileImageSize extends Expiring {
   width: number;
   height: number;
+  signed?: boolean;
+  fileName?: string;
+  checksum?: Record<string, string>
 }
 
 export interface FileSize extends FileImageSize {
@@ -159,7 +162,6 @@ export interface FileData extends Record<string, unknown>, Partial<FileImageSize
   resolved?: ResolvedFilePart[];
   resolvedAt?: string;
   errors?: FileErrorDescription[];
-  signed?: boolean;
 }
 
 export interface File extends FileData {
