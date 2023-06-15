@@ -23,6 +23,7 @@ import files from "@fastify/static";
 import { errorHandler } from "../view/error";
 import etag from "@fastify/etag";
 import { parseStringFields } from "./body-parser";
+import {getConfig} from "../config";
 
 const { pathname } = new URL(import.meta.url);
 const directory = dirname(pathname);
@@ -115,6 +116,12 @@ export async function create() {
     );
 
     await setupSwagger(app);
+
+    const { routes: providedRoutes } = getConfig();
+
+    if (providedRoutes) {
+        await register(providedRoutes);
+    }
 
     register(routes);
 

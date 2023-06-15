@@ -29,20 +29,23 @@ export async function listSystemLogsRoutes(fastify: FastifyInstance) {
         ]
     }
 
-    fastify.get(
-        "/",
-        {
-            schema,
-            preHandler: authenticate(fastify),
-            async handler(request, response) {
-                const data = await listSystemLogs({
-                    partnerId: getMaybeAuthorizedForPartnerId()
-                })
+    try {
+        fastify.get(
+            "/",
+            {
+                schema,
+                preHandler: authenticate(fastify),
+                async handler(request, response) {
+                    const data = await listSystemLogs({
+                        partnerId: getMaybeAuthorizedForPartnerId()
+                    })
 
-                response.send(data);
-            }
-        },
+                    response.send(data);
+                }
+            },
 
-    );
+        );
+    } catch {
+    }
 }
 

@@ -8,7 +8,7 @@ export function ListProducts() {
             {!isAnonymous ? <a href="/product/create">Create Product</a> : undefined}
             <div className="flex flex-col divide-y">
                 {products.map(product => (
-                    <div>
+                    <div key={product.productId}>
                         {product.productName}
                     </div>
                 ))}

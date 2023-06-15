@@ -1,4 +1,4 @@
-import {File, getRemoteSourceKey, getRemoteSources, TYPE_BASE_NAMES} from "../data";
+import {File, getRemoteSourceKey, getRemoteSources, Product, setProduct, TYPE_BASE_NAMES} from "../data";
 import {importRemoteSource} from "../remote/import";
 import {getResolvedUrl} from "../data/file/resolve-file";
 import {ok} from "../is";
@@ -17,8 +17,11 @@ for (const source of bases) {
     const file = await importRemoteSource({
         source,
         json: true,
-        async handler(input: unknown) {
+        async handler(input: Product[]) {
             // console.log(input);
+            for (const product of input) {
+                await setProduct(product);
+            }
             return input;
         }
     });

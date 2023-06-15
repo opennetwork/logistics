@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import {FastifyInstance} from "fastify";
 import { addProduct, ProductData, productSchema } from "../../data";
 import { authenticate } from "../authentication";
 
@@ -27,13 +27,15 @@ export async function addProductRoutes(fastify: FastifyInstance) {
     ],
   };
 
-  fastify.post<Schema>("/", {
-    schema,
-    preHandler: authenticate(fastify),
-    async handler(request, response) {
-      const product = await addProduct(request.body);
-      response.status(201);
-      response.send(product);
-    },
-  });
+  try {
+    fastify.post<Schema>("/", {
+      schema,
+      preHandler: authenticate(fastify),
+      async handler(request, response) {
+        const product = await addProduct(request.body);
+        response.status(201);
+        response.send(product);
+      },
+    });
+  } catch {}
 }

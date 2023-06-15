@@ -36,6 +36,8 @@ import { ok } from "../is";
 import { join, dirname } from "node:path";
 import { addCachedPage, getCached, getCachedPage } from "../data/cache";
 import { getOrigin } from "../listen/config";
+import {PartialView, View} from "./types";
+import {getConfig} from "../config";
 
 const { pathname } = new URL(import.meta.url);
 const DIRECTORY = dirname(pathname);
@@ -50,12 +52,12 @@ export async function viewRoutes(fastify: FastifyInstance) {
   });
 
   function createPathHandler(
-    path: string,
+    view: PartialView,
     options?: Partial<HappeningServerProps>,
     isPathCached?: boolean
   ) {
-    const baseHandler = pathsHandler[path];
-    const submitHandler = pathsSubmit[path];
+    const baseHandler = view.handler;
+    const submitHandler = view.submit;
 
     return async function handler(
       request: FastifyRequest,
@@ -120,7 +122,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
           <HappeningServer
             {...options}
             input={baseResult}
-            url={path}
+            url={view.path}
             isAnonymous={anonymous}
             isFragment={isFragment}
             partners={await listPartners({
@@ -150,8 +152,8 @@ export async function viewRoutes(fastify: FastifyInstance) {
       }
     };
   }
-  function createPathSubmitHandler(path: string) {
-    const submit = pathsSubmit[path];
+  function createPathSubmitHandler(view: PartialView) {
+    const { submit, path } = view;
     ok(
       typeof submit === "function",
       `Expected pathSubmit.${path} to be a function`
@@ -167,8 +169,8 @@ export async function viewRoutes(fastify: FastifyInstance) {
       } catch (caught) {
         error = caught;
       }
-      const view = createPathHandler(
-        path,
+      const pathHandler = createPathHandler(
+        view,
         {
           result,
           error,
@@ -176,36 +178,34 @@ export async function viewRoutes(fastify: FastifyInstance) {
         },
         false
       );
-      await view(request, response);
+      await pathHandler(request, response);
     };
   }
 
-  Object.keys(paths).forEach((path) => {
-    const anonymous = pathsAnonymous[path] || !!ALLOW_ANONYMOUS_VIEWS;
-
-    const isPathCached = pathsCache[path] || false;
-
-    const handler = createPathHandler(path, {}, isPathCached);
-
-    console.log({ path, anonymous, isPathCached });
-
+  function createView(view: PartialView) {
+    const {
+      path,
+      anonymous,
+      cached: isPathCached = false,
+      submit
+    } = view;
+    const pathHandler = createPathHandler(view, {}, isPathCached);
     const preHandler = authenticate(fastify, {
-      anonymous: pathsAnonymous[path] || !!ALLOW_ANONYMOUS_VIEWS,
+      anonymous: anonymous || !!ALLOW_ANONYMOUS_VIEWS,
     });
-
     const fragmentSuffix = `${path === "/" ? "" : "/"}fragment`;
 
     fastify.get(`${path}${fragmentSuffix}`, {
       preHandler,
-      handler,
+      handler: pathHandler,
     });
     fastify.get(path, {
       preHandler,
-      handler,
+      handler: pathHandler,
     });
 
-    if (pathsSubmit[path]) {
-      const submitHandler = createPathSubmitHandler(path);
+    if (submit) {
+      const submitHandler = createPathSubmitHandler(view);
       fastify.post(path, {
         preHandler,
         handler: submitHandler,
@@ -215,5 +215,24 @@ export async function viewRoutes(fastify: FastifyInstance) {
         handler: submitHandler,
       });
     }
-  });
+  }
+
+  const { views = [] } = getConfig();
+
+  const includedPaths = views.map(view => view.path);
+
+  views
+      .forEach(createView);
+
+  Object.keys(paths)
+      .filter(path => !includedPaths.includes(path))
+      .forEach((path) => {
+        createView({
+          path,
+          anonymous: pathsAnonymous[path] || !!ALLOW_ANONYMOUS_VIEWS,
+          cached: pathsCache[path] || false,
+          handler: pathsHandler[path],
+          submit: pathsSubmit[path]
+        })
+      });
 }

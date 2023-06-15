@@ -59,7 +59,8 @@ async function createImports(importmap) {
 
     const entries = [];
 
-    const root = importmap.root || "esnext/.imports";
+    const root = importmap.root || "esnext/imports";
+    const buildRoot = "esnext";
 
     await mkdir(root, {
         recursive: true
@@ -67,7 +68,7 @@ async function createImports(importmap) {
 
     for (const [key, value] of Object.entries(importmap.imports)) {
         if (typeof value !== "string") continue;
-        const target = join(root, `${key}.js`)
+        const target = join(root, `${key.replace(/\.js$/, "")}.js`)
         await esbuild.build({
             entryPoints: [value],
             bundle: true,
@@ -84,6 +85,17 @@ async function createImports(importmap) {
         JSON.stringify({
             imports
         }, undefined, "  "),
+        "utf-8"
+    );
+
+    const files = Object.values(imports);
+    const referenceFile = files
+        .map((file, index) => `export * as Import${index} from "${file.replace(`/${buildRoot}`, ".")}";`)
+        .join("\n")
+
+    await writeFile(
+        `${buildRoot}/import-references.js`,
+        `${referenceFile}\n`,
         "utf-8"
     );
 }

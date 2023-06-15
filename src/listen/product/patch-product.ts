@@ -1,5 +1,5 @@
-import { FastifyInstance } from "fastify";
-import {addProduct, getProduct, ProductData, productSchema, setProduct} from "../../data";
+import {FastifyInstance} from "fastify";
+import {getProduct, ProductData, productSchema, setProduct} from "../../data";
 import { authenticate } from "../authentication";
 
 export async function patchProductRoutes(fastify: FastifyInstance) {
@@ -54,25 +54,28 @@ export async function patchProductRoutes(fastify: FastifyInstance) {
     ],
   };
 
-  fastify.patch<Schema>("/:productId", {
-    schema,
-    preHandler: authenticate(fastify),
-    async handler(request, response) {
-      const { productId } = request.params;
-      const existing = await getProduct(productId);
-      // Patch must have an existing product
-      if (!existing) {
-        response.status(404);
-        return response.send();
-      }
-      const product = await setProduct({
-        ...existing,
-        ...request.body,
-        createdAt: existing.createdAt,
-        productId
-      });
-      response.status(200);
-      response.send(product);
-    },
-  });
+  try {
+    fastify.patch<Schema>("/:productId", {
+      schema,
+      preHandler: authenticate(fastify),
+      async handler(request, response) {
+        const { productId } = request.params;
+        const existing = await getProduct(productId);
+        // Patch must have an existing product
+        if (!existing) {
+          response.status(404);
+          return response.send();
+        }
+        const product = await setProduct({
+          ...existing,
+          ...request.body,
+          createdAt: existing.createdAt,
+          productId
+        });
+        response.status(200);
+        response.send(product);
+      },
+    });
+  } catch {
+  }
 }

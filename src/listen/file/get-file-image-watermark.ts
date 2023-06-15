@@ -86,25 +86,29 @@ export async function getFileImageWatermarkRoutes(fastify: FastifyInstance) {
             return new XMLSerializer().serializeToString(doc);
         }
 
-        fastify.get<Schema>("/watermark/named.svg", {
-            schema,
-            async handler(request, response) {
-                const svg = await getSvg(request.query);
-                response.header("Content-Type", "image/svg+xml");
-                response.send(svg);
-            }
-        })
+        try {
+            fastify.get<Schema>("/watermark/named.svg", {
+                schema,
+                async handler(request, response) {
+                    const svg = await getSvg(request.query);
+                    response.header("Content-Type", "image/svg+xml");
+                    response.send(svg);
+                }
+            })
+        } catch {}
 
-        fastify.get<Schema>("/watermark/named.png", {
-            schema,
-            async handler(request, response) {
-                const svg = await getSvg(request.query);
-                const output = await sharp(Buffer.from(svg))
-                    .png()
-                    .toBuffer();
-                response.header("Content-Type", "image/png");
-                response.send(output);
-            }
-        })
+        try {
+            fastify.get<Schema>("/watermark/named.png", {
+                schema,
+                async handler(request, response) {
+                    const svg = await getSvg(request.query);
+                    const output = await sharp(Buffer.from(svg))
+                        .png()
+                        .toBuffer();
+                    response.header("Content-Type", "image/png");
+                    response.send(output);
+                }
+            })
+        } catch {}
     }
 }

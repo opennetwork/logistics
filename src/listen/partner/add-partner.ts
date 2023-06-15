@@ -23,20 +23,23 @@ export async function addPartnerRoutes(fastify: FastifyInstance) {
         response
     }
 
-    fastify.post<Schema>(
-        "/",
-        {
-            schema,
-            preHandler: authenticate(fastify, {
-                anonymous: true
-            }),
-            async handler(request, response)  {
-                const partner = await addPartner(request.body);
+    try {
+        fastify.post<Schema>(
+            "/",
+            {
+                schema,
+                preHandler: authenticate(fastify, {
+                    anonymous: true
+                }),
+                async handler(request, response)  {
+                    const partner = await addPartner(request.body);
 
-                response.status(201);
-                response.send(partner);
+                    response.status(201);
+                    response.send(partner);
+                }
             }
-        }
-    )
+        )
+    } catch {
+    }
 }
 

@@ -1,9 +1,11 @@
+import "../import-references";
+
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 import "../tracing";
 
-import {start} from "./start";
+const { start } = await import("./start");
 
 await start();

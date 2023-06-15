@@ -22,11 +22,13 @@ export async function listProductRoutes(fastify: FastifyInstance) {
     ],
   };
 
-  fastify.get("/", {
-    schema,
-    preHandler: authenticate(fastify),
-    async handler(request: FastifyRequest, response) {
-      response.send(await listProducts());
-    },
-  });
+  try {
+    fastify.get("/", {
+      schema,
+      preHandler: authenticate(fastify),
+      async handler(request: FastifyRequest, response) {
+        response.send(await listProducts());
+      },
+    });
+  } catch { }
 }
