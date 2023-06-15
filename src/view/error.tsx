@@ -4,6 +4,7 @@ import HappeningServer from "../react/server";
 import { getOrigin } from "../listen/config";
 import { getMaybeUser, getUser, isAnonymous } from "../authentication";
 import { isHTMLResponse } from "../listen/authentication";
+import {getConfig} from "../config";
 
 export function errorHandler(
   error: Error,
@@ -30,6 +31,7 @@ export function errorHandler(
       partners={[]}
       user={user}
       timezone={DEFAULT_TIMEZONE}
+      config={getConfig()}
     />
   );
 

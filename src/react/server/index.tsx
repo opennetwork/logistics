@@ -1,4 +1,4 @@
-import { Data, DataProvider } from "./data/provider";
+import { Data, DataProvider } from "./data";
 import { paths } from "./paths";
 import { getOrigin } from "../../listen/config";
 import { AnonymousLayout, Layout, LayoutProps } from "./layout";

@@ -8,10 +8,12 @@ import {
 import {createContext, ProviderProps, useContext, useMemo} from "react";
 import { ok } from "../../../is";
 import { TimezoneProvider } from "../../client/components/happening";
+import {Config} from "../../../config";
 
 const TRUSTED_ROLE: AuthenticationRole[] = ["moderator", "admin", "developer"];
 
 export interface Data {
+  config?: Config;
   body?: unknown;
   input?: unknown;
   result?: unknown;
@@ -181,4 +183,9 @@ export function useTimezone() {
 export function useProducts() {
   const { products } = useData();
   return useMemo(() => products || [], [products]);
+}
+
+export function useConfig(): Config {
+  const { config } = useData();
+  return config || {}
 }

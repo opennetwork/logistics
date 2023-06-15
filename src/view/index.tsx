@@ -121,6 +121,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
         let html = renderToStaticMarkup(
           <HappeningServer
             {...options}
+            config={getConfig()}
             input={baseResult}
             url={view.path}
             isAnonymous={anonymous}
