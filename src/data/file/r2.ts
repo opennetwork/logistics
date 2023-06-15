@@ -38,7 +38,7 @@ export function isR2() {
     )
 }
 
-export async function saveToR2(file: Pick<FileData, "fileName" | "contentType"> & Partial<Pick<FileData, "source">>, contents: Buffer | Blob): Promise<Partial<FileData>> {
+export async function saveToR2(file: FileData, contents: Buffer | Blob): Promise<Partial<FileData>> {
     const client = await getR2();
     let prefix = getRemoteSourcePrefix(file.source) ?? "";
     if (prefix && !prefix.endsWith("/")) {
