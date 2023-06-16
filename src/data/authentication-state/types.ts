@@ -8,7 +8,8 @@ export type AuthenticationStateType =
   | "authsignal"
   | "partner"
   | "attendee"
-  | "invitee";
+  | "invitee"
+  | "exchange";
 
 export interface AuthenticationStateFromData {
   type: AuthenticationStateType | string;
@@ -16,10 +17,7 @@ export interface AuthenticationStateFromData {
   from?: AuthenticationStateFromData;
 }
 
-export interface AuthenticationStateData
-  extends Expiring,
-    Record<string, unknown> {
-  type: AuthenticationStateType | string;
+export interface UntypedAuthenticationStateData {
   from?: AuthenticationStateFromData;
   userState?: string;
   externalScope?: string;
@@ -29,6 +27,13 @@ export interface AuthenticationStateData
   partnerId?: string;
   userId?: string;
   redirectUrl?: string;
+}
+
+export interface AuthenticationStateData
+  extends Expiring,
+    UntypedAuthenticationStateData,
+    Record<string, unknown> {
+  type: AuthenticationStateType | string;
 }
 
 

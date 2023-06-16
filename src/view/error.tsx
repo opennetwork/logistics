@@ -21,13 +21,15 @@ export function errorHandler(
   const anonymous = isAnonymous();
   const user = getMaybeUser();
   const { DEFAULT_TIMEZONE = "Pacific/Auckland" } = process.env;
+  const origin = getOrigin();
 
   const html = renderToStaticMarkup(
     <HappeningServer
       view={getView("/error")}
       isFragment={isFragment}
       isAnonymous={anonymous}
-      url="/error"
+      url={new URL(request.url, origin).toString()}
+      origin={origin}
       error={error}
       organisations={[]}
       partners={[]}

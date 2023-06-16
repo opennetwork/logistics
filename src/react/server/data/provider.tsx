@@ -22,6 +22,7 @@ export interface Data {
   submitted?: true;
   timezone: string;
   url: string;
+  origin: string;
   isAnonymous: boolean;
   isFragment: boolean;
   organisations: Organisation[];

@@ -40,7 +40,8 @@ export async function viewRoutes(fastify: FastifyInstance) {
   function createPathHandler(
     view: View,
     options?: Partial<HappeningServerProps>,
-    isPathCached?: boolean
+    isPathCached?: boolean,
+    baseResultGiven?: { value: unknown }
   ) {
     const baseHandler = view.handler;
     const submitHandler = view.submit;
@@ -50,9 +51,13 @@ export async function viewRoutes(fastify: FastifyInstance) {
       response: FastifyReply
     ) {
       let baseResult: unknown = undefined;
-      if (baseHandler) {
-        baseResult = await baseHandler(request, response);
-        if (response.sent) return;
+      if (baseResultGiven) {
+        baseResult = baseResultGiven.value;
+      } else {
+        if (baseHandler) {
+          baseResult = await baseHandler(request, response);
+          if (response.sent) return;
+        }
       }
 
       const html = await getHTML();
@@ -100,6 +105,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
         const { pathname } = new URL(request.url, getOrigin());
         const isFragment = pathname.endsWith("/fragment");
         const user = getMaybeUser();
+        const origin = getOrigin();
 
         // console.log({ anonymous, state, roles: state?.roles });
 
@@ -110,7 +116,8 @@ export async function viewRoutes(fastify: FastifyInstance) {
             view={view}
             config={getConfig()}
             input={baseResult}
-            url={view.path}
+            url={new URL(request.url, origin).toString()}
+            origin={origin}
             isAnonymous={anonymous}
             isFragment={isFragment}
             partners={await listPartners({
@@ -141,7 +148,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
     };
   }
   function createPathSubmitHandler(view: View) {
-    const { submit, path } = view;
+    const { submit, handler: baseHandler, path } = view;
     ok(
       typeof submit === "function",
       `Expected pathSubmit.${path} to be a function`
@@ -151,9 +158,16 @@ export async function viewRoutes(fastify: FastifyInstance) {
       request: FastifyRequest,
       response: FastifyReply
     ) {
+      let baseResult;
+
+      if (baseHandler) {
+        baseResult = await baseHandler(request, response);
+        if (response.sent) return;
+      }
+
       let result, error;
       try {
-        result = await submit(request, response);
+        result = await submit(request, response, baseResult);
       } catch (caught) {
         error = caught;
       }
@@ -164,7 +178,8 @@ export async function viewRoutes(fastify: FastifyInstance) {
           error,
           submitted: true,
         },
-        false
+        false,
+          { value: baseResult }
       );
       await pathHandler(request, response);
     };

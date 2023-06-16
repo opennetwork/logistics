@@ -9,6 +9,7 @@ import { ok } from "../../is";
 import { getExpiresAt } from "../expiring-kv";
 import { addExternalUser } from "./add-user";
 import { User } from "./types";
+import {getUserAuthenticationRoleForUser} from "../authentication-role";
 
 export function getUser(userId: string) {
   const store = getUserStore();
@@ -35,6 +36,13 @@ export async function getExternalUser(
   );
   ok(reference.userId, "Expected external user id to be available");
   const user = await getUser(reference.userId);
+  if (!user) {
+    // User expired, reset
+    return addExternalUser({
+      externalId,
+      externalType
+    })
+  }
   // If user is not expiring, persist the external user reference
   // If user is expiring, reset both to default expiring time
   const expiresAt = user.expiresAt

@@ -2,9 +2,7 @@ import { FastifyInstance } from "fastify";
 import { ok } from "../../is";
 import { getOrigin } from "../config";
 import {
-  getAuthenticationStateByKey,
   addAuthenticationState,
-  systemLogSchema,
   addCookieState,
   AuthenticationRole,
   getAuthenticationRoles,
@@ -13,9 +11,12 @@ import {
   getCached,
   addExpiring,
   getExternalUser,
+  getUserAuthenticationRoleForUser,
+  getAuthenticationState,
+  getInviteURL,
 } from "../../data";
 import { packageIdentifier } from "../../package";
-import { getExpiresAt, MONTH_MS } from "../../data/expiring-kv";
+import { getExpiresAt, MONTH_MS } from "../../data";
 import "@fastify/cookie";
 
 interface RedditUserContent extends Record<string, unknown> {
@@ -113,7 +114,7 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
       async handler(request, response) {
         const { code, state: stateKey } = request.query;
 
-        const state = await getAuthenticationStateByKey(stateKey);
+        const state = await getAuthenticationState(stateKey);
 
         if (!state?.externalScope) {
           const message = `Could not find stateKey in storage`;
@@ -122,7 +123,7 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        const { redirectUrl, type } = state;
+        const { redirectUrl, type, userState } = state;
         ok(type === "reddit", "Expected type to be reddit");
 
         await deleteAuthenticationState(state.stateId);
@@ -145,9 +146,14 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
 
         const internalUser = await getExternalUser("reddit", me.name);
 
+        const userRoles = await getUserAuthenticationRoleForUser(internalUser);
+
         const { stateId, expiresAt } = await addCookieState({
           userId: internalUser.userId,
-          roles,
+          roles: [...new Set<AuthenticationRole>([
+            ...roles,
+            ...(userRoles?.roles ?? [])
+          ])],
           from: {
             type: "reddit",
             createdAt: state.createdAt,
@@ -160,8 +166,22 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
           expires: new Date(expiresAt),
         });
 
-        // "/home" is authenticated, "/" is not
-        response.header("Location", "/home");
+        const authState = userState ?
+            await getAuthenticationState(userState)
+            : undefined
+
+        let location = "/home";
+
+        if (authState && authState.type === "exchange") {
+          const exchangeState = await getAuthenticationState(authState.userState);
+          if (exchangeState?.type === "invitee") {
+            const url = getInviteURL();
+            url.searchParams.set("state", userState);
+            location = url.toString();
+          }
+        }
+
+        response.header("Location", location);
         response.status(302);
         response.send();
 
@@ -316,11 +336,22 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
   {
     const querystring = {
       type: "object",
-      properties: {},
-      additionalProperties: true,
-    };
+      properties: {
+        state: {
+          type: "string",
+          nullable: true,
+        },
+        bot: {
+          type: "string",
+          nullable: true,
+        },
+      }
+    }
     type Schema = {
-      Querystring: Record<string, string>;
+      Querystring: {
+        state?: string
+        bot?: string
+      }
     };
     const schema = {
       querystring,

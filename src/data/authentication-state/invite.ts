@@ -1,10 +1,11 @@
-import {AuthenticationState, InviteeData} from "./types";
+import {AuthenticationState, AuthenticationStateData, InviteeData, UntypedAuthenticationStateData} from "./types";
 import {v4} from "uuid";
 import {addAuthenticationState} from "./add-authentication-state";
-import {hash} from "bcrypt";
+import {compare, hash} from "bcrypt";
 import {getConfig} from "../../config";
-import {isNumberString} from "../../is";
+import {isLike, isNumberString} from "../../is";
 import {getOrigin} from "../../listen/config";
+import {getAuthenticationState} from "./get-authentication-state";
 
 const {
     INVITEE_BCRYPT_SALT,
@@ -12,7 +13,7 @@ const {
     INVITEE_URL
 } = process.env;
 
-const DEFAULT_INVITEE_URL = "/invites/accept"
+const DEFAULT_INVITEE_URL = "/invite/accept"
 const DEFAULT_ROUNDS = 13;
 
 function getSaltOrRounds() {
@@ -24,28 +25,62 @@ function getSaltOrRounds() {
     return DEFAULT_ROUNDS;
 }
 
-export async function addInvitee(data: InviteeData): Promise<AuthenticationState & { url: string }> {
+export function getInviteURL() {
+    return new URL(INVITEE_URL || DEFAULT_INVITEE_URL, getOrigin());
+}
 
+export interface InviteeStateData {
+    inviteSecretHashed: string;
+    inviteUrl: string;
+}
+
+export interface InviteeState extends AuthenticationState, InviteeStateData {
+
+}
+
+export async function addInviteeState(data: UntypedAuthenticationStateData): Promise<InviteeState> {
     const inviteSecret = v4();
-
     const inviteSecretHashed = await hash(inviteSecret, getSaltOrRounds());
-
-    const intendedUrl = new URL(INVITEE_URL || DEFAULT_INVITEE_URL, getOrigin());
-
+    const intendedUrl = getInviteURL();
+    const inviteeState: InviteeStateData = {
+        inviteSecretHashed,
+        inviteUrl: intendedUrl.toString()
+    }
     const state = await addAuthenticationState({
         ...data,
         type: "invitee",
-        inviteSecretHashed,
-        inviteUrl: intendedUrl.toString()
+        ...inviteeState
     });
-
     const inviteUrl = new URL(intendedUrl);
-
-    // Set the token AFTER storing the url in the database
+    // Set the token AFTER storing the target url in the database
     inviteUrl.searchParams.set("token", inviteSecret);
-
+    inviteUrl.searchParams.set("state", state.stateKey);
     return {
         ...state,
-        url: inviteUrl.toString()
+        ...inviteeState,
+        inviteUrl: inviteUrl.toString()
     };
+}
+
+export interface GetInviteeOptions {
+    stateId: string;
+    token: string;
+}
+
+export async function getInviteeState({ stateId, token }: GetInviteeOptions): Promise<InviteeState | undefined> {
+    const state = await getAuthenticationState(stateId);
+    if (!state) return undefined;
+    if (!isInviteeState(state)) return undefined;
+    const matched = await compare(token, state.inviteSecretHashed);
+    if (!matched) return undefined;
+    return state;
+}
+
+export function isInviteeState(state: AuthenticationState): state is InviteeState {
+    if (!state.type) return false;
+    return !!(
+        isLike<InviteeState>(state) &&
+        state.inviteUrl &&
+        state.inviteSecretHashed
+    );
 }

@@ -1,3 +1,5 @@
+import {Expiring} from "../expiring";
+
 export type SystemRole = "system";
 
 declare global {
@@ -21,3 +23,14 @@ export type AuthenticationRole =
   // keys from multiple interface definitions in global will merge together
   | keyof AuthenticationRoles;
 
+export interface UserAuthenticationRoleData extends Expiring {
+    userId: string;
+    roles: AuthenticationRole[];
+}
+
+export interface UserAuthenticationRole extends UserAuthenticationRoleData {
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type PartialUserAuthenticationRole = UserAuthenticationRoleData & Partial<UserAuthenticationRole>

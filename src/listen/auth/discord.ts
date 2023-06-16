@@ -3,14 +3,15 @@ import DiscordOAuth2, { PartialGuild } from "discord-oauth2";
 import { ok } from "../../is";
 import { getOrigin } from "../config";
 import {
-  getAuthenticationStateByKey,
   addAuthenticationState,
-  systemLogSchema,
   addCookieState,
   AuthenticationRole,
   getAuthenticationRoles,
   deleteAuthenticationState,
   getExternalUser,
+  getUserAuthenticationRoleForUser,
+  getAuthenticationState,
+  getInviteURL,
 } from "../../data";
 import "@fastify/cookie";
 
@@ -93,7 +94,7 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
       async handler(request, response) {
         const { code, state: stateKey } = request.query;
 
-        const state = await getAuthenticationStateByKey(stateKey);
+        const state = await getAuthenticationState(stateKey);
 
         if (!state?.externalScope) {
           const message = `Could not find stateKey in storage`;
@@ -102,7 +103,7 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        const { externalScope: scope, type } = state;
+        const { externalScope: scope, type, userState } = state;
 
         ok(type === "discord", "Expected type to be discord");
         ok(scope, "Expected externalScope with discord state");
@@ -132,9 +133,14 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
 
         const internalUser = await getExternalUser("discord", user.id);
 
+        const userRoles = await getUserAuthenticationRoleForUser(internalUser);
+
         const { stateId, expiresAt } = await addCookieState({
           userId: internalUser.userId,
-          roles,
+          roles: [...new Set<AuthenticationRole>([
+            ...roles,
+            ...(userRoles?.roles ?? [])
+          ])],
           from: {
             type: "discord",
             createdAt: state.createdAt,
@@ -147,19 +153,24 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
           expires: new Date(expiresAt),
         });
 
-        // "/home" is authenticated, "/" is not
-        response.header("Location", "/home");
+        const authState = userState ?
+            await getAuthenticationState(userState)
+            : undefined
+
+        let location = "/home";
+
+        if (authState && authState.type === "exchange") {
+          const exchangeState = await getAuthenticationState(authState.userState);
+          if (exchangeState?.type === "invitee") {
+            const url = getInviteURL();
+            url.searchParams.set("state", userState);
+            location = url.toString();
+          }
+        }
+
+        response.header("Location", location);
         response.status(302);
         response.send();
-
-        // response.status(200)
-        // response.send({
-        //     member,
-        //     guild,
-        //     roles,
-        //     state,
-        //     isBot
-        // });
 
         async function getMember(): Promise<DiscordGuildMember | undefined> {
           const response = await fetch(
@@ -226,11 +237,22 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
   {
     const querystring = {
       type: "object",
-      properties: {},
-      additionalProperties: true,
-    };
+      properties: {
+        state: {
+          type: "string",
+          nullable: true,
+        },
+        bot: {
+          type: "string",
+          nullable: true,
+        },
+      }
+    }
     type Schema = {
-      Querystring: Record<string, string>;
+      Querystring: {
+        state?: string
+        bot?: string
+      }
     };
     const schema = {
       querystring,

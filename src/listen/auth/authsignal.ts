@@ -8,6 +8,9 @@ import {
   DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS,
   deleteAuthenticationState,
   getExternalUser,
+  getInviteURL,
+  getUserAuthenticationRoleForUser,
+  AuthenticationRole,
 } from "../../data";
 import {
   authsignal,
@@ -68,14 +71,16 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
 
         ok(state, "Expected to find authentication state");
 
-        const { type, userId } = state;
+        const { type, userId, userState } = state;
 
         ok(type === "authsignal", "Expected type to be authsignal");
         ok(userId === sub, "Expected token subject to match our given userId");
 
-        const { state: userState, success } = await authsignal.validateChallenge({
+        const { success } = await authsignal.validateChallenge({
           token,
         });
+
+        console.log({ userState });
 
         await deleteAuthenticationState(state.stateId);
 
@@ -84,6 +89,9 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           const url = new URL("/login", origin);
           const error = "Failed to authenticate";
           url.searchParams.set("error", error);
+          if (userState) {
+            url.searchParams.set("state", userState);
+          }
           response.header("Location", url.toString());
           response.status(302);
           response.send(error);
@@ -92,13 +100,16 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
 
         const user = await getExternalUser("authsignal", userId);
 
+        const userRoles = await getUserAuthenticationRoleForUser(user);
+
         const { stateId, expiresAt } = await addCookieState({
           userId: user.userId,
-          roles: [
+          roles: [...new Set<AuthenticationRole>([
             // We have no additional roles with this authentication method
             // Just give member, no trusted roles
             "member",
-          ],
+            ...(userRoles?.roles ?? [])
+          ])],
           from: {
             type: "authsignal",
             createdAt: state.createdAt,
@@ -111,8 +122,22 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           expires: new Date(expiresAt),
         });
 
-        // "/home" is authenticated, "/" is not
-        response.header("Location", "/home");
+        const authState = userState ?
+            await getAuthenticationState(userState)
+            : undefined
+
+        let location = "/home";
+
+        if (authState && authState.type === "exchange") {
+          const exchangeState = await getAuthenticationState(authState.userState);
+          if (exchangeState?.type === "invitee") {
+            const url = getInviteURL();
+            url.searchParams.set("state", userState);
+            location = url.toString();
+          }
+        }
+
+        response.header("Location", location);
         response.status(302);
         response.send();
       },
@@ -120,6 +145,15 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
   }
 
   {
+    const querystring = {
+      type: "object",
+      properties: {
+        state: {
+          type: "string",
+          nullable: true,
+        },
+      }
+    }
     const body = {
       type: "object",
       properties: {
@@ -130,6 +164,10 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           type: "string",
           nullable: true,
         },
+        state: {
+          type: "string",
+          nullable: true,
+        },
       },
       required: ["email"],
     };
@@ -137,16 +175,23 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
       Body: {
         email: string;
         deviceId?: string;
+        state?: string;
       };
+      Querystring: {
+        state?: string
+      }
     };
     const schema = {
       body,
+      querystring,
       tags: ["system"],
     };
     fastify.post<Schema>("/authsignal/redirect", {
       schema,
       async handler(request, response) {
-        const { email, deviceId } = request.body;
+        const { email, deviceId, state: userStateBody } = request.body;
+        const { state: userStateQuery } = request.query;
+        const userState = userStateBody || userStateQuery;
 
         const hash = createHash("sha256");
         hash.update(AUTHSIGNAL_TENANT);
@@ -191,6 +236,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           authsignalState: state,
           authsignalActionCode: actionCode,
           expiresAt: getExpiresAt(DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS),
+          userState
         });
 
         response.header("Location", url);
