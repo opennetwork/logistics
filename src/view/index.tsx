@@ -203,26 +203,28 @@ export async function viewRoutes(fastify: FastifyInstance) {
     });
     const fragmentSuffix = `${path === "/" ? "" : "/"}fragment`;
 
-    fastify.get(`${path}${fragmentSuffix}`, {
-      preHandler,
-      handler: pathHandler,
-    });
-    fastify.get(path, {
-      preHandler,
-      handler: pathHandler,
-    });
+    try {
+      fastify.get(`${path}${fragmentSuffix}`, {
+        preHandler,
+        handler: pathHandler,
+      });
+      fastify.get(path, {
+        preHandler,
+        handler: pathHandler,
+      });
 
-    if (submit) {
-      const submitHandler = createPathSubmitHandler(view);
-      fastify.post(path, {
-        preHandler,
-        handler: submitHandler,
-      });
-      fastify.post(`${path}${fragmentSuffix}`, {
-        preHandler,
-        handler: submitHandler,
-      });
-    }
+      if (submit) {
+        const submitHandler = createPathSubmitHandler(view);
+        fastify.post(path, {
+          preHandler,
+          handler: submitHandler,
+        });
+        fastify.post(`${path}${fragmentSuffix}`, {
+          preHandler,
+          handler: submitHandler,
+        });
+      }
+    } catch {}
   }
 
   const allViews = getViews();
