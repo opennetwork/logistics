@@ -5,6 +5,7 @@ import { getOrigin } from "../listen/config";
 import { getMaybeUser, getUser, isAnonymous } from "../authentication";
 import { isHTMLResponse } from "../listen/authentication";
 import {getConfig} from "../config";
+import {getView} from "./views";
 
 export function errorHandler(
   error: Error,
@@ -23,6 +24,7 @@ export function errorHandler(
 
   const html = renderToStaticMarkup(
     <HappeningServer
+      view={getView("/error")}
       isFragment={isFragment}
       isAnonymous={anonymous}
       url="/error"

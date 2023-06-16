@@ -12,6 +12,8 @@ import {
 import {ok} from "../../../is";
 import {DateTime} from "luxon";
 
+export const path = "/happening/create";
+
 export const MINUTE_MS = 60 * 1000;
 export const DAY_MS = 24 * 60 * MINUTE_MS;
 
@@ -190,3 +192,5 @@ export type HappeningType = (
     )
   }
 }
+
+export const Component = CreateHappeningPage;

@@ -1,20 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import {
-  commit,
-  commitAt,
-  commitAuthor,
-  packageIdentifier,
-  secondsBetweenCommitAndBuild,
-  secondsBetweenCommitAndTestCompletion,
-  timeBetweenCommitAndBuild,
-  timeBetweenCommitAndTestCompletion,
-} from "../package";
-import {
-  paths,
-  pathsAnonymous,
-  pathsCache,
-  pathsHandler,
-  pathsSubmit,
+  views as defaultViews
 } from "../react/server/paths";
 import HappeningServer, { HappeningServerProps } from "../react/server";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -29,15 +15,15 @@ import {
   getMaybeAuthorizedForOrganisationId,
   getMaybeAuthorizedForPartnerId,
   getMaybeUser,
-  getUser,
   isAnonymous,
 } from "../authentication";
 import { ok } from "../is";
 import { join, dirname } from "node:path";
-import { addCachedPage, getCached, getCachedPage } from "../data/cache";
+import { addCachedPage, getCachedPage } from "../data";
 import { getOrigin } from "../listen/config";
-import {PartialView, View} from "./types";
-import {getConfig} from "../config";
+import {View} from "./types";
+import {getConfig, setConfig} from "../config";
+import {getViews} from "./views";
 
 const { pathname } = new URL(import.meta.url);
 const DIRECTORY = dirname(pathname);
@@ -52,7 +38,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
   });
 
   function createPathHandler(
-    view: PartialView,
+    view: View,
     options?: Partial<HappeningServerProps>,
     isPathCached?: boolean
   ) {
@@ -121,6 +107,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
         let html = renderToStaticMarkup(
           <HappeningServer
             {...options}
+            view={view}
             config={getConfig()}
             input={baseResult}
             url={view.path}
@@ -153,7 +140,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
       }
     };
   }
-  function createPathSubmitHandler(view: PartialView) {
+  function createPathSubmitHandler(view: View) {
     const { submit, path } = view;
     ok(
       typeof submit === "function",
@@ -183,7 +170,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
     };
   }
 
-  function createView(view: PartialView) {
+  function createView(view: View) {
     const {
       path,
       anonymous,
@@ -218,22 +205,6 @@ export async function viewRoutes(fastify: FastifyInstance) {
     }
   }
 
-  const { views = [] } = getConfig();
-
-  const includedPaths = views.map(view => view.path);
-
-  views
-      .forEach(createView);
-
-  Object.keys(paths)
-      .filter(path => !includedPaths.includes(path))
-      .forEach((path) => {
-        createView({
-          path,
-          anonymous: pathsAnonymous[path] || !!ALLOW_ANONYMOUS_VIEWS,
-          cached: pathsCache[path] || false,
-          handler: pathsHandler[path],
-          submit: pathsSubmit[path]
-        })
-      });
+  const allViews = getViews();
+  allViews.forEach(createView);
 }

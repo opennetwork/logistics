@@ -1,5 +1,8 @@
 import { useOrganisations } from "../data";
 
+export const path = "/organisations";
+export const cache = true;
+
 export function Organisations() {
   const organisations = useOrganisations();
   return (
@@ -14,3 +17,5 @@ export function Organisations() {
     </div>
   );
 }
+
+export const Component = Organisations;

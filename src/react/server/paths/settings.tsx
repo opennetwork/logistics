@@ -8,6 +8,8 @@ import {
 } from "../../../package.readonly";
 import { homepage, packageIdentifier } from "../../../package";
 
+export const path = "/settings";
+
 export function Settings() {
   return (
     <>
@@ -58,3 +60,5 @@ export function Settings() {
     </>
   );
 }
+
+export const Component = Settings;

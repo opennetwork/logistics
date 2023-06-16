@@ -1,16 +1,17 @@
 import { Data, DataProvider } from "./data";
-import { paths } from "./paths";
 import { getOrigin } from "../../listen/config";
 import { AnonymousLayout, Layout, LayoutProps } from "./layout";
+import {ok} from "../../is";
+import {View} from "../../view/types";
 
 export interface HappeningServerProps extends Data {
   url: string;
+  view: View;
 }
 
 export default function HappeningServer(options: HappeningServerProps) {
   const { pathname } = new URL(options.url, getOrigin());
-
-  const Component = paths[pathname];
+  const { view: { Component } } = options;
 
   if (!Component) {
     return <div>Could not find {pathname}</div>;

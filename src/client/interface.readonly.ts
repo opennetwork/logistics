@@ -13,6 +13,12 @@ export type PartialAttendee = AttendeeData & Partial<Attendee>;
 
 export type SystemRole = "system";
 
+declare global {
+    interface AuthenticationRoles extends Record<SystemRole, SystemRole> {
+
+    }
+}
+
 export type AuthenticationRole =
   | "moderator"
   | "admin"
@@ -23,7 +29,10 @@ export type AuthenticationRole =
   | "developer"
   | "coordinator"
   | "partner"
-  | SystemRole;
+  | SystemRole
+  // Allows typing of authentication roles from the global scope.
+  // keys from multiple interface definitions in global will merge together
+  | keyof AuthenticationRoles;
 
 export type AttendeeAuthorisationType = "attendee";
 export type HappeningAuthorisationType = "happening";

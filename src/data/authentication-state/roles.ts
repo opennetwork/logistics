@@ -1,10 +1,23 @@
-import { ok } from "../../is";
-import { AuthenticationRole, SystemRole } from "../authentication-role";
+import {isLike} from "../../is";
+import {AuthenticationRole, SystemRole} from "../authentication-role";
+import {getConfig} from "../../config";
 
-export const namedRoles: Record<
-  Exclude<AuthenticationRole, SystemRole>,
-  string
-> = {
+export type NamedRolesConfig = Record<Exclude<AuthenticationRole, SystemRole>, string>;
+export type AlternativeRoleNamesConfig = Partial<Record<AuthenticationRole, string[]>>;
+
+export interface AuthenticationRoleConfig {
+  namedRoles: NamedRolesConfig;
+  alternativeRoleNames: AlternativeRoleNamesConfig;
+  roles: AuthenticationRole[]
+}
+
+declare global {
+  interface ApplicationConfig extends Partial<Exclude<AuthenticationRoleConfig, "roles">> {
+
+  }
+}
+
+export const DEFAULT_NAMED_ROLES: NamedRolesConfig = {
   admin: "Admin",
   industry: "Industry",
   member: "Member",
@@ -16,9 +29,7 @@ export const namedRoles: Record<
   partner: "Partner",
 };
 
-export const alternativeRoleNames: Partial<
-  Record<AuthenticationRole, string[]>
-> = {
+export const DEFAULT_ALTERNATIVE_ROLE_NAMES: AlternativeRoleNamesConfig = {
   member: ["Contributor", "Subscriber"],
   booster: ["Server Booster"],
   developer: ["Software Engineer", "Developer"],
@@ -30,33 +41,31 @@ export const alternativeRoleNames: Partial<
   industry: ["Verified Industry"],
 };
 
-export const roles: AuthenticationRole[] = [
-  "admin",
-  "industry",
-  "member",
-  "moderator",
-  "owner",
-  "developer",
-  "coordinator",
-  "booster",
-  "partner",
-];
-const stringRoles: string[] = roles;
-
-ok(
-  Object.keys(namedRoles).length === roles.length,
-  "Expected roles array to include all named roles"
-);
+export function getAuthenticationRoleConfig(): AuthenticationRoleConfig {
+  const { namedRoles = DEFAULT_NAMED_ROLES, alternativeRoleNames = DEFAULT_ALTERNATIVE_ROLE_NAMES } = getConfig()
+  return {
+    namedRoles,
+    alternativeRoleNames,
+    roles: Object.keys(namedRoles).filter<AuthenticationRole>(isLike)
+  }
+}
 
 export function isAuthenticationRole(key: string): key is AuthenticationRole {
+  const stringRoles: string[] = getAuthenticationRoleConfig().roles;
   return stringRoles.includes(key);
 }
 
 export function getAuthenticationRole(
-  name: string
+  name: string,
+  config?: AuthenticationRoleConfig
 ): AuthenticationRole | undefined {
   const lowerName = name.toLowerCase();
   if (isAuthenticationRole(lowerName)) return lowerName;
+  const {
+    roles,
+    namedRoles,
+    alternativeRoleNames
+  } = config ?? getAuthenticationRoleConfig();
   for (const key of roles) {
     if (key === "system") continue;
     if (name === key || lowerName === key) return key;
@@ -73,9 +82,11 @@ export function getAuthenticationRole(
 }
 
 export function getAuthenticationRoles(names: string[]): AuthenticationRole[] {
+  const config = getAuthenticationRoleConfig()
   const result = names
     .filter(Boolean)
-    .map(getAuthenticationRole)
+    .map(name => getAuthenticationRole(name, config))
     .filter(Boolean);
   return [...new Set(result)];
 }
+

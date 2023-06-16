@@ -7,7 +7,8 @@ export type AuthenticationStateType =
   | "cookie"
   | "authsignal"
   | "partner"
-  | "attendee";
+  | "attendee"
+  | "invitee";
 
 export interface AuthenticationStateFromData {
   type: AuthenticationStateType | string;
@@ -28,6 +29,11 @@ export interface AuthenticationStateData
   partnerId?: string;
   userId?: string;
   redirectUrl?: string;
+}
+
+
+export interface InviteeData extends Exclude<AuthenticationStateData, "type"> {
+  roles: AuthenticationRole[];
 }
 
 export interface AuthenticationState

@@ -7,6 +7,8 @@ import {
 } from "../../../../data";
 import {ok} from "../../../../is";
 
+export const path = "/product/create";
+
 export const MINUTE_MS = 60 * 1000;
 export const DAY_MS = 24 * 60 * MINUTE_MS;
 
@@ -120,3 +122,5 @@ export function CreateProduct() {
         )
     }
 }
+
+export const Component = CreateProduct;

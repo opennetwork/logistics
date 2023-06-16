@@ -1,5 +1,9 @@
 import {useData, useProducts} from "../../data";
 
+export const path = "/products";
+export const anonymous = true;
+export const cache = true;
+
 export function ListProducts() {
     const products = useProducts();
     const { isAnonymous } = useData();
@@ -16,3 +20,5 @@ export function ListProducts() {
         </div>
     )
 }
+
+export const Component = ListProducts;

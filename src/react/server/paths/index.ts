@@ -1,73 +1,32 @@
-import { FunctionComponent } from "react";
-import { Partners } from "./partners";
-import { Settings } from "./settings";
-import { Home } from "./home";
-import { Organisations } from "./organisations";
-import { Feedback, submit as feedbackSubmit } from "./feedback";
-import { Login } from "./login";
-import { Logout, handler as logoutHandler } from "./logout";
-import { Errors } from "./error";
-import { HappeningPage, handler as happeningHandler } from "./happening";
-import { HappeningsPage, handler as happeningsHandler } from "./happenings";
-import { CreateHappeningPage, submit as createHappeningSubmit } from "./create-happening";
 import * as product from "./product"
+import {View} from "../../../view/types";
 
-export const paths: Record<string, FunctionComponent> = {
-  "/": Home,
-  "/home": Home,
-  "/partners": Partners,
-  "/settings": Settings,
-  "/organisations": Organisations,
-  "/feedback": Feedback,
-  "/login": Login,
-  "/logout": Logout,
-  "/error": Errors,
-  "/happenings": HappeningsPage,
-  "/happening/create": CreateHappeningPage,
-  "/happening/:happeningId": HappeningPage,
-  "/products": product.list.ListProducts,
-  "/product/create": product.create.CreateProduct
-};
+import * as PartnersView from "./partners";
+import * as SettingsView from "./settings";
+import * as HomeView from "./home";
+import * as IndexView from "./home-index";
+import * as OrganisationsView from "./organisations";
+import * as FeedbackView from "./feedback";
+import * as LoginView from "./login";
+import * as LogoutView from "./logout";
+import * as ErrorsView from "./error";
+import * as HappeningView from "./happening";
+import * as HappeningsView from "./happenings";
+import * as CreateHappeningView from "./create-happening";
 
-export const pathsAnonymous: Record<string, boolean> = {
-  "/home": true,
-  "/": true,
-  "/feedback": true,
-  "/calculator": true,
-  "/login": true,
-  "/happenings": true,
-  "/products": true,
-  "/happening/create": true,
-  "/happening/:happeningId": true
-};
-
-export const pathsSubmit: Record<
-  string,
-  (...args: unknown[]) => Promise<unknown | void> | unknown | void
-> = {
-  "/feedback": feedbackSubmit,
-  "/happening/create": createHappeningSubmit,
-  "/product/create": product.create.submit
-};
-
-export const pathsHandler: Record<
-  string,
-  (...args: unknown[]) => Promise<unknown | void> | unknown | void
-> = {
-  "/logout": logoutHandler,
-  "/happenings": happeningsHandler,
-  "/happening/:happeningId": happeningHandler
-};
-
-export const pathsCache: Record<string, boolean> = {
-  "/": false,
-  "/home": false,
-  "/partners": true,
-  "/settings": false,
-  "/organisations": true,
-  "/feedback": false,
-  "/login": false,
-  "/logout": false,
-  "/error": false,
-  "/products": true
-};
+export const views: View[] = [
+  PartnersView,
+  SettingsView,
+  HomeView,
+  IndexView,
+  OrganisationsView,
+  FeedbackView,
+  LoginView,
+  LogoutView,
+  ErrorsView,
+  HappeningView,
+  HappeningsView,
+  CreateHappeningView,
+  product.create,
+  product.list
+];

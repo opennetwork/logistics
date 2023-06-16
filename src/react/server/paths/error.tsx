@@ -1,5 +1,7 @@
 import { useError } from "../data";
 
+export const path = "/error";
+
 export function Errors() {
   const error = useError();
   console.error(error);
@@ -18,3 +20,5 @@ export function Errors() {
     </>
   );
 }
+
+export const Component = Errors;

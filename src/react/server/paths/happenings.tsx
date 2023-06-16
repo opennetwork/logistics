@@ -4,6 +4,9 @@ import {HappeningTree, HappeningType, listHappeningTrees} from "../../../data";
 import {FastifyRequest} from "fastify";
 import {isLike} from "../../../is";
 
+export const path = "/happenings";
+export const anonymous = true;
+
 type Schema = {
   Querystring: {
     type?: string
@@ -33,3 +36,5 @@ export function HappeningsPage() {
       </div>
   )
 }
+
+export const Component = HappeningsPage;
