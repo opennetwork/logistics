@@ -1,6 +1,6 @@
 {
   "name": "@opennetwork/logistics",
-  "version": "1.0.0-alpha.18",
+  "version": "1.0.0-alpha.19",
   "main": "./esnext/index.js",
   "module": "./esnext/index.js",
   "types": "./esnext/index.d.ts",
