@@ -5,8 +5,11 @@ export { Config } from "./types";
 
 const ConfigContext = createContext<Config>()
 
-export function getConfig(): Config {
-    return ConfigContext.value;
+export function getConfig(overrides?: Partial<Config>): Config {
+    return {
+        ...ConfigContext.value,
+        ...overrides
+    };
 }
 
 export function withConfig<R>(config: Config, fn: () => R): R {

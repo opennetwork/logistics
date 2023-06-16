@@ -22,8 +22,12 @@ import { join, dirname } from "node:path";
 import { addCachedPage, getCachedPage } from "../data";
 import { getOrigin } from "../listen/config";
 import {View} from "./types";
-import {getConfig, setConfig} from "../config";
+import {Config, getConfig} from "../config";
 import {getViews} from "./views";
+import {name} from "../package";
+
+export * from "./error";
+export * from "./types";
 
 const { pathname } = new URL(import.meta.url);
 const DIRECTORY = dirname(pathname);
@@ -32,7 +36,7 @@ export const REACT_CLIENT_DIRECTORY = join(DIRECTORY, "../react/client");
 export async function viewRoutes(fastify: FastifyInstance) {
   const { ALLOW_ANONYMOUS_VIEWS, ENABLE_CACHE, DEFAULT_TIMEZONE = "Pacific/Auckland" } = process.env;
 
-  fastify.get("/server.css", async (request, response) => {
+  fastify.get(`/${name}/server.css`, async (request, response) => {
     response.header("Content-Type", "text/css");
     response.send(ServerCSS);
   });
@@ -114,7 +118,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
           <HappeningServer
             {...options}
             view={view}
-            config={getConfig()}
+            config={getConfig(givenConfig)}
             input={baseResult}
             url={new URL(request.url, origin).toString()}
             origin={origin}

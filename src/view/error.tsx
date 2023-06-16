@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { renderToStaticMarkup } from "react-dom/server";
 import HappeningServer from "../react/server";
 import { getOrigin } from "../listen/config";
-import { getMaybeUser, getUser, isAnonymous } from "../authentication";
+import { getMaybeUser, isAnonymous } from "../authentication";
 import { isHTMLResponse } from "../listen/authentication";
 import {getConfig} from "../config";
 import {getView} from "./views";
