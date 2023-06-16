@@ -1,4 +1,4 @@
-import { Data, DataProvider } from "./data";
+import { ReactData, DataProvider } from "./data";
 import { getOrigin } from "../../listen/config";
 import { AnonymousLayout, Layout, LayoutProps } from "./layout";
 import {View} from "../../view";
@@ -6,7 +6,7 @@ import {View} from "../../view";
 export * from "./data";
 export * from "./paths";
 
-export interface OpenNetworkServerProps extends Data {
+export interface OpenNetworkServerProps extends ReactData {
   url: string;
   view: View;
 }

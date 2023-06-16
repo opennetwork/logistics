@@ -12,7 +12,7 @@ import {Config} from "../../../config";
 
 const TRUSTED_ROLE: AuthenticationRole[] = ["moderator", "admin", "developer"];
 
-export interface Data {
+export interface ReactData {
   config?: Config;
   body?: unknown;
   input?: unknown;
@@ -32,9 +32,9 @@ export interface Data {
   products?: Product[];
 }
 
-export const DataContext = createContext<Data | undefined>(undefined);
+export const DataContext = createContext<ReactData | undefined>(undefined);
 
-export function DataProvider({ children, ...props }: ProviderProps<Data>) {
+export function DataProvider({ children, ...props }: ProviderProps<ReactData>) {
   return (
       <DataContext.Provider {...props}>
         <TimezoneProvider value={props.value.timezone}>
@@ -44,7 +44,7 @@ export function DataProvider({ children, ...props }: ProviderProps<Data>) {
   )
 }
 
-export function useData(): Data {
+export function useData(): ReactData {
   const context = useContext(DataContext);
   ok(context, "Expected DataProvider to be used");
   return context;

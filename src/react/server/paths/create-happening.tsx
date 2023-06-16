@@ -1,5 +1,4 @@
 import { FastifyRequest } from "fastify";
-import { Happening } from "../../client/components/happening";
 import {useError, useInput, useMaybeBody, useMaybeResult, useSubmitted, useTimezone} from "../data";
 import {
   FormMetaData,
