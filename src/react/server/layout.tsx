@@ -2,7 +2,7 @@ import { PropsWithChildren, ReactElement } from "react";
 import { description, namespace, project } from "../../package";
 import { getOrigin } from "../../listen/config";
 import { useData, useIsTrusted, useQuery, useQuerySearch } from "./data";
-import { importmapPath } from "../../package";
+import { importmapPath, name } from "../../package";
 import { readFile } from "node:fs/promises";
 
 const importMapJSON = await readFile(importmapPath, "utf-8");
@@ -176,7 +176,7 @@ export function BaseLayout({
         <title>{title || project}</title>
         <meta name="description" content={description} />
         <meta name="author" content={namespace} />
-        <link href="/server.css" rel="stylesheet" />
+        <link href={`/${name}/server.css`} rel="stylesheet" />
         <script type="importmap" dangerouslySetInnerHTML={{ __html: importMapJSON }} />
       </head>
       <body className="h-full">
