@@ -30,13 +30,17 @@ const { pathname } = new URL(import.meta.url);
 const DIRECTORY = dirname(pathname);
 export const REACT_CLIENT_DIRECTORY = join(DIRECTORY, "../react/client");
 
-export async function viewRoutes(fastify: FastifyInstance) {
-  const { ALLOW_ANONYMOUS_VIEWS, ENABLE_CACHE, DEFAULT_TIMEZONE = "Pacific/Auckland" } = process.env;
-
+export async function styleRoutes(fastify: FastifyInstance) {
   fastify.get(`/${name}/server.css`, async (request, response) => {
     response.header("Content-Type", "text/css");
     response.send(ServerCSS);
   });
+}
+
+export async function viewRoutes(fastify: FastifyInstance) {
+  const { ALLOW_ANONYMOUS_VIEWS, ENABLE_CACHE, DEFAULT_TIMEZONE = "Pacific/Auckland" } = process.env;
+
+  fastify.register(styleRoutes);
 
   function createPathHandler(
     view: View,
