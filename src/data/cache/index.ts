@@ -8,7 +8,7 @@ import {
 import { getGlobalCount } from "../storage";
 import { Cached, CacheData } from "./types";
 import { getOrigin } from "../../listen/config";
-import { getExpiresAt } from "../storage";
+import { getExpiresAt } from "../expiring-kv";
 import { commit, packageIdentifier } from "../../package";
 
 function getSortedRoles() {
