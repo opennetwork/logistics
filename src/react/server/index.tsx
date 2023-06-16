@@ -6,12 +6,12 @@ import {View} from "../../view";
 export * from "./data";
 export * from "./paths";
 
-export interface HappeningServerProps extends Data {
+export interface OpenNetworkServerProps extends Data {
   url: string;
   view: View;
 }
 
-export default function HappeningServer(options: HappeningServerProps) {
+export default function OpenNetworkServer(options: OpenNetworkServerProps) {
   const { pathname } = new URL(options.url, getOrigin());
   const { view: { Component } } = options;
 

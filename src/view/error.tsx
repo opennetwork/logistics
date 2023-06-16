@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { renderToStaticMarkup } from "react-dom/server";
-import HappeningServer from "../react/server";
+import OpenNetworkServer from "../react/server";
 import { getOrigin } from "../listen/config";
 import { getMaybeUser, isAnonymous } from "../authentication";
 import { isHTMLResponse } from "../listen/authentication";
@@ -24,7 +24,7 @@ export function errorHandler(
   const origin = getOrigin();
 
   const html = renderToStaticMarkup(
-    <HappeningServer
+    <OpenNetworkServer
       view={getView("/error")}
       isFragment={isFragment}
       isAnonymous={anonymous}

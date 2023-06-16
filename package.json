@@ -26,6 +26,9 @@
       ],
       "vercel/serverless": [
         "./esnext/listen/serverless.d.ts"
+      ],
+      "react/client": [
+        "./esnext/react/client/index.d.ts"
       ]
     }
   },
@@ -38,7 +41,8 @@
     "./client": "./esnext/client/index.js",
     "./listen": "./esnext/listen/main.js",
     "./listen/routes": "./esnext/listen/routes.js",
-    "./vercel/serverless": "./esnext/listen/serverless.js"
+    "./vercel/serverless": "./esnext/listen/serverless.js",
+    "./react/client": "./esnext/react/client/index.js"
   },
   "repository": {
     "type": "git",

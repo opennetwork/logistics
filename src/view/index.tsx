@@ -1,8 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import {
-  views as defaultViews
-} from "../react/server/paths";
-import HappeningServer, { HappeningServerProps } from "../react/server";
+import OpenNetworkServer, { OpenNetworkServerProps } from "../react/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   listOrganisations,
@@ -22,7 +19,7 @@ import { join, dirname } from "node:path";
 import { addCachedPage, getCachedPage } from "../data";
 import { getOrigin } from "../listen/config";
 import {View} from "./types";
-import {Config, getConfig} from "../config";
+import {getConfig} from "../config";
 import {getViews} from "./views";
 import {name} from "../package";
 
@@ -43,7 +40,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
 
   function createPathHandler(
     view: View,
-    options?: Partial<HappeningServerProps>,
+    options?: Partial<OpenNetworkServerProps>,
     isPathCached?: boolean,
     baseResultGiven?: { value: unknown }
   ) {
@@ -115,7 +112,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
 
         // Can go right to static, should be no async loading within components
         let html = renderToStaticMarkup(
-          <HappeningServer
+          <OpenNetworkServer
             {...options}
             view={view}
             config={getConfig()}
