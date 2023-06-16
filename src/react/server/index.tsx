@@ -1,8 +1,10 @@
 import { Data, DataProvider } from "./data";
 import { getOrigin } from "../../listen/config";
 import { AnonymousLayout, Layout, LayoutProps } from "./layout";
-import {ok} from "../../is";
-import {View} from "../../view/types";
+import {View} from "../../view";
+
+export * from "./data";
+export * from "./paths";
 
 export interface HappeningServerProps extends Data {
   url: string;

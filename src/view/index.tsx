@@ -118,7 +118,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
           <HappeningServer
             {...options}
             view={view}
-            config={getConfig(givenConfig)}
+            config={getConfig()}
             input={baseResult}
             url={new URL(request.url, origin).toString()}
             origin={origin}

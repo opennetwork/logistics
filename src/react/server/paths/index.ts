@@ -1,6 +1,6 @@
 import * as product from "./product"
 import * as invite from "./invite"
-import {View} from "../../../view/types";
+import {View} from "../../../view";
 
 import * as PartnersView from "./partners";
 import * as SettingsView from "./settings";
