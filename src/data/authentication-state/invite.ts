@@ -6,6 +6,8 @@ import {getConfig} from "../../config";
 import {isLike, isNumberString} from "../../is";
 import {getOrigin} from "../../listen/config";
 import {getAuthenticationState} from "./get-authentication-state";
+import {getExpiresAt} from "../expiring-kv";
+import {DEFAULT_INVITEE_STATE_EXPIRES_MS} from "./store";
 
 const {
     INVITEE_BCRYPT_SALT,
@@ -49,7 +51,8 @@ export async function addInviteeState(data: UntypedAuthenticationStateData): Pro
     const state = await addAuthenticationState({
         ...data,
         type: "invitee",
-        ...inviteeState
+        ...inviteeState,
+        expiresAt: getExpiresAt(DEFAULT_INVITEE_STATE_EXPIRES_MS, data.expiresAt)
     });
     const inviteUrl = new URL(intendedUrl);
     // Set the token AFTER storing the target url in the database

@@ -17,7 +17,7 @@ export interface AuthenticationStateFromData {
   from?: AuthenticationStateFromData;
 }
 
-export interface UntypedAuthenticationStateData {
+export interface UntypedAuthenticationStateData extends Expiring {
   from?: AuthenticationStateFromData;
   userState?: string;
   externalScope?: string;
@@ -30,8 +30,7 @@ export interface UntypedAuthenticationStateData {
 }
 
 export interface AuthenticationStateData
-  extends Expiring,
-    UntypedAuthenticationStateData,
+  extends UntypedAuthenticationStateData,
     Record<string, unknown> {
   type: AuthenticationStateType | string;
 }

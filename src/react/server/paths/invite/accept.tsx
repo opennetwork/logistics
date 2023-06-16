@@ -9,7 +9,7 @@ import {
 import {FastifyReply, FastifyRequest} from "fastify";
 import {
     addAuthenticationState,
-    AuthenticationState,
+    AuthenticationState, DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS,
     deleteAuthenticationState,
     getAuthenticationState,
     getExpiresAt,
@@ -107,7 +107,7 @@ export async function submit(request: FastifyRequest<InputSchema>, response: Fas
     } = input;
 
     if (isAnonymous()) {
-        let expiresAt = getExpiresAt(15 * MINUTE_MS);
+        let expiresAt = getExpiresAt(DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS);
         // Ensure it can't be used longer than the base invite
         if (new Date(expiresAt).getTime() > new Date(state.expiresAt).getTime()) {
             expiresAt = state.expiresAt;
@@ -125,7 +125,7 @@ export async function submit(request: FastifyRequest<InputSchema>, response: Fas
             userState: stateId,
             // Shorter lived
             expiresAt,
-            redirectUrl: url.toString()
+            redirectUrl: url.toString(),
         });
 
         url.searchParams.set("state", exchangeState.stateId);
