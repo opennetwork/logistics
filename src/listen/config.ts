@@ -17,6 +17,10 @@ export function getPort() {
 }
 
 function getEnvironmentOrigin() {
+    if (process.env.ORIGIN_URL) {
+        return process.env.ORIGIN_URL;
+    }
+
     if (process.env.VERCEL_URL) {
         return `https://${process.env.VERCEL_URL}`
     }
