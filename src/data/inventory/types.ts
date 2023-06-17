@@ -1,7 +1,15 @@
 import {InventoryProduct, InventoryProductIdentifierData} from "../inventory-product";
 
+export type InventoryType =
+    | "inventory"
+    | "picking"
+    | "packing"
+    | "transit"
+
 export interface InventoryData {
-  products: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
+  type: InventoryType
+  locationId?: string;
+  products?: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
 }
 
 export interface Inventory extends InventoryData {

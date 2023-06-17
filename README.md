@@ -279,8 +279,16 @@ export interface Identifier {
     identifiedAt: string;
 }
 
+export type InventoryType =
+    | "inventory"
+    | "picking"
+    | "packing"
+    | "transit"
+
 export interface InventoryData {
-  products: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
+  type: InventoryType
+  locationId?: string;
+  products?: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
 }
 
 export interface Inventory extends InventoryData {
@@ -288,6 +296,13 @@ export interface Inventory extends InventoryData {
   createdAt: string;
   updatedAt: string;
 }
+
+export type InventoryProductStatus =
+    | "pending"
+    | "available"
+    | "processing"
+    | "split"
+    | "void";
 
 export interface InventoryProductIdentifierData {
   productId: string;
@@ -297,6 +312,10 @@ export interface InventoryProductIdentifierData {
 
 export interface InventoryProductData extends InventoryProductIdentifierData {
   inventoryId: string;
+  status?: InventoryProductStatus;
+  // Record where it came from and was sent to
+  from?: ShipmentFrom;
+  to?: ShipmentTo | ShipmentTo[];
 }
 
 export interface InventoryProduct extends InventoryProductData {
@@ -307,8 +326,15 @@ export interface InventoryProduct extends InventoryProductData {
 
 export type SetInventoryProduct = InventoryProductData & Pick<InventoryProduct, "inventoryId" | "inventoryProductId"> & Partial<InventoryProduct>;
 
+export type LocationType =
+    | "place"
+    | "inventory"
+    | "packing"
+    | "picking"
+
 export interface LocationData extends Record<string, unknown> {
-  locationName: string;
+  type: LocationType
+  locationName?: string;
   address?: string[];
   countryCode?: string;
 }
@@ -323,7 +349,10 @@ export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
 
 export interface OrderData {
   status: OrderStatus;
+  reference?: string;
   products?: (OrderProductIdentifierData & Partial<OrderProduct>)[];
+  to?: ShipmentTo;
+  from?: ShipmentFrom; // Is it from a specific known location?
 }
 
 export interface Order extends OrderData {
@@ -419,6 +448,8 @@ export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 
 export interface ShipmentLocation {
   locationId?: string; // Optional fixed location
+  inventoryId?: string; // Optional fixed inventory set
+  inventoryProductId?: string;  // Optional fixed inventory set
   address?: string[]; // Human-readable address
   countryCode?: string;
 }

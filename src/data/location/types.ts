@@ -1,5 +1,12 @@
+export type LocationType =
+    | "place"
+    | "inventory"
+    | "packing"
+    | "picking"
+
 export interface LocationData extends Record<string, unknown> {
-  locationName: string;
+  type: LocationType
+  locationName?: string;
   address?: string[];
   countryCode?: string;
 }

@@ -22,11 +22,16 @@ export const inventoryData = {
   properties: {
     products: {
       type: "array",
-      items: inventoryProduct
+      items: inventoryProduct,
+      nullable: true
+    },
+    locationId: {
+      type: "string",
+      nullable: true
     }
   },
   required: [
-    "products"
+
   ],
 } as const;
 

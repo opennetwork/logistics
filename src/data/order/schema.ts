@@ -1,4 +1,5 @@
 import { identifierSchema } from "../identifier";
+import { shipmentSchema } from "../shipment";
 
 export const orderProduct = {
   type: "object",
@@ -22,11 +23,15 @@ export const orderData = {
   properties: {
     products: {
       type: "array",
-      items: orderProduct
+      items: orderProduct,
+      nullable: true
+    },
+    to: {
+      ...shipmentSchema.shipmentTo,
+      nullable: true
     }
   },
   required: [
-    "products"
   ],
 } as const;
 

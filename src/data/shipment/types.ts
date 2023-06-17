@@ -4,6 +4,8 @@ export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 
 export interface ShipmentLocation {
   locationId?: string; // Optional fixed location
+  inventoryId?: string; // Optional fixed inventory set
+  inventoryProductId?: string;  // Optional fixed inventory set
   address?: string[]; // Human-readable address
   countryCode?: string;
 }
@@ -26,6 +28,7 @@ export interface ShipmentData extends Record<string, unknown> {
   from?: ShipmentFrom;
   // A shipment would always have a destination
   to: ShipmentTo;
+  identifiers?: Identifier[];
 }
 
 export interface Shipment extends ShipmentData {
