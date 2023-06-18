@@ -389,6 +389,32 @@ export interface Partner extends PartnerData {
   approvedByUserId?: string;
 }
 
+export type PaymentStatus = "pending" | "processing" | "paid" | "void";
+
+export interface PaymentData extends Record<string, unknown> {
+  status: PaymentStatus;
+  paymentMethodId: string;
+  reference?: string;
+}
+
+export interface Payment extends PaymentData {
+  paymentId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaymentMethodStatus = "pending" | "available" | "expired" | "void";
+
+export interface PaymentMethodData extends Record<string, unknown> {
+  status: PaymentMethodStatus;
+}
+
+export interface PaymentMethod extends PaymentMethodData {
+  paymentMethodId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProductData extends Record<string, unknown> {
   productName: string;
   // Is the product publicly visible
@@ -438,6 +464,7 @@ export interface ShipmentData extends Record<string, unknown> {
   from?: ShipmentFrom;
   // A shipment would always have a destination
   to: ShipmentTo;
+  identifiers?: Identifier[];
 }
 
 export interface Shipment extends ShipmentData {

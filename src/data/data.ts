@@ -21,3 +21,5 @@ export * from "./order";
 export * from "./order-product";
 export * from "./inventory-product";
 export * from "./file";
+export * from "./payment";
+export * from "./payment-method";
