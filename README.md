@@ -380,8 +380,10 @@ export type NumberString = `${number}` | number;
 export interface OfferData extends Record<string, unknown> {
   status: OfferStatus;
   items: OfferItem[];
+  // The user that is providing this offer
+  userId?: string;
   // The organisation that is providing this offer
-  organisationId: string;
+  organisationId?: string;
   offerName?: string;
   // Is the offer publicly visible
   public?: boolean;

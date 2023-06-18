@@ -24,6 +24,7 @@ export const productOfferItem = {
 }
 
 export const offerItem = {
+  type: "object",
   oneOf: [
       productOfferItem
   ]
@@ -47,9 +48,7 @@ export const offerStatus = {
 export const offerData = {
   type: "object",
   properties: {
-    status: {
-      type: offerStatus
-    },
+    status: offerStatus,
     items: {
       type: "array",
       items: offerItem
