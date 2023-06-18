@@ -12,6 +12,10 @@ export const productOfferItem = {
     productId: {
       type: "string"
     },
+    quantity: {
+      type: "number",
+      nullable: true
+    },
     identifiers: {
       type: "array",
       items: identifierSchema.identifier,

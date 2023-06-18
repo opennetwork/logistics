@@ -3,6 +3,7 @@ import {Identifier} from "../identifier";
 export interface ProductOfferItem {
   type: "product";
   productId: string;
+  quantity?: number;
   identifiers?: Identifier[];
 }
 

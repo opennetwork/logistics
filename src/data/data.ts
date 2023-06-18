@@ -18,7 +18,7 @@ export * from "./shipment";
 export * from "./identifier";
 export * from "./inventory";
 export * from "./order";
-export * from "./order-product";
+export * from "./order-item";
 export * from "./inventory-product";
 export * from "./file";
 export * from "./payment";

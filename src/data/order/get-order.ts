@@ -1,5 +1,5 @@
 import { getOrderStore } from "./store";
-import { listOrderProducts } from "../order-product";
+import { listOrderProducts } from "../order-item";
 
 export async function getOrder(id: string) {
   const store = getOrderStore();

@@ -1,6 +1,6 @@
 import { Order, OrderData } from "./types";
 import { getOrderStore } from "./store";
-import { setOrderProducts } from "../order-product";
+import {setOrderItems} from "../order-item";
 import {v4} from "uuid";
 
 export async function setOrder(
@@ -12,15 +12,15 @@ export async function setOrder(
     createdAt: data.createdAt || updatedAt,
     ...data,
     // Don't store the products on the order itself
-    products: undefined,
+    items: undefined,
     updatedAt,
   };
   await store.set(data.orderId, document);
-  if (data.products) {
-    await setOrderProducts(data.products.map(product => ({
+  if (data.items) {
+    await setOrderItems(data.items.map(product => ({
       ...product,
       orderId: data.orderId,
-      orderProductId: product.orderProductId || v4()
+      orderItemId: product.orderItemId || v4()
     })));
   }
   return document;

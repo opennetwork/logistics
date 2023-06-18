@@ -1,11 +1,15 @@
 import {
     addInventory,
-    addInventoryProduct, addOffer,
+    addInventoryProduct,
+    addOffer,
     addOrder,
-    addOrderProduct, addOrganisation,
-    addShipment, getOrganisation,
+    addOrderItem,
+    addShipment,
+    getOrganisation,
     Identifier,
-    listInventoryProducts, listOffers,
+    listInventoryProducts,
+    listOffers,
+    listOrderItems,
     listOrderProducts,
     listOrders,
     listProducts,
@@ -84,23 +88,23 @@ const organisationId = v5("organisationId", namespace);
 
         let order = await addOrder({
             status: "pending", // Pending cart order,
-            products: [],
+            items: [],
             reference,
             from
         });
         const { orderId } = order;
 
-        await addOrderProduct({
+        await addOrderItem({
             orderId,
             productId: pick(products).productId,
             quantity: chance.integer({ min: 1, max: 20 })
         });
-        await addOrderProduct({
+        await addOrderItem({
             orderId,
             productId: pick(products).productId,
             quantity: chance.integer({ min: 1, max: 20 })
         });
-        await addOrderProduct({
+        await addOrderItem({
             orderId,
             productId: pick(products).productId,
             quantity: chance.integer({ min: 1, max: 20 })
@@ -147,7 +151,7 @@ const organisationId = v5("organisationId", namespace);
 
         // Ensure we have everything in stock
         {
-            const orderedProducts = await listOrderProducts(orderId);
+            const orderedProducts = await listOrderItems(orderId);
 
             const partner = {
                 address: [
@@ -168,7 +172,7 @@ const organisationId = v5("organisationId", namespace);
                         inventoryId,
                         organisationId
                     },
-                    products: orderedProducts
+                    items: orderedProducts
                         .map(({ productId, quantity }) => ({ productId, quantity }))
                 });
             }
@@ -243,7 +247,7 @@ const organisationId = v5("organisationId", namespace);
 
             const allocated = new Map<string, Identifier[]>();
 
-            for (const { productId, quantity } of await listOrderProducts(orderId)) {
+            for (const { productId, quantity = 1 } of orderProducts) {
 
                 const identifiers = Array.from({ length: quantity }, () => barcodes.get(productId).pop());
 

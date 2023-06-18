@@ -1,6 +1,6 @@
 import {addOrder, addProduct, getOrder, listProducts, setOrder} from "../../data";
 import {ok} from "../../is";
-import {addOrderProduct, listOrderProducts} from "../../data";
+import { addOrderItem, listOrderProducts} from "../../data";
 import { Chance } from "chance";
 
 const chance = new Chance();
@@ -19,10 +19,10 @@ const chance = new Chance();
 
     const { orderId } = await addOrder({
         status: "pending", // Pending cart order,
-        products: []
+        items: []
     });
 
-    const defaultToQuantityOne = await addOrderProduct({
+    const defaultToQuantityOne = await addOrderItem({
         orderId,
         productId: products[0].productId
     });
@@ -30,7 +30,7 @@ const chance = new Chance();
     ok(defaultToQuantityOne.identifiers);
     ok(Array.isArray(defaultToQuantityOne.identifiers));
 
-    await addOrderProduct({
+    await addOrderItem({
         orderId,
         productId: products[1].productId
     })

@@ -295,6 +295,8 @@ export type InventoryType =
 
 export interface InventoryData {
   type: InventoryType
+  userId?: string;
+  organisationId?: string;
   locationId?: string;
   products?: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
 }
@@ -358,6 +360,7 @@ export interface Location extends LocationData {
 export interface ProductOfferItem {
   type: "product";
   productId: string;
+  quantity?: number;
   identifiers?: Identifier[];
 }
 
@@ -405,7 +408,7 @@ export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
 export interface OrderData {
   status: OrderStatus;
   reference?: string;
-  products?: (OrderProductIdentifierData & Partial<OrderProduct>)[];
+  items?: (OrderItemIdentifierData & Partial<OrderItem>)[];
   to?: ShipmentTo;
   from?: ShipmentFrom; // Is it from a specific known location?
 }
@@ -416,23 +419,32 @@ export interface Order extends OrderData {
   updatedAt: string;
 }
 
-export interface OrderProductIdentifierData {
-  productId: string;
+export interface OrderItemIdentifierData {
+  productId?: string;
+  offerId?: string;
   quantity?: number; // Default 1
   identifiers?: Identifier[]; // Default []
 }
 
-export interface OrderProductData extends OrderProductIdentifierData {
+export interface OrderItemData extends OrderItemIdentifierData {
   orderId: string;
 }
 
-export interface OrderProduct extends OrderProductData {
-  orderProductId: string;
+export interface OrderItem extends OrderItemData {
+  orderItemId: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export type SetOrderProduct = OrderProductData & Pick<OrderProduct, "orderId" | "orderProductId"> & Partial<OrderProduct>;
+export interface OrderProductItem extends OrderItem {
+  productId: string;
+}
+
+export interface OrderOfferItem extends OrderItem {
+  offerId: string;
+}
+
+export type SetOrderItem = OrderItemData & Pick<OrderItem, "orderId" | "orderItemId"> & Partial<OrderItem>;
 
 export interface OrganisationBaseData extends Record<string, unknown> {
   countryCode?: string; // "NZ"
