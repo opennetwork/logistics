@@ -314,7 +314,8 @@ const chance = new Chance();
             });
 
             console.log(pickedProducts);
-            ok(pickedProducts.length);
+            ok(pickedProducts.length === 3);
+
 
             const packageLocation = await addLocation({
                 type: "packing"

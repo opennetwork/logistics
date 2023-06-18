@@ -389,9 +389,13 @@ export interface Partner extends PartnerData {
   approvedByUserId?: string;
 }
 
+export type PaymentType =
+    | "invoice"
+    | "realtime";
 export type PaymentStatus = "pending" | "processing" | "paid" | "void";
 
 export interface PaymentData extends Record<string, unknown> {
+  type: PaymentType;
   status: PaymentStatus;
   paymentMethodId: string;
   reference?: string;
@@ -403,10 +407,15 @@ export interface Payment extends PaymentData {
   updatedAt: string;
 }
 
+export type PaymentMethodType =
+    | "invoice"
+    | "realtime";
+
 export type PaymentMethodStatus = "pending" | "available" | "expired" | "void";
 
 export interface PaymentMethodData extends Record<string, unknown> {
   status: PaymentMethodStatus;
+  type: PaymentMethodType;
 }
 
 export interface PaymentMethod extends PaymentMethodData {
