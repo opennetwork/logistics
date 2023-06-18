@@ -3,10 +3,11 @@ import {Identifier} from "../identifier";
 export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 
 export interface ShipmentLocation {
-  organisationId?: string; // Optional fixed organisation
-  locationId?: string; // Optional fixed location
-  inventoryId?: string; // Optional fixed inventory set
-  inventoryItemId?: string;  // Optional fixed inventory set
+  userId?: string;
+  organisationId?: string;
+  locationId?: string;
+  inventoryId?: string;
+  inventoryItemId?: string;
   address?: string[]; // Human-readable address
   countryCode?: string;
 }

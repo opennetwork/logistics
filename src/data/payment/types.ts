@@ -8,6 +8,8 @@ export interface PaymentData extends Record<string, unknown> {
   status: PaymentStatus;
   paymentMethodId: string;
   reference?: string;
+  userId?: string;
+  organisationId?: string;
 }
 
 export interface Payment extends PaymentData {

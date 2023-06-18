@@ -8,12 +8,12 @@ const chance = new Chance();
 {
     let products = await listProducts();
 
-    while (products.length < 3) {
-        await addProduct({
-            productName: chance.name()
-        });
-        products = await listProducts();
-    }
+    // while (products.length < 3) {
+    //     await addProduct({
+    //         productName: chance.name()
+    //     });
+    //     products = await listProducts();
+    // }
 
     ok(products.length >= 3, "Some products should be already seeded")
 

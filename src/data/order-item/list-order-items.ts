@@ -1,6 +1,7 @@
 import {OrderItem, OrderOfferItem, OrderProductItem} from "./types";
 import { getOrderItemStore } from "./store";
 import {getOffer, OfferItem, ProductOfferItem} from "../offer";
+import {isOrderOfferItem, isOrderProductItem, isProductOfferItem} from "./is";
 
 export async function listOrderItems(orderId: string): Promise<
     OrderItem[]
@@ -33,16 +34,4 @@ export async function listOrderProducts(orderId: string, offers = true): Promise
   return offerProducts
       .flatMap<OrderProductItem>(value => value)
       .concat(products);
-
-  function isOrderProductItem(item: OrderItem): item is OrderProductItem {
-    return !!item.productId;
-  }
-
-  function isOrderOfferItem(item: OrderItem): item is OrderOfferItem {
-    return !!item.offerId;
-  }
-
-  function isProductOfferItem(item: OfferItem): item is ProductOfferItem {
-    return item.type === "product";
-  }
 }

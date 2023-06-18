@@ -9,6 +9,8 @@ export interface OrderData {
   items?: (OrderItemIdentifierData & Partial<OrderItem>)[];
   to?: ShipmentTo;
   from?: ShipmentFrom; // Is it from a specific known location?
+  paymentId?: string;
+  paymentMethodId?: string;
 }
 
 export interface Order extends OrderData {

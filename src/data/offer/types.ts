@@ -1,5 +1,13 @@
 import {Identifier} from "../identifier";
 
+
+export type MaybeNumberString = `${number}` | number | string;
+
+export interface OfferPrice {
+  price: MaybeNumberString;
+  currency: string;
+}
+
 export interface ProductOfferItem {
   type: "product";
   productId: string;
@@ -23,9 +31,8 @@ export type OfferStatus =
     | "soldOut"
     | "void"
 
-export type NumberString = `${number}` | number;
 
-export interface OfferData extends Record<string, unknown> {
+export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> {
   status: OfferStatus;
   items: OfferItem[];
   // The user that is providing this offer
@@ -35,8 +42,6 @@ export interface OfferData extends Record<string, unknown> {
   offerName?: string;
   // Is the offer publicly visible
   public?: boolean;
-  price?: NumberString;
-  currency?: string;
   countryCode?: string;
 }
 

@@ -3,7 +3,7 @@ import {
     addInventoryItem,
     addOffer,
     addOrder,
-    addOrderItem,
+    addOrderItem, addPayment, addPaymentMethod,
     addShipment,
     getOrganisation,
     Identifier,
@@ -15,7 +15,7 @@ import {
     listProducts,
     setInventoryItem,
     setOrder,
-    setOrganisation,
+    setOrganisation, setPayment, setPaymentMethod,
     ShipmentFrom,
     ShipmentTo
 } from "../../data";
@@ -23,11 +23,13 @@ import {ok} from "../../is";
 import {v4, v5} from "uuid";
 import {Chance} from "chance";
 import {addLocation} from "../../data/location";
+import {getOrderPrice} from "../../data/order-item/get-order-item-info";
 
 const chance = new Chance();
 
 const namespace = "737f2826-b4c3-40ba-b1f5-1f7766439c9d";
 const organisationId = v5("organisationId", namespace);
+const userId = v5("userId", namespace);
 
 {
     let products = await listProducts();
@@ -58,7 +60,9 @@ const organisationId = v5("organisationId", namespace);
                             productId
                         }
                     ],
-                    organisationId
+                    organisationId,
+                    price: chance.floating({ min: 1, max: 10000 })
+                        .toFixed(2)
                 });
             }
         }
@@ -79,7 +83,8 @@ const organisationId = v5("organisationId", namespace);
               chance.address(),
               chance.city()
           ],
-          countryCode: "NZL"
+          countryCode: "NZL",
+          userId
         };
 
         const from: ShipmentFrom = {
@@ -91,32 +96,105 @@ const organisationId = v5("organisationId", namespace);
             status: "pending", // Pending cart order,
             items: [],
             reference,
-            from
+            from,
         });
         const { orderId } = order;
 
-        await addOrderItem({
-            orderId,
+        const lookingFor = Array.from({ length: 3 }, () => ({
             productId: pick(products).productId,
             quantity: chance.integer({ min: 1, max: 20 })
-        });
-        await addOrderItem({
-            orderId,
-            productId: pick(products).productId,
-            quantity: chance.integer({ min: 1, max: 20 })
-        });
-        await addOrderItem({
-            orderId,
-            productId: pick(products).productId,
-            quantity: chance.integer({ min: 1, max: 20 })
-        });
+        } as const))
 
-        order = await setOrder({
-            ...order,
-            to,
-            status: "submitted"
-        });
-        ok(order.to, "Expected shipping address after submitting");
+
+        for (const { productId, quantity } of lookingFor) {
+            const offers = await listOffers({
+                productId
+            });
+
+            const justProduct = offers.find(offer => (
+                offer.items.length === 1 &&
+                (!offer.items[0].quantity || offer.items[0].quantity === 1)
+            )) ;
+            ok(justProduct);
+
+            await addOrderItem({
+                orderId,
+                offerId: justProduct.offerId,
+                quantity
+            });
+        }
+
+        const price = await getOrderPrice(orderId);
+        console.log(price);
+        ok(price, "Price should be above 0");
+
+        {
+            // Provide an address for shipping
+            order = await setOrder({
+                ...order,
+                to
+            });
+        }
+
+        {
+            // Add a new payment method
+            let paymentMethod = await addPaymentMethod({
+                status: "pending",
+                type: "realtime",
+                userId: order.to.userId
+            });
+            const { paymentMethodId, type: paymentType } = paymentMethod
+
+            {
+                // Verify payment method and confirm its availability for use
+                paymentMethod = await setPaymentMethod({
+                    ...paymentMethod,
+                    status: "available"
+                })
+            }
+
+            {
+                // Make a payment using the verified payment method
+                let payment = await addPayment({
+                    paymentMethodId,
+                    type: paymentType,
+                    status: "pending",
+                    userId: paymentMethod.userId
+                });
+                const { paymentId } = payment;
+
+                {
+                    // Mark the payment as processing
+                    payment = await setPayment({
+                        ...payment,
+                        status: "processing"
+                    });
+
+                    {
+                        // Verify the payment and update the order to include payment
+                        payment = await setPayment({
+                            ...payment,
+                            status: "paid"
+                        });
+                        order = await setOrder({
+                            ...order,
+                            paymentMethodId,
+                            paymentId
+                        })
+                    }
+                }
+
+            }
+        }
+
+        {
+            // Now the order is paid for, submit the order
+            order = await setOrder({
+                ...order,
+                status: "submitted"
+            });
+            ok(order.to, "Expected shipping address after submitting");
+        }
     }
 
     {

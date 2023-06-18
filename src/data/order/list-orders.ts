@@ -36,6 +36,9 @@ export async function listOrders({ status, from, to }: ListOrdersInput = {}): Pr
 function isShipmentLocationMatch(base: ShipmentLocation, match: ShipmentLocation) {
   return (
       (
+          !base.userId ||
+          base.userId === match.userId
+      ) &&(
           !base.organisationId ||
           base.organisationId === match.organisationId
       ) &&

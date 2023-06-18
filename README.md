@@ -366,6 +366,13 @@ export interface Location extends LocationData {
   updatedAt: string;
 }
 
+export type MaybeNumberString = `${number}` | number | string;
+
+export interface OfferPrice {
+  price: MaybeNumberString;
+  currency: string;
+}
+
 export interface ProductOfferItem {
   type: "product";
   productId: string;
@@ -389,9 +396,8 @@ export type OfferStatus =
     | "soldOut"
     | "void"
 
-export type NumberString = `${number}` | number;
 
-export interface OfferData extends Record<string, unknown> {
+export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> {
   status: OfferStatus;
   items: OfferItem[];
   // The user that is providing this offer
@@ -401,8 +407,6 @@ export interface OfferData extends Record<string, unknown> {
   offerName?: string;
   // Is the offer publicly visible
   public?: boolean;
-  price?: NumberString;
-  currency?: string;
   countryCode?: string;
 }
 
@@ -420,6 +424,8 @@ export interface OrderData {
   items?: (OrderItemIdentifierData & Partial<OrderItem>)[];
   to?: ShipmentTo;
   from?: ShipmentFrom; // Is it from a specific known location?
+  paymentId?: string;
+  paymentMethodId?: string;
 }
 
 export interface Order extends OrderData {
@@ -511,6 +517,8 @@ export interface PaymentData extends Record<string, unknown> {
   status: PaymentStatus;
   paymentMethodId: string;
   reference?: string;
+  userId?: string;
+  organisationId?: string;
 }
 
 export interface Payment extends PaymentData {
@@ -528,6 +536,8 @@ export type PaymentMethodStatus = "pending" | "available" | "expired" | "void";
 export interface PaymentMethodData extends Record<string, unknown> {
   status: PaymentMethodStatus;
   type: PaymentMethodType;
+  userId?: string;
+  organisationId?: string;
 }
 
 export interface PaymentMethod extends PaymentMethodData {
@@ -560,10 +570,11 @@ export interface Product extends ProductData {
 export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 
 export interface ShipmentLocation {
-  organisationId?: string; // Optional fixed organisation
-  locationId?: string; // Optional fixed location
-  inventoryId?: string; // Optional fixed inventory set
-  inventoryItemId?: string;  // Optional fixed inventory set
+  userId?: string;
+  organisationId?: string;
+  locationId?: string;
+  inventoryId?: string;
+  inventoryItemId?: string;
   address?: string[]; // Human-readable address
   countryCode?: string;
 }

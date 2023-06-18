@@ -1,6 +1,6 @@
 /* c8 ignore start */
 import why from "why-is-node-still-running";
-import {isRedisMemory, seed, startRedisMemory, stopData, stopRedisMemory} from "../data";
+import {isRedisMemory, listProducts, seed, startRedisMemory, stopData, stopRedisMemory} from "../data";
 
 try {
   if (isRedisMemory()) {
@@ -9,10 +9,14 @@ try {
 
   await seed();
 
-  await import("./client");
-  console.log("after client");
-  await import("./remote");
-  console.log("after remote");
+  const products = await listProducts();
+
+  if (products.length < 3 || !process.env.IS_LOCAL) {
+    await import("./client");
+    console.log("after client");
+    await import("./remote");
+    console.log("after remote");
+  }
   await import("./scenarios");
 
   // Ensure any data clients are closed
