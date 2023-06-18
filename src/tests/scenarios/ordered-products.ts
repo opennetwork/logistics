@@ -1,38 +1,71 @@
 import {
     addInventory,
-    addInventoryProduct,
+    addInventoryProduct, addOffer,
     addOrder,
-    addOrderProduct,
-    addShipment,
+    addOrderProduct, addOrganisation,
+    addShipment, getOrganisation,
     Identifier,
-    listInventoryProducts,
+    listInventoryProducts, listOffers,
     listOrderProducts,
     listOrders,
     listProducts,
     setInventoryProduct,
-    setOrder,
+    setOrder, setOrganisation,
     ShipmentFrom,
     ShipmentTo
 } from "../../data";
 import {ok} from "../../is";
-import {v4} from "uuid";
+import {v4, v5} from "uuid";
 import {Chance} from "chance";
 import {addLocation} from "../../data/location";
 
 const chance = new Chance();
 
-{
+const namespace = "737f2826-b4c3-40ba-b1f5-1f7766439c9d";
+const organisationId = v5("organisationId", namespace);
 
+{
     let products = await listProducts();
 
+    await setOrganisation({
+        organisationName: chance.company(),
+        ...await getOrganisation(organisationId),
+        organisationId,
+    });
+
+
     ok(products.length >= 3, "Some products should be already seeded");
+
+    {
+        for (const { productId } of products) {
+            const offers = await listOffers({
+                productId,
+                organisationId
+            });
+
+            // If there aren't any offers yet, make some available!
+            if (!offers.length) {
+                await addOffer({
+                    status: "available",
+                    items: [
+                        {
+                            type: "product",
+                            productId
+                        }
+                    ],
+                    organisationId
+                });
+            }
+        }
+    }
 
     // A third party reference that can be recognised
     // In other software, this should be human-readable
     const reference = v4();
 
     const { locationId } = await addLocation({
-        type: "place"
+        type: "place",
+        organisationId
     });
 
     {
@@ -45,14 +78,14 @@ const chance = new Chance();
         };
 
         const from: ShipmentFrom = {
-            locationId
+            locationId,
+            organisationId,
         };
 
         let order = await addOrder({
             status: "pending", // Pending cart order,
             products: [],
             reference,
-            to,
             from
         });
         const { orderId } = order;
@@ -73,16 +106,20 @@ const chance = new Chance();
             quantity: chance.integer({ min: 1, max: 20 })
         });
 
-        ok(order.to, "Expected shipping address before submitting");
         order = await setOrder({
             ...order,
+            to,
             status: "submitted"
         });
+        ok(order.to, "Expected shipping address after submitting");
     }
 
     {
         const submittedOrders = await listOrders({
-            status: "submitted"
+            status: "submitted",
+            from: {
+                organisationId
+            }
         });
         let mostRecent = submittedOrders.at(-1);
 
@@ -104,7 +141,8 @@ const chance = new Chance();
         // Inventory shelf just for this order when it comes in
         // Extra priority!
         const { inventoryId } = await addInventory({
-            type: "inventory"
+            type: "inventory",
+            organisationId
         })
 
         // Ensure we have everything in stock
@@ -127,7 +165,8 @@ const chance = new Chance();
                     from: partner,
                     to: {
                         locationId,
-                        inventoryId
+                        inventoryId,
+                        organisationId
                     },
                     products: orderedProducts
                         .map(({ productId, quantity }) => ({ productId, quantity }))
@@ -142,7 +181,8 @@ const chance = new Chance();
                         from: partner,
                         to: {
                             locationId,
-                            inventoryId
+                            inventoryId,
+                            organisationId
                         },
                         inventoryId,
                         productId,
@@ -161,12 +201,14 @@ const chance = new Chance();
         // Pick the order ready for shipping
 
         const picking = await addLocation({
-            type: "picking"
+            type: "picking",
+            organisationId
         });
 
         const pickingInventory = await addInventory({
             type: "picking",
-            locationId: picking.locationId
+            locationId: picking.locationId,
+            organisationId
         });
 
         {

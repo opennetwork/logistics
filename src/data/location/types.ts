@@ -9,6 +9,8 @@ export interface LocationData extends Record<string, unknown> {
   locationName?: string;
   address?: string[];
   countryCode?: string;
+  organisationId?: string;
+  userId?: string;
 }
 
 export interface Location extends LocationData {

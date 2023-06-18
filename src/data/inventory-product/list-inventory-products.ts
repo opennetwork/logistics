@@ -13,7 +13,7 @@ export async function listInventoryProducts(options: ListInventoryProductsInput)
 > {
   // TODO make this not all in memory
   // Its okay for now :)
-  const { inventoryId} = options;
+  const { inventoryId } = options;
   if (!inventoryId) {
     const inventory = await listInventory(options);
     const values = await Promise.all(
@@ -27,7 +27,6 @@ export async function listInventoryProducts(options: ListInventoryProductsInput)
     return values.flatMap<InventoryProduct>(value => value);
   }
   const { productId, status } = options;
-
   const store = getInventoryProductStore(inventoryId);
   let values = await store.values();
   if (productId) {

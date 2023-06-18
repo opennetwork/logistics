@@ -8,6 +8,8 @@ export type InventoryType =
 
 export interface InventoryData {
   type: InventoryType
+  userId?: string;
+  organisationId?: string;
   locationId?: string;
   products?: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
 }

@@ -3,6 +3,7 @@ import {Identifier} from "../identifier";
 export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 
 export interface ShipmentLocation {
+  organisationId?: string; // Optional fixed organisation
   locationId?: string; // Optional fixed location
   inventoryId?: string; // Optional fixed inventory set
   inventoryProductId?: string;  // Optional fixed inventory set

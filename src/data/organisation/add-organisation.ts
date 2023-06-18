@@ -1,24 +1,13 @@
 import { v4 } from "uuid";
 import { OrganisationData, Organisation } from "./types";
-import { getOrganisationStore } from "./store";
+import { setOrganisation } from "./set-organisation";
 
-export interface AddOrganisationInput extends OrganisationData {}
-
-export async function addOrganisation(
-  data: AddOrganisationInput
-): Promise<Organisation> {
-  const store = getOrganisationStore();
-  const organisationId = v4();
-  const createdAt = new Date().toISOString();
-  const organisation: Organisation = {
+export async function addOrganisation(data: OrganisationData): Promise<Organisation> {
+  return setOrganisation({
     ...data,
-    organisationId,
+    organisationId: v4(),
     approved: false,
     approvedAt: undefined,
-    approvedByUserId: undefined,
-    createdAt,
-    updatedAt: createdAt,
-  };
-  await store.set(organisationId, organisation);
-  return organisation;
+    approvedByUserId: undefined
+  });
 }

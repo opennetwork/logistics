@@ -345,6 +345,8 @@ export interface LocationData extends Record<string, unknown> {
   locationName?: string;
   address?: string[];
   countryCode?: string;
+  organisationId?: string;
+  userId?: string;
 }
 
 export interface Location extends LocationData {
@@ -458,6 +460,8 @@ export interface Organisation extends OrganisationData {
   approvedByUserId?: string;
 }
 
+export type PartialOrganisation = OrganisationData & Partial<Organisation>;
+
 export interface PartnerData extends Record<string, unknown> {
   partnerName: string;
   countryCode?: string;
@@ -535,6 +539,7 @@ export interface Product extends ProductData {
 export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 
 export interface ShipmentLocation {
+  organisationId?: string; // Optional fixed organisation
   locationId?: string; // Optional fixed location
   inventoryId?: string; // Optional fixed inventory set
   inventoryProductId?: string;  // Optional fixed inventory set

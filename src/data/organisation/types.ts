@@ -23,3 +23,5 @@ export interface Organisation extends OrganisationData {
   updatedAt: string;
   approvedByUserId?: string;
 }
+
+export type PartialOrganisation = OrganisationData & Partial<Organisation>;
