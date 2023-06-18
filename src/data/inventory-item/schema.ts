@@ -1,9 +1,9 @@
 import { identifierSchema } from "../identifier";
 
-export const inventoryProduct = {
+export const inventoryItem = {
   type: "object",
   properties: {
-    productId: {
+    itemId: {
       type: "string"
     },
     quantity: {
@@ -14,5 +14,5 @@ export const inventoryProduct = {
       items: identifierSchema.identifier
     }
   },
-  required: ["productId", "quantity", "identifiers"]
+  required: ["itemId", "quantity", "identifiers"]
 }

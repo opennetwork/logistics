@@ -1,20 +1,21 @@
 import {
     addInventory,
-    addInventoryProduct,
+    addInventoryItem,
     addOffer,
     addOrder,
     addOrderItem,
     addShipment,
     getOrganisation,
     Identifier,
-    listInventoryProducts,
+    listInventoryItems, listInventoryProducts,
     listOffers,
     listOrderItems,
     listOrderProducts,
     listOrders,
     listProducts,
-    setInventoryProduct,
-    setOrder, setOrganisation,
+    setInventoryItem,
+    setOrder,
+    setOrganisation,
     ShipmentFrom,
     ShipmentTo
 } from "../../data";
@@ -151,7 +152,7 @@ const organisationId = v5("organisationId", namespace);
 
         // Ensure we have everything in stock
         {
-            const orderedProducts = await listOrderItems(orderId);
+            const orderedProducts = await listOrderProducts(orderId, true);
 
             const partner = {
                 address: [
@@ -180,7 +181,7 @@ const organisationId = v5("organisationId", namespace);
             {
                 // We received the orders from the partner!
                 for (const { productId, quantity } of orderedProducts) {
-                    await addInventoryProduct({
+                    await addInventoryItem({
                         status: "available",
                         from: partner,
                         to: {
@@ -220,7 +221,7 @@ const organisationId = v5("organisationId", namespace);
             const availableProducts = await listInventoryProducts({
                 inventoryId,
                 status: "available"
-            });
+            }, true);
 
             const orderProducts = await listOrderProducts(orderId);
 
@@ -255,7 +256,7 @@ const organisationId = v5("organisationId", namespace);
                 productAllocated.push(...identifiers);
                 allocated.set(productId, productAllocated);
 
-                await addInventoryProduct({
+                await addInventoryItem({
                     productId,
                     quantity,
                     inventoryId: pickingInventory.inventoryId,
@@ -290,7 +291,7 @@ const organisationId = v5("organisationId", namespace);
             const productAllocationInventory: Record<string, ShipmentTo> = {};
 
             for (const [productId, identifiers] of allocated.entries()) {
-                const { inventoryProductId } = await addInventoryProduct({
+                const { inventoryItemId } = await addInventoryItem({
                     status: "available",
                     inventoryId: pickingInventory.inventoryId,
                     productId,
@@ -298,14 +299,14 @@ const organisationId = v5("organisationId", namespace);
                     identifiers
                 });
                 productAllocationInventory[productId] = {
-                    inventoryProductId,
+                    inventoryItemId,
                     inventoryId: pickingInventory.inventoryId
                 };
             }
 
             await Promise.all(
                 fullyAllocated.map(
-                    product => setInventoryProduct({
+                    product => setInventoryItem({
                         ...product,
                         status: "void",
                         to: productAllocationInventory[product.productId]
@@ -324,21 +325,21 @@ const organisationId = v5("organisationId", namespace);
                             identifier => !usedIdentifiers.includes(identifier)
                         );
 
-                        const target = await setInventoryProduct({
+                        const target = await setInventoryItem({
                             ...product,
-                            inventoryProductId: v4(),
+                            inventoryItemId: v4(),
                             status: "available",
                             identifiers: remainingIdentifiers
                         });
 
-                        await setInventoryProduct({
+                        await setInventoryItem({
                             ...product,
-                            inventoryProductId: v4(),
+                            inventoryItemId: v4(),
                             status: "split",
                             to: [
                                 {
                                     inventoryId: target.inventoryId,
-                                    inventoryProductId: target.inventoryProductId
+                                    inventoryItemId: target.inventoryItemId
                                 },
                                 productAllocationInventory[product.productId]
                             ]
@@ -354,7 +355,7 @@ const organisationId = v5("organisationId", namespace);
 
         // Pack the products
         {
-            const pickedProducts = await listInventoryProducts({
+            const pickedProducts = await listInventoryItems({
                 inventoryId: pickingInventory.inventoryId,
                 status: "available"
             });
@@ -372,18 +373,18 @@ const organisationId = v5("organisationId", namespace);
 
             for (const product of pickedProducts) {
 
-                const target = await setInventoryProduct({
+                const target = await setInventoryItem({
                     ...product,
                     inventoryId: packageInventory.inventoryId,
-                    inventoryProductId: v4()
+                    inventoryItemId: v4()
                 });
 
-                await setInventoryProduct({
+                await setInventoryItem({
                     ...product,
                     status: "void",
                     to: {
                         inventoryId: target.inventoryId,
-                        inventoryProductId: target.inventoryProductId
+                        inventoryItemId: target.inventoryItemId
                     }
                 });
             }

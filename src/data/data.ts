@@ -19,7 +19,7 @@ export * from "./identifier";
 export * from "./inventory";
 export * from "./order";
 export * from "./order-item";
-export * from "./inventory-product";
+export * from "./inventory-item";
 export * from "./file";
 export * from "./payment";
 export * from "./payment-method";

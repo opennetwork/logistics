@@ -1,4 +1,4 @@
-import {InventoryProduct, InventoryProductIdentifierData} from "../inventory-product";
+import {InventoryItem, InventoryItemIdentifierData} from "../inventory-item";
 
 export type InventoryType =
     | "inventory"
@@ -11,7 +11,7 @@ export interface InventoryData {
   userId?: string;
   organisationId?: string;
   locationId?: string;
-  products?: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
+  items?: (InventoryItemIdentifierData & Partial<InventoryItem>)[];
 }
 
 export interface Inventory extends InventoryData {

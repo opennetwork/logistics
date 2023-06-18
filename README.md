@@ -298,7 +298,7 @@ export interface InventoryData {
   userId?: string;
   organisationId?: string;
   locationId?: string;
-  products?: (InventoryProductIdentifierData & Partial<InventoryProduct>)[];
+  items?: (InventoryItemIdentifierData & Partial<InventoryItem>)[];
 }
 
 export interface Inventory extends InventoryData {
@@ -307,34 +307,43 @@ export interface Inventory extends InventoryData {
   updatedAt: string;
 }
 
-export type InventoryProductStatus =
+export type InventoryItemStatus =
     | "pending"
     | "available"
     | "processing"
     | "split"
     | "void";
 
-export interface InventoryProductIdentifierData {
-  productId: string;
+export interface InventoryItemIdentifierData {
+  productId?: string;
+  offerId?: string; // Allows a bundled offer to be stored as inventory
   quantity?: number; // Default 1
   identifiers?: Identifier[]; // Default []
 }
 
-export interface InventoryProductData extends InventoryProductIdentifierData {
+export interface InventoryItemData extends InventoryItemIdentifierData {
   inventoryId: string;
-  status?: InventoryProductStatus;
+  status?: InventoryItemStatus;
   // Record where it came from and was sent to
   from?: ShipmentFrom;
   to?: ShipmentTo | ShipmentTo[];
 }
 
-export interface InventoryProduct extends InventoryProductData {
-  inventoryProductId: string;
+export interface InventoryItem extends InventoryItemData {
+  inventoryItemId: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export type SetInventoryProduct = InventoryProductData & Pick<InventoryProduct, "inventoryId" | "inventoryProductId"> & Partial<InventoryProduct>;
+export interface InventoryProduct extends InventoryItem {
+  productId: string;
+}
+
+export interface InventoryOffer extends InventoryItem {
+  offerId: string;
+}
+
+export type SetInventoryItem = InventoryItemData & Pick<InventoryItem, "inventoryId" | "inventoryItemId"> & Partial<InventoryItem>;
 
 export type LocationType =
     | "place"
@@ -554,7 +563,7 @@ export interface ShipmentLocation {
   organisationId?: string; // Optional fixed organisation
   locationId?: string; // Optional fixed location
   inventoryId?: string; // Optional fixed inventory set
-  inventoryProductId?: string;  // Optional fixed inventory set
+  inventoryItemId?: string;  // Optional fixed inventory set
   address?: string[]; // Human-readable address
   countryCode?: string;
 }

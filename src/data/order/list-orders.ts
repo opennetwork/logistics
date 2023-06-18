@@ -48,8 +48,8 @@ function isShipmentLocationMatch(base: ShipmentLocation, match: ShipmentLocation
           base.inventoryId === match.inventoryId
       ) &&
       (
-          !base.inventoryProductId ||
-          base.inventoryProductId === match.inventoryProductId
+          !base.inventoryItemId ||
+          base.inventoryItemId === match.inventoryItemId
       ) &&
       (
           !base.countryCode ||
