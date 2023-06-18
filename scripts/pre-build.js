@@ -1,10 +1,12 @@
 import { readFile, readdir, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import {extname, join} from "node:path";
 import {replaceBetween, VARIABLES_REPLACE_AFTER_TEST_COMMENT} from "./replace-between.js";
 
 const PATH = "./src/data"
 const CLIENT_INTERFACE_GENERATED_PATH = "./src/client/interface.readonly.ts"
 const CLIENT_INTERFACE_PATH = "./src/client/client.interface.ts"
+const COMMON_PATH = "src";
+const CLIENT_COMMON_RELATIVE = "../";
 
 const PACKAGE_GENERATED_PATH = "./src/package.readonly.ts"
 
@@ -21,7 +23,7 @@ const IGNORE_TYPES = [
 
 const paths = await readdir(PATH)
 
-const types = (
+const typePaths = (
     await Promise.all(
         paths
             .filter(name => !IGNORE_TYPES.includes(name))
@@ -37,8 +39,20 @@ const types = (
                     if (!typesStat) return "";
                     if (!typesStat.isFile()) return "";
 
-                    const typesFile = await readFile(typesPath, "utf-8");
+                    return typesPath;
+                }
+            )
+    )
+)
+    .filter(Boolean);
 
+
+const types = (
+    await Promise.all(
+        typePaths
+            .map(
+                async (typesPath) => {
+                    const typesFile = await readFile(typesPath, "utf-8");
                     // Assume all imports are to other types that will be contained in this file
                     // If not the build will fail :)
                     return typesFile
@@ -53,10 +67,21 @@ const types = (
 
 // console.log(types);
 
+const typesFile = typePaths
+    .map(
+        typePath => {
+            const path = typePath
+                .replace(`./${COMMON_PATH}/`, CLIENT_COMMON_RELATIVE)
+                .replace(`${COMMON_PATH}/`, CLIENT_COMMON_RELATIVE);
+            const extension = extname(path);
+            return `export * from "${path.replace(extension, "")}"`;
+        }
+    )
+    .join("\n");
 
 await writeFile(
     CLIENT_INTERFACE_GENERATED_PATH,
-    types,
+    `// These references are auto generated, do not edit manually\n\n${typesFile}\n`,
     "utf-8"
 );
 

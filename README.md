@@ -28,6 +28,14 @@ export interface ClientOptions {
 export interface Client {
     addPartner(partner: PartnerData): Promise<Partner>;
     listPartners(): Promise<Partner[]>;
+    addProduct(product: ProductData): Promise<Product>;
+    setProduct(product: Product): Promise<Product>;
+    patchProduct(product: Pick<Product, "productId"> & Partial<Product>): Promise<Product>;
+    listProducts(): Promise<Product[]>;
+    addOffer(offer: OfferData): Promise<Offer>;
+    setOffer(offer: Offer): Promise<Offer>;
+    patchOffer(offer: Pick<Offer, "offerId"> & Partial<Offer>): Promise<Offer>;
+    listOffers(): Promise<Offer[]>;
     listSystemLogs(): Promise<SystemLog[]>;
     background(query: Record<string, string> | URLSearchParams): Promise<void>;
 }
@@ -341,6 +349,49 @@ export interface LocationData extends Record<string, unknown> {
 
 export interface Location extends LocationData {
   locationId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductOfferItem {
+  type: "product";
+  productId: string;
+  identifiers?: Identifier[];
+}
+
+export type OfferItem =
+    | ProductOfferItem
+
+export type OfferItemType = OfferItem["type"];
+
+export type OfferStatus =
+    | "preSale"
+    | "preOrder"
+    | "onlineOnly"
+    | "storeOnly"
+    | "available"
+    | "backOrder"
+    | "limitedAvailability"
+    | "soldOut"
+    | "void"
+
+export type NumberString = `${number}` | number;
+
+export interface OfferData extends Record<string, unknown> {
+  status: OfferStatus;
+  items: OfferItem[];
+  // The organisation that is providing this offer
+  organisationId: string;
+  offerName?: string;
+  // Is the offer publicly visible
+  public?: boolean;
+  price?: NumberString;
+  currency?: string;
+  countryCode?: string;
+}
+
+export interface Offer extends OfferData {
+  offerId: string;
   createdAt: string;
   updatedAt: string;
 }

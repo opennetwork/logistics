@@ -23,3 +23,4 @@ export * from "./inventory-product";
 export * from "./file";
 export * from "./payment";
 export * from "./payment-method";
+export * from "./offer";

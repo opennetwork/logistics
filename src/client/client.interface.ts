@@ -3,6 +3,10 @@ import {
     Partner,
     PartnerData,
     SystemLog,
+    Product,
+    ProductData,
+    OfferData,
+    Offer
 } from "./interface.readonly";
 
 // Client start
@@ -17,6 +21,14 @@ export interface ClientOptions {
 export interface Client {
     addPartner(partner: PartnerData): Promise<Partner>;
     listPartners(): Promise<Partner[]>;
+    addProduct(product: ProductData): Promise<Product>;
+    setProduct(product: Product): Promise<Product>;
+    patchProduct(product: Pick<Product, "productId"> & Partial<Product>): Promise<Product>;
+    listProducts(): Promise<Product[]>;
+    addOffer(offer: OfferData): Promise<Offer>;
+    setOffer(offer: Offer): Promise<Offer>;
+    patchOffer(offer: Pick<Offer, "offerId"> & Partial<Offer>): Promise<Offer>;
+    listOffers(): Promise<Offer[]>;
     listSystemLogs(): Promise<SystemLog[]>;
     background(query: Record<string, string> | URLSearchParams): Promise<void>;
 }
