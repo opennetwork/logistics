@@ -27,11 +27,20 @@ export function ListOffers() {
     }
     return (
         <div className="flex flex-col">
-            {!isAnonymous ? <a href={createUrl} className={LINK_CLASS}>Create Offer{queryProduct.productId ? ` for ${queryProduct.productName}` : ""}</a> : undefined}
+            {!isAnonymous ? <a href={createUrl} className={LINK_CLASS}>Create Offer{queryProduct?.productId ? ` for ${queryProduct.productName}` : ""}</a> : undefined}
             <div className="flex flex-col divide-y">
                 {offers.map(offer => (
-                    <div key={offer.offerId}>
-                        {offer.offerName}
+                    <div key={offer.offerId} className="flex flex-row justify-between">
+                        <div>{offer.offerName || offer.offerId}</div>
+                        {
+                            !isAnonymous ? (
+                                <div>
+                                    <a href={`/orders?offerId=${offer.offerId}`} className={LINK_CLASS}>
+                                        Orders
+                                    </a>
+                                </div>
+                            ) : undefined
+                        }
                     </div>
                 ))}
             </div>

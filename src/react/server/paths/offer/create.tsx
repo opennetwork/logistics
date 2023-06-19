@@ -89,6 +89,7 @@ export function CreateOffer() {
                                         className={FORM_CLASS}
                                         type="text"
                                         placeholder="Product Quantity"
+                                        name="items[0].quantity"
                                         defaultValue={(body?.items[0]?.quantity ?? "1").toString()}
                                     />
                                 </label>

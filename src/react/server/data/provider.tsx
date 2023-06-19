@@ -3,7 +3,7 @@ import {
   Partner,
   Organisation,
   User,
-  Product, Offer,
+  Product, Offer, Order,
 } from "../../../data";
 import {createContext, ProviderProps, useContext, useMemo} from "react";
 import { ok } from "../../../is";
@@ -31,6 +31,7 @@ export interface ReactData {
   roles?: AuthenticationRole[];
   products?: Product[];
   offers?: Offer[];
+  orders?: Order[];
 }
 
 export const DataContext = createContext<ReactData | undefined>(undefined);
@@ -197,6 +198,11 @@ export function useOffers() {
   return useMemo(() => offers || [], [offers]);
 }
 
+export function useOrders() {
+  const { orders } = useData();
+  return useMemo(() => orders || [], [orders]);
+}
+
 export function useProduct(productId?: string): Product | undefined {
   const products = useProducts();
   return useMemo(() => {
@@ -212,3 +218,12 @@ export function useOffer(offerId?: string): Offer | undefined {
     return offers.find((offer) => offer.offerId === offerId);
   }, [offers, offerId]);
 }
+
+export function useOrder(orderId?: string): Order | undefined {
+  const orders = useOrders();
+  return useMemo(() => {
+    if (!orderId) return undefined;
+    return orders.find((order) => order.orderId === orderId);
+  }, [orders, orderId]);
+}
+
