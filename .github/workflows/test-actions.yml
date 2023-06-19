@@ -20,6 +20,10 @@ jobs:
       DISCORD_BOT_PERMISSIONS: 1
       DISCORD_SERVER_ID: 1
       COOKIE_SECRET: 1
+      PRODUCT_REMOTE_URL: ${{ secrets.PRODUCT_REMOTE_URL }}
+      PRODUCT_REMOTE_TOKEN: ${{ secrets.PRODUCT_REMOTE_TOKEN }}
+      PRODUCTFILE_REMOTE_URL: ${{ secrets.PRODUCTFILE_REMOTE_URL }}
+      PRODUCTFILE_REMOTE_TOKEN: ${{ secrets.PRODUCTFILE_REMOTE_TOKEN }}
     services:
       # Label used to access the service container
       redis:
