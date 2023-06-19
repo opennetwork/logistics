@@ -3,19 +3,24 @@ import {
     addInventoryItem,
     addOffer,
     addOrder,
-    addOrderItem, addPayment, addPaymentMethod,
+    addOrderItem,
+    addPayment,
+    addPaymentMethod,
     addShipment,
     getOrganisation,
     Identifier,
-    listInventoryItems, listInventoryProducts,
+    listInventoryItems,
+    listInventoryProducts,
     listOffers,
-    listOrderItems,
     listOrderProducts,
     listOrders,
     listProducts,
     setInventoryItem,
     setOrder,
-    setOrganisation, setPayment, setPaymentMethod,
+    setOrganisation,
+    setPayment,
+    setPaymentMethod,
+    setShipment,
     ShipmentFrom,
     ShipmentTo
 } from "../../data";
@@ -469,7 +474,7 @@ const userId = v5("userId", namespace);
 
             // Ship the order!
             {
-                await addShipment({
+                let shipment = await addShipment({
                     status: "pending",
                     from: {
                         locationId,
@@ -484,6 +489,30 @@ const userId = v5("userId", namespace);
                         }
                     ]
                 })
+
+                {
+                    // Mark as ready for sending
+                    shipment = await setShipment({
+                        ...shipment,
+                        status: "processing"
+                    })
+                }
+
+                {
+                    // Mark as sent
+                    shipment = await setShipment({
+                        ...shipment,
+                        status: "sent"
+                    })
+                }
+
+                {
+                    // Mark as delivered
+                    shipment = await setShipment({
+                        ...shipment,
+                        status: "delivered"
+                    })
+                }
             }
         }
     }
