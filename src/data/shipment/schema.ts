@@ -1,7 +1,27 @@
 export const shipmentLocation = {
   type: "object",
   properties: {
+    userId: {
+      type: "string",
+      nullable: true
+    },
+    organisationId: {
+      type: "string",
+      nullable: true
+    },
     locationId: {
+      type: "string",
+      nullable: true
+    },
+    inventoryId: {
+      type: "string",
+      nullable: true
+    },
+    inventoryItemId: {
+      type: "string",
+      nullable: true
+    },
+    orderId: {
       type: "string",
       nullable: true
     },

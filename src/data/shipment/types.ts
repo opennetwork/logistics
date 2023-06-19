@@ -8,6 +8,7 @@ export interface ShipmentLocation {
   locationId?: string;
   inventoryId?: string;
   inventoryItemId?: string;
+  orderId?: string;
   address?: string[]; // Human-readable address
   countryCode?: string;
 }
