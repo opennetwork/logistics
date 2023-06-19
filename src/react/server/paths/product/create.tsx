@@ -51,7 +51,7 @@ export function CreateProduct() {
 
     function ProductBody({ body }: { body?: ProductData }) {
         return (
-            <form name="happening" action="/product/create#action-section" method="post">
+            <form name="product" action="/product/create#action-section" method="post">
                 <div className="flex flex-col">
                     <label className={FORM_GROUP_CLASS}>
                         <span className="text-gray-700">Product Name</span>
@@ -73,7 +73,7 @@ export function CreateProduct() {
                         defaultChecked={false}
                     />
                     <span className="flex flex-col ml-4">
-                        Should the public be visible to the public?
+                        Should the product be visible to the public?
                     </span>
                 </label>
                 <style dangerouslySetInnerHTML={{ __html: `

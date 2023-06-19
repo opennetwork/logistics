@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import OpenNetworkServer, { OpenNetworkServerProps } from "../react/server";
+import OpenNetworkServer, {OpenNetworkServerProps, ReactData} from "../react/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   listOrganisations,
@@ -14,7 +14,7 @@ import {
   getMaybeUser,
   isAnonymous,
 } from "../authentication";
-import { ok } from "../is";
+import {isLike, ok} from "../is";
 import { join, dirname } from "node:path";
 import { addCachedPage, getCachedPage } from "../data";
 import { getOrigin } from "../listen/config";
@@ -59,7 +59,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
       if (baseResultGiven) {
         baseResult = baseResultGiven.value;
       } else {
-        if (baseHandler) {
+        if (!isPathCached && baseHandler) {
           baseResult = await baseHandler(request, response);
           if (response.sent) return;
         }
@@ -85,7 +85,6 @@ export async function viewRoutes(fastify: FastifyInstance) {
         const isCacheUsable = !!(
           isPathCached &&
           ENABLE_CACHE &&
-          !submitHandler &&
           request.method.toLowerCase() === "get"
         );
         if (isCacheUsable) {
@@ -105,6 +104,11 @@ export async function viewRoutes(fastify: FastifyInstance) {
       }
 
       async function getRenderedHTML() {
+
+        if (isPathCached && baseHandler && !baseResultGiven) {
+          baseResult = await baseHandler(request, response);
+        }
+
         const anonymous = isAnonymous();
         const state = getMaybeAuthenticationState();
         const { pathname } = new URL(request.url, getOrigin());
@@ -117,6 +121,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
         // Can go right to static, should be no async loading within components
         let html = renderToStaticMarkup(
           <OpenNetworkServer
+            {...(isLike<Partial<ReactData>>(baseResult) ? baseResult : {})}
             {...options}
             view={view}
             config={getConfig()}
