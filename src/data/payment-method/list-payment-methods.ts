@@ -1,11 +1,13 @@
-import { PaymentMethod } from "./types";
+import {PaymentMethod, PaymentMethodOwnerIdentifiers} from "./types";
 import { getPaymentMethodStore } from "./store";
 
-export interface ListPaymentMethodsInput {}
+export interface ListPaymentMethodsInput extends PaymentMethodOwnerIdentifiers {
 
-export async function listPaymentMethods({}: ListPaymentMethodsInput = {}): Promise<
+}
+
+export async function listPaymentMethods(options: ListPaymentMethodsInput = {}): Promise<
   PaymentMethod[]
 > {
-  const store = getPaymentMethodStore();
+  const store = getPaymentMethodStore(options);
   return store.values();
 }

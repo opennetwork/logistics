@@ -2,6 +2,7 @@ import * as product from "./product"
 import * as invite from "./invite"
 import * as offer from "./offer"
 import * as order from "./order"
+import * as paymentMethod from "./payment-method"
 import {View} from "../../../view";
 
 import * as PartnersView from "./partners";
@@ -37,5 +38,7 @@ export const views: View[] = [
   offer.create,
   offer.list,
   order.create,
-  order.list
+  order.list,
+  paymentMethod.create,
+  paymentMethod.list
 ];

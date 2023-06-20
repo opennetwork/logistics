@@ -3,7 +3,7 @@ import {
   Partner,
   Organisation,
   User,
-  Product, Offer, Order,
+  Product, Offer, Order, PaymentMethod,
 } from "../../../data";
 import {createContext, ProviderProps, useContext, useMemo} from "react";
 import { ok } from "../../../is";
@@ -32,6 +32,7 @@ export interface ReactData {
   products?: Product[];
   offers?: Offer[];
   orders?: Order[];
+  paymentMethods?: PaymentMethod[];
 }
 
 export const DataContext = createContext<ReactData | undefined>(undefined);
@@ -188,6 +189,11 @@ export function useProducts() {
   return useMemo(() => products || [], [products]);
 }
 
+export function usePaymentMethods() {
+  const { paymentMethods } = useData();
+  return useMemo(() => paymentMethods || [], [paymentMethods]);
+}
+
 export function useConfig(): Config {
   const { config } = useData();
   return config || {}
@@ -225,5 +231,13 @@ export function useOrder(orderId?: string): Order | undefined {
     if (!orderId) return undefined;
     return orders.find((order) => order.orderId === orderId);
   }, [orders, orderId]);
+}
+
+export function usePaymentMethod(paymentMethodId?: string): PaymentMethod | undefined {
+  const paymentMethods = usePaymentMethods();
+  return useMemo(() => {
+    if (!paymentMethodId) return undefined;
+    return paymentMethods.find((paymentMethod) => paymentMethod.paymentMethodId === paymentMethodId);
+  }, [paymentMethods, paymentMethodId]);
 }
 
