@@ -9,10 +9,16 @@ async function login() {
   return fn();
 }
 
+async function paymentMethodSelect() {
+  const { paymentMethodSelect: fn } = await import("./payment-method-select");
+  return fn();
+}
+
 export const paths: Record<string, () => void | Promise<void>> = {
   "/": home,
   "/home": home,
-  "/login": login
+  "/login": login,
+  "/payment-method/select": paymentMethodSelect
 };
 
 export function runPath() {

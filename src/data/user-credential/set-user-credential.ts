@@ -1,7 +1,8 @@
-import {getUserCredentialStore} from "./store";
+import {DEFAULT_CREDENTIAL_EXPIRES_IN_MS, getUserCredentialStore} from "./store";
 import {UserCredential, SetUserCredential} from "./types";
 import {v4} from "uuid";
 import {createHash} from "crypto";
+import {getExpiresAt} from "../expiring-kv";
 
 function getUserCredentialId(data: SetUserCredential): string {
   const hash = createHash("sha256");
@@ -25,7 +26,9 @@ export async function setUserCredential(data: SetUserCredential): Promise<UserCr
     createdAt: data.createdAt || updatedAt,
     ...data,
     updatedAt,
-    userCredentialId
+    userCredentialId,
+    // Ignore provided expiry and reset on use
+    expiresAt: getExpiresAt(DEFAULT_CREDENTIAL_EXPIRES_IN_MS)
   };
   await store.set(userCredentialId, document);
   return document;

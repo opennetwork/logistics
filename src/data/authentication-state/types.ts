@@ -10,7 +10,7 @@ export type AuthenticationStateType =
   | "attendee"
   | "invitee"
   | "exchange"
-  | "credential";
+  | "challenge";
 
 export interface AuthenticationStateFromData {
   type: AuthenticationStateType | string;

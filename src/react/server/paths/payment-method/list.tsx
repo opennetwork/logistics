@@ -1,8 +1,17 @@
 import {useData, usePaymentMethods} from "../../data";
+import {getMaybePartner, getMaybeUser} from "../../../../authentication";
+import {listPaymentMethods} from "../../../../data";
+import {getUserIdentifiers} from "./utils";
 
 export const path = "/payment-methods";
 export const anonymous = true;
 export const cache = true;
+
+export async function handler() {
+    return {
+        paymentMethods: await listPaymentMethods(getUserIdentifiers())
+    }
+}
 
 const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offset-2";
 
