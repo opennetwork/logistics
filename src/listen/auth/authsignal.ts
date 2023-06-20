@@ -95,7 +95,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
 
         ok(state, "Expected to find authentication state");
 
-        const { type, userId, userState, authenticatorUserId } = state;
+        const { type, userId, userState, authenticatorUserId, authenticatorType } = state;
 
         ok(type === "authsignal", "Expected type to be authsignal");
         ok(userId === sub, "Expected token subject to match our given userId");
@@ -138,7 +138,12 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
                 typeof authenticatorUserId === "string" ?
                     authenticatorUserId :
                     undefined
-            )
+            ),
+            authenticatorType: (
+                typeof authenticatorType === "string" ?
+                    authenticatorType :
+                    undefined
+            ),
           });
         }
 
@@ -222,6 +227,10 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         authenticatorUserId: {
           type: "string",
           nullable: true
+        },
+        authenticatorType: {
+          type: "string",
+          nullable: true
         }
       }
     };
@@ -232,6 +241,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         deviceId?: string;
         state?: string;
         authenticatorUserId?: string;
+        authenticatorType?: string;
       };
       Querystring: {
         state?: string
@@ -239,7 +249,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
     };
 
     async function getAuthsignalState(request: FastifyRequest<Schema>) {
-      const { email, deviceId, state: userStateBody, actionCode: givenActionCode, authenticatorUserId: givenAuthenticatorUserId } = request.body;
+      const { email, deviceId, state: userStateBody, actionCode: givenActionCode, authenticatorUserId: givenAuthenticatorUserId, authenticatorType } = request.body;
       const { state: userStateQuery } = request.query;
       const userState = userStateBody || userStateQuery;
 
@@ -298,6 +308,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         expiresAt: getExpiresAt(DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS),
         userState,
         authenticatorUserId,
+        authenticatorType: authenticatorType ?? "user",
         from: currentState ? {
           type: currentState.type,
           stateId: currentState.stateId,

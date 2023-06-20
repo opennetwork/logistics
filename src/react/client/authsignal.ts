@@ -39,13 +39,28 @@ export function getAuthsignalClient(meta = getAuthsignalMeta()): AuthsignalCusto
     return client;
 }
 
-export async function passkey(email: string, meta: AuthsignalMeta = getAuthsignalMeta()) {
+export interface PasskeyOptions {
+    email?: string;
+    payment?: boolean
+}
+
+export async function passkey({ email, payment }: PasskeyOptions, meta: AuthsignalMeta = getAuthsignalMeta()) {
     const { baseUrl } = meta;
+
+    const authenticatorUserId = payment ?
+        crypto.randomUUID() :
+        undefined;
+    const authenticatorType = payment ? "payment" : "user";
+
+    const userName = email ?? authenticatorUserId;
+    ok(userName, "Expected email or payment");
+
     const {
         token,
         enrolledVerificationMethods,
         redirectUrl
     } = await track();
+
 
     const accessToken = await getAccessToken();
     const credential = await getCredential()
@@ -80,19 +95,25 @@ export async function passkey(email: string, meta: AuthsignalMeta = getAuthsigna
                 token
             })
         } else {
-            return await authsignal.extendedPasskey.signUp({
-                userName: email,
-                token,
-                authenticatorSelection: {
-                    userVerification: "required",
-                    residentKey: "required",
-                    authenticatorAttachment: "platform",
-                },
-                extensions: {
-                    "payment": {
-                        isPayment: true,
+            let paymentOptions;
+            if (payment) {
+                paymentOptions = {
+                    authenticatorSelection: {
+                        userVerification: "required",
+                        residentKey: "required",
+                        authenticatorAttachment: "platform",
+                    },
+                    extensions: {
+                        "payment": {
+                            isPayment: true,
+                        }
                     }
                 }
+            }
+            return await authsignal.extendedPasskey.signUp({
+                userName,
+                token,
+                ...paymentOptions
             })
         }
 
@@ -105,7 +126,9 @@ export async function passkey(email: string, meta: AuthsignalMeta = getAuthsigna
             {
                 method: "POST",
                 body: JSON.stringify({
-                    email
+                    email,
+                    authenticatorUserId,
+                    authenticatorType
                 }),
                 headers: {
                     "Content-Type": "application/json"

@@ -46,6 +46,6 @@ export async function login() {
 
         const email = input.value;
 
-        await passkey(email, getAuthsignalMeta(form));
+        await passkey({ email }, getAuthsignalMeta(form));
     }
 }
