@@ -4,9 +4,15 @@ async function home() {
   return fn();
 }
 
+async function login() {
+  const { login: fn } = await import("./login");
+  return fn();
+}
+
 export const paths: Record<string, () => void | Promise<void>> = {
   "/": home,
-  "/home": home
+  "/home": home,
+  "/login": login
 };
 
 export function runPath() {

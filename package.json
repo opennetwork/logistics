@@ -55,6 +55,7 @@
   "author": "Fabian Cook <hello@fabiancook.dev>",
   "license": "MIT",
   "dependencies": {
+    "@authsignal/browser": "^0.1.6",
     "@authsignal/node": "^0.0.43",
     "@aws-sdk/client-s3": "^3.350.0",
     "@aws-sdk/s3-request-presigner": "^3.350.0",
@@ -78,6 +79,7 @@
     "@opentelemetry/api": "^1.4.1",
     "@opentelemetry/auto-instrumentations-node": "^0.36.6",
     "@opentelemetry/instrumentation-fastify": "^0.31.2",
+    "@simplewebauthn/browser": "^7.2.0",
     "@tailwindcss/forms": "^0.5.3",
     "@types/luxon": "^3.3.0",
     "@upstash/redis": "^1.20.4",
@@ -194,7 +196,9 @@
       "react/jsx-runtime": "scripts/bridge/jsx-runtime.js",
       "react": "node_modules/react/index.js",
       "react-dom": "node_modules/react-dom/index.js",
-      "react-dom/client": "node_modules/react-dom/client.js"
+      "react-dom/client": "node_modules/react-dom/client.js",
+      "@simplewebauthn/browser": "node_modules/@simplewebauthn/browser/dist/bundle/index.js",
+      "@authsignal/browser": "node_modules/@authsignal/browser/dist/index.js"
     }
   }
 }

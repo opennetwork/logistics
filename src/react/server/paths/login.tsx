@@ -1,6 +1,7 @@
 import { useData } from "../data";
 import {DISCORD_CLIENT_ID} from "../../../listen/auth/discord";
 import {REDDIT_CLIENT_ID} from "../../../listen/auth/reddit";
+import {AUTHSIGNAL_CHALLENGE_API_URL, AUTHSIGNAL_TENANT} from "../../../authentication/authsignal";
 
 export const path = "/login";
 export const anonymous = true;
@@ -29,10 +30,14 @@ export function Login() {
   return (
     <div>
       <form
+        id="login-authsignal"
         name="login-authsignal"
         action="/api/authentication/authsignal/redirect"
         method="post"
       >
+        <meta name="authsignal-tenant-id" content={AUTHSIGNAL_TENANT} />
+        <meta name="authsignal-region" content={AUTHSIGNAL_CHALLENGE_API_URL} />
+        <meta name="authsignal-track-url" content="/api/authentication/authsignal/track" />
         <input type="hidden" name="state" value={state} />
         <div className="flex flex-col">
           <label className={FORM_GROUP_CLASS}>
@@ -41,6 +46,7 @@ export function Login() {
               className={FORM_CLASS}
               type="email"
               name="email"
+              defaultValue=""
               placeholder="Email Address"
             />
           </label>
@@ -50,7 +56,7 @@ export function Login() {
             type="submit"
             className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white"
           >
-            Login with Email / Magic Link / Authenticator
+            Login with Email
           </button>
         </div>
       </form>

@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import {FastifyInstance, FastifyRequest} from "fastify";
 import { ok } from "../../is";
 import { getOrigin } from "../config";
 import {
@@ -80,7 +80,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           token,
         });
 
-        console.log({ userState });
+        console.log({ userState, success });
 
         await deleteAuthenticationState(state.stateId);
 
@@ -98,6 +98,9 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           return;
         }
 
+        const userInfo = await authsignal.getUser({
+          userId
+        })
         const user = await getExternalUser("authsignal", userId);
 
         const userRoles = await getUserAuthenticationRoleForUser(user);
@@ -140,6 +143,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         response.header("Location", location);
         response.status(302);
         response.send();
+
       },
     });
   }
@@ -168,12 +172,17 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           type: "string",
           nullable: true,
         },
+        actionCode: {
+          type: "string",
+          nullable: true,
+        },
       },
       required: ["email"],
     };
     type Schema = {
       Body: {
         email: string;
+        actionCode?: string;
         deviceId?: string;
         state?: string;
       };
@@ -181,63 +190,82 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         state?: string
       }
     };
+
+    async function getAuthsignalState(request: FastifyRequest<Schema>) {
+      const { email, deviceId, state: userStateBody, actionCode: givenActionCode } = request.body;
+      const { state: userStateQuery } = request.query;
+      const userState = userStateBody || userStateQuery;
+
+      const hash = createHash("sha256");
+      hash.update(AUTHSIGNAL_TENANT);
+      hash.update(email);
+      const userId = hash.digest().toString("hex");
+
+      const { isEnrolled, enrolledVerificationMethods = [] } = await authsignal.getUser({
+        userId,
+      });
+
+      const redirectUrl =
+          AUTHSIGNAL_REDIRECT_URL ||
+          `${getOrigin()}${fastify.prefix}/authsignal/callback`;
+
+      const actionCode = isEnrolled ? (givenActionCode || "authenticate") : "enroll";
+      const ipAddress = getClientIp(request.raw);
+
+      const stateId = v4();
+      const idempotencyKey = stateId;
+
+      const {
+        state,
+        url,
+        idempotencyKey: returnedIdempotencyKey,
+        token
+      } = await authsignal.track({
+        action: actionCode,
+        userId,
+        email,
+        idempotencyKey,
+        deviceId: deviceId || undefined,
+        userAgent: request.headers["user-agent"],
+        ipAddress: ipAddress || undefined,
+        redirectUrl,
+      });
+
+      const authenticationState = await setAuthenticationState({
+        type: "authsignal",
+        stateId,
+        userId,
+        externalKey: idempotencyKey,
+        redirectUrl,
+        authsignalState: state,
+        authsignalActionCode: actionCode,
+        authsignalEnrolledVerificationMethods: enrolledVerificationMethods,
+        expiresAt: getExpiresAt(DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS),
+        userState,
+      });
+
+      return {
+        authenticationState,
+        enrolledVerificationMethods,
+        url,
+        token,
+        returnedIdempotencyKey
+      } as const;
+    }
+
     const schema = {
       body,
       querystring,
       tags: ["system"],
     };
+
     fastify.post<Schema>("/authsignal/redirect", {
       schema,
       async handler(request, response) {
-        const { email, deviceId, state: userStateBody } = request.body;
-        const { state: userStateQuery } = request.query;
-        const userState = userStateBody || userStateQuery;
-
-        const hash = createHash("sha256");
-        hash.update(AUTHSIGNAL_TENANT);
-        hash.update(email);
-        const userId = hash.digest().toString("hex");
-
-        const { isEnrolled } = await authsignal.getUser({
-          userId,
-        });
-
-        const redirectUrl =
-          AUTHSIGNAL_REDIRECT_URL ||
-          `${getOrigin()}${fastify.prefix}/authsignal/callback`;
-
-        const actionCode = isEnrolled ? "authenticate" : "enroll";
-        const ipAddress = getClientIp(request.raw);
-
-        const stateId = v4();
-        const idempotencyKey = stateId;
-
         const {
-          state,
           url,
-          idempotencyKey: returnedIdempotencyKey,
-        } = await authsignal.track({
-          action: actionCode,
-          userId,
-          email,
-          idempotencyKey,
-          deviceId: deviceId || undefined,
-          userAgent: request.headers["user-agent"],
-          ipAddress: ipAddress || undefined,
-          redirectUrl,
-        });
-
-        const authenticationState = await setAuthenticationState({
-          type: "authsignal",
-          stateId,
-          userId,
-          externalKey: idempotencyKey,
-          redirectUrl,
-          authsignalState: state,
-          authsignalActionCode: actionCode,
-          expiresAt: getExpiresAt(DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS),
-          userState
-        });
+          authenticationState
+        } = await getAuthsignalState(request);
 
         response.header("Location", url);
         if (authenticationState.expiresAt) {
@@ -248,5 +276,26 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         response.send("Redirecting");
       },
     });
+
+    fastify.post<Schema>("/authsignal/track", {
+      schema,
+      async handler(request, response) {
+        const {
+          token,
+          url,
+          enrolledVerificationMethods,
+          authenticationState
+        } = await getAuthsignalState(request);
+
+        response.send({
+          url,
+          token,
+          enrolledVerificationMethods,
+          redirectUrl: authenticationState.redirectUrl
+        });
+      },
+    });
+
+
   }
 }
