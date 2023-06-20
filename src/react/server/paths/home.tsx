@@ -10,7 +10,7 @@ import {
 } from "../../../package";
 import {
   useData,
-  useIsTrusted,
+  useIsTrusted, useMaybeAuthenticationState,
   useMaybeUser,
   useRoles,
 } from "../data/provider";
@@ -26,6 +26,7 @@ export function Home() {
   const roles = useRoles();
   const isTrusted = useIsTrusted();
   const user = useMaybeUser();
+  const authenticationState = useMaybeAuthenticationState();
   // console.log({
   //     home: {
   //         roles,
@@ -100,7 +101,16 @@ export function Home() {
                 <p>
                   User Id: {user.userId}
                   <br />
-                  Authenticated With: {user.externalType}
+                  Initially Authenticated With: {user.externalType}
+                  {
+                    authenticationState && authenticationState.from.type !== user.externalType ? (
+                        <>
+                          <br />
+                          Authenticated With: {authenticationState.type}<br/>
+                          Authenticated From: {authenticationState.from.type}
+                        </>
+                    ) : undefined
+                  }
                 </p>
               ) : isTrusted ? (
                 "No user associated"

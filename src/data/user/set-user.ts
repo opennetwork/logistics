@@ -1,7 +1,12 @@
-import { User, UserData } from "./types";
+import {ExternalUserReference, ExternalUserReferenceData, User, UserData} from "./types";
 import { v4 } from "uuid";
 import { getExpiresAt } from "../expiring-kv";
-import { DEFAULT_USER_EXPIRES_IN_MS, getUserStore } from "./store";
+import {
+  DEFAULT_USER_EXPIRES_IN_MS,
+  getExternalReferenceKey,
+  getExternalUserReferenceStore,
+  getUserStore
+} from "./store";
 
 export async function setUser(data: UserData & Partial<User>) {
   const store = getUserStore();
@@ -16,4 +21,16 @@ export async function setUser(data: UserData & Partial<User>) {
   };
   await store.set(userId, user);
   return user;
+}
+
+export async function setExternalReference(data: ExternalUserReference & ExternalUserReferenceData) {
+  const { externalId, externalType, ...rest } = data;
+  const key = getExternalReferenceKey(externalType, externalId);
+  const reference: ExternalUserReference = {
+    ...rest,
+    externalType,
+  };
+  const store = getExternalUserReferenceStore();
+  await store.set(key, reference);
+  return reference;
 }

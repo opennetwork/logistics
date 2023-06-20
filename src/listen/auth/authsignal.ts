@@ -24,6 +24,8 @@ import jsonwebtoken from "jsonwebtoken";
 import { getExpiresAt } from "../../data/expiring-kv";
 import "@fastify/cookie";
 import {setUserCredential} from "../../data/user-credential";
+import {getMaybeAuthenticationState, getMaybeUser} from "../../authentication";
+import {authenticate} from "../authentication";
 
 ok(jsonwebtoken.decode);
 
@@ -72,6 +74,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
     };
     fastify.get<Schema>("/authsignal/callback", {
       schema,
+      preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request, response) {
         const { token, credentialId } = request.query;
 
@@ -119,7 +122,8 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        const user = await getExternalUser("authsignal", userId);
+        const existingUser = getMaybeUser();
+        const user = await getExternalUser("authsignal", userId, existingUser);
 
         let userCredential;
         if (credentialId) {
@@ -133,28 +137,30 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           });
         }
 
-        const userRoles = await getUserAuthenticationRoleForUser(user);
+        if (!existingUser) {
+          const userRoles = await getUserAuthenticationRoleForUser(user);
 
-        const { stateId, expiresAt } = await addCookieState({
-          userId: user.userId,
-          roles: [...new Set<AuthenticationRole>([
-            // We have no additional roles with this authentication method
-            // Just give member, no trusted roles
-            "member",
-            ...(userRoles?.roles ?? [])
-          ])],
-          from: {
-            type: "authsignal",
-            createdAt: state.createdAt,
-          },
-          userCredentialId: userCredential?.userCredentialId
-        });
+          const { stateId, expiresAt } = await addCookieState({
+            userId: user.userId,
+            roles: [...new Set<AuthenticationRole>([
+              // We have no additional roles with this authentication method
+              // Just give member, no trusted roles
+              "member",
+              ...(userRoles?.roles ?? [])
+            ])],
+            from: {
+              type: "authsignal",
+              createdAt: state.createdAt,
+            },
+            userCredentialId: userCredential?.userCredentialId
+          });
 
-        response.setCookie("state", stateId, {
-          path: "/",
-          signed: true,
-          expires: new Date(expiresAt),
-        });
+          response.setCookie("state", stateId, {
+            path: "/",
+            signed: true,
+            expires: new Date(expiresAt),
+          });
+        }
 
         const authState = userState ?
             await getAuthenticationState(userState)
@@ -262,6 +268,8 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         redirectUrl,
       });
 
+      const currentState = getMaybeAuthenticationState();
+
       const authenticationState = await setAuthenticationState({
         type: "authsignal",
         stateId,
@@ -273,6 +281,12 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         authsignalEnrolledVerificationMethods: enrolledVerificationMethods,
         expiresAt: getExpiresAt(DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS),
         userState,
+        from: currentState ? {
+          type: currentState.type,
+          stateId: currentState.stateId,
+          createdAt: currentState.createdAt,
+          from: currentState.from
+        } : undefined
       });
 
       return {
@@ -292,6 +306,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
 
     fastify.post<Schema>("/authsignal/redirect", {
       schema,
+      preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request, response) {
         const {
           url,
@@ -310,6 +325,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
 
     fastify.post<Schema>("/authsignal/track", {
       schema,
+      preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request, response) {
         const {
           token,

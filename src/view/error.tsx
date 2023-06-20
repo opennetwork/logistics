@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { renderToStaticMarkup } from "react-dom/server";
 import OpenNetworkServer from "../react/server";
 import { getOrigin } from "../listen/config";
-import { getMaybeUser, isAnonymous } from "../authentication";
+import {getMaybeAuthenticationState, getMaybeUser, isAnonymous} from "../authentication";
 import { isHTMLResponse } from "../listen/authentication";
 import {getConfig} from "../config";
 import {getView} from "./views";
@@ -36,6 +36,7 @@ export function errorHandler(
       user={user}
       timezone={DEFAULT_TIMEZONE}
       config={getConfig()}
+      authenticationState={getMaybeAuthenticationState()}
     />
   );
 

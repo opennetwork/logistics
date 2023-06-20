@@ -141,6 +141,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
               // only public products will be visible
               public: anonymous
             })}
+            authenticationState={getMaybeAuthenticationState()}
             roles={state?.roles}
             query={request.query}
             body={request.body}

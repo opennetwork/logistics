@@ -1,36 +1,31 @@
 import {
-  ExternalUserReference,
   ExternalUserReferenceData,
+  User,
   UserData,
 } from "./types";
-import {
-  getExternalReferenceKey,
-  getExternalUserReferenceStore,
-} from "./store";
-import { setUser } from "./set-user";
+import {setExternalReference, setUser} from "./set-user";
 
 export async function addUser(data: UserData) {
   return setUser(data);
 }
 
 export async function addExternalUser(
-  data: UserData & ExternalUserReferenceData
+  data: UserData & ExternalUserReferenceData,
+  existingUser?: User
 ) {
-  const store = getExternalUserReferenceStore();
   const { externalId, externalType, ...rest } = data;
 
-  const user = await addUser({
+  const user = existingUser ?? await addUser({
     ...rest,
     externalType,
   });
 
-  const reference: ExternalUserReference = {
+  await setExternalReference({
     externalType,
+    externalId,
     userId: user.userId,
     expiresAt: user.expiresAt,
-  };
-  const key = getExternalReferenceKey(externalType, externalId);
-  await store.set(key, reference);
+  });
 
   return user;
 }

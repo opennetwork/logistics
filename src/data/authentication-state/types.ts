@@ -14,6 +14,7 @@ export type AuthenticationStateType =
 
 export interface AuthenticationStateFromData {
   type: AuthenticationStateType | string;
+  stateId?: string;
   createdAt: string;
   from?: AuthenticationStateFromData;
 }

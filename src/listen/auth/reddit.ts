@@ -18,6 +18,8 @@ import {
 import { packageIdentifier } from "../../package";
 import { getExpiresAt, MONTH_MS } from "../../data";
 import "@fastify/cookie";
+import {authenticate} from "../authentication";
+import {getMaybeAuthenticationState, getMaybeUser} from "../../authentication";
 
 interface RedditUserContent extends Record<string, unknown> {
   author_flair_text?: string;
@@ -111,6 +113,7 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
 
     fastify.get<Schema>("/reddit/callback", {
       schema,
+      preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request, response) {
         const { code, state: stateKey } = request.query;
 
@@ -144,27 +147,30 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
             .map((entry) => entry[0]),
         ]);
 
-        const internalUser = await getExternalUser("reddit", me.name);
+        const existingUser = getMaybeUser();
+        const internalUser = await getExternalUser("reddit", me.name, existingUser);
 
-        const userRoles = await getUserAuthenticationRoleForUser(internalUser);
+        if (!existingUser) {
+          const userRoles = await getUserAuthenticationRoleForUser(internalUser);
 
-        const { stateId, expiresAt } = await addCookieState({
-          userId: internalUser.userId,
-          roles: [...new Set<AuthenticationRole>([
-            ...roles,
-            ...(userRoles?.roles ?? [])
-          ])],
-          from: {
-            type: "reddit",
-            createdAt: state.createdAt,
-          },
-        });
+          const { stateId, expiresAt } = await addCookieState({
+            userId: internalUser.userId,
+            roles: [...new Set<AuthenticationRole>([
+              ...roles,
+              ...(userRoles?.roles ?? [])
+            ])],
+            from: {
+              type: "reddit",
+              createdAt: state.createdAt,
+            },
+          });
 
-        response.setCookie("state", stateId, {
-          path: "/",
-          signed: true,
-          expires: new Date(expiresAt),
-        });
+          response.setCookie("state", stateId, {
+            path: "/",
+            signed: true,
+            expires: new Date(expiresAt),
+          });
+        }
 
         const authState = userState ?
             await getAuthenticationState(userState)
@@ -359,6 +365,7 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
     };
     fastify.get<Schema>("/reddit/redirect", {
       schema,
+      preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request, response) {
         const { state: userState } = request.query;
 
@@ -369,12 +376,19 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
           REDDIT_REDIRECT_URL ||
           `${getOrigin()}${fastify.prefix}/reddit/callback`;
 
+        const currentState = getMaybeAuthenticationState();
+
         const { stateKey, expiresAt } = await addAuthenticationState({
           type: "reddit",
           userState,
           externalScope: scope,
           redirectUrl,
-          // externalPermissions: permissions
+          from: currentState ? {
+            type: currentState.type,
+            stateId: currentState.stateId,
+            createdAt: currentState.createdAt,
+            from: currentState.from
+          } : undefined,
         });
 
         const url = new URL("/api/v1/authorize", "https://ssl.reddit.com");

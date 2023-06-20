@@ -14,6 +14,8 @@ import {
   getInviteURL,
 } from "../../data";
 import "@fastify/cookie";
+import {authenticate} from "../authentication";
+import {getMaybeAuthenticationState, getMaybeUser} from "../../authentication";
 
 interface DiscordRole extends Record<string, unknown> {
   id: string;
@@ -91,6 +93,7 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
     };
     fastify.get<Schema>("/discord/callback", {
       schema,
+      preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request, response) {
         const { code, state: stateKey } = request.query;
 
@@ -131,27 +134,30 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
 
         const roles = mapRoles();
 
-        const internalUser = await getExternalUser("discord", user.id);
+        const existingUser = getMaybeUser();
+        const internalUser = await getExternalUser("discord", user.id, existingUser);
 
-        const userRoles = await getUserAuthenticationRoleForUser(internalUser);
+        if (!existingUser) {
+          const userRoles = await getUserAuthenticationRoleForUser(internalUser);
 
-        const { stateId, expiresAt } = await addCookieState({
-          userId: internalUser.userId,
-          roles: [...new Set<AuthenticationRole>([
-            ...roles,
-            ...(userRoles?.roles ?? [])
-          ])],
-          from: {
-            type: "discord",
-            createdAt: state.createdAt,
-          },
-        });
+          const { stateId, expiresAt } = await addCookieState({
+            userId: internalUser.userId,
+            roles: [...new Set<AuthenticationRole>([
+              ...roles,
+              ...(userRoles?.roles ?? [])
+            ])],
+            from: {
+              type: "discord",
+              createdAt: state.createdAt,
+            },
+          });
 
-        response.setCookie("state", stateId, {
-          path: "/",
-          signed: true,
-          expires: new Date(expiresAt),
-        });
+          response.setCookie("state", stateId, {
+            path: "/",
+            signed: true,
+            expires: new Date(expiresAt),
+          });
+        }
 
         const authState = userState ?
             await getAuthenticationState(userState)
@@ -260,6 +266,7 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
     };
     fastify.get<Schema>("/discord/redirect", {
       schema,
+      preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request, response) {
         const { bot, state: userState } = request.query;
 
@@ -269,11 +276,19 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
         const permissions =
           bot && DISCORD_BOT_PERMISSIONS ? +DISCORD_BOT_PERMISSIONS : undefined;
 
+        const currentState = getMaybeAuthenticationState();
+
         const { stateKey, expiresAt } = await addAuthenticationState({
           type: "discord",
           userState,
           externalScope: scope,
           externalPermissions: permissions,
+          from: currentState ? {
+            type: currentState.type,
+            stateId: currentState.stateId,
+            createdAt: currentState.createdAt,
+            from: currentState.from
+          } : undefined,
         });
 
         if (!url) {

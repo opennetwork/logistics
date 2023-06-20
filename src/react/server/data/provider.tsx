@@ -3,7 +3,7 @@ import {
   Partner,
   Organisation,
   User,
-  Product, Offer, Order, PaymentMethod,
+  Product, Offer, Order, PaymentMethod, AuthenticationState,
 } from "../../../data";
 import {createContext, ProviderProps, useContext, useMemo} from "react";
 import { ok } from "../../../is";
@@ -28,6 +28,7 @@ export interface ReactData {
   organisations: Organisation[];
   partners?: Partner[];
   user?: User;
+  authenticationState?: AuthenticationState;
   roles?: AuthenticationRole[];
   products?: Product[];
   offers?: Offer[];
@@ -62,6 +63,17 @@ export function useUser(): User {
   const user = useMaybeUser();
   ok(user, "Expected user");
   return user;
+}
+
+export function useMaybeAuthenticationState(): AuthenticationState | undefined {
+  const { authenticationState } = useData();
+  return authenticationState;
+}
+
+export function useAuthenticationState(): AuthenticationState {
+  const authenticationState = useMaybeAuthenticationState();
+  ok(authenticationState, "Expected authenticationState");
+  return authenticationState;
 }
 
 export function useMaybeBody<B>(): B | undefined {
