@@ -21,7 +21,9 @@ import { getOrigin } from "../listen/config";
 import {View} from "./types";
 import {getConfig} from "../config";
 import {getViews} from "./views";
-import {name} from "../package";
+import {importmapPrefix, importmapRoot, importmapRootName, name, root} from "../package";
+import etag from "@fastify/etag";
+import files from "@fastify/static";
 
 export * from "./error";
 export * from "./types";
@@ -29,6 +31,38 @@ export * from "./types";
 const { pathname } = new URL(import.meta.url);
 const DIRECTORY = dirname(pathname);
 export const REACT_CLIENT_DIRECTORY = join(DIRECTORY, "../react/client");
+
+export async function fileRoutes(fastify: FastifyInstance) {
+  fastify.register(etag);
+  fastify.addHook("onRequest", (request, response, done) => {
+    response.header("Cache-Control", "max-age=1800"); // Give it something
+    done();
+  });
+  fastify.register(files, {
+    root: REACT_CLIENT_DIRECTORY,
+    prefix: `/${name}/client`,
+  });
+  const publicPath = join(root, "./public");
+  fastify.register(files, {
+    root: publicPath,
+    decorateReply: false,
+    prefix: `/${name}/public`,
+  });
+  try {
+    fastify.register(files, {
+      root: publicPath,
+      decorateReply: false,
+      prefix: "/public",
+    });
+  } catch {}
+  fastify.register(files, {
+    // Relative to top level of this module
+    // NOT relative to cwd
+    root: importmapRoot,
+    prefix: `${importmapPrefix ? `/${importmapPrefix}/` : ""}${importmapRootName}`,
+    decorateReply: false,
+  });
+}
 
 export async function styleRoutes(fastify: FastifyInstance) {
   fastify.get(`/${name}/server.css`, async (request, response) => {
@@ -40,6 +74,7 @@ export async function styleRoutes(fastify: FastifyInstance) {
 export async function viewRoutes(fastify: FastifyInstance) {
   const { ALLOW_ANONYMOUS_VIEWS, ENABLE_CACHE, DEFAULT_TIMEZONE = "Pacific/Auckland" } = process.env;
 
+  fastify.register(fileRoutes);
   fastify.register(styleRoutes);
 
   function createPathHandler(

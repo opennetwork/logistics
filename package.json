@@ -193,6 +193,7 @@
   },
   "importmap": {
     "root": "esnext/imports",
+    "prefix": ":name",
     "imports": {
       "react/jsx-runtime": "scripts/bridge/jsx-runtime.js",
       "react": "node_modules/react/index.js",

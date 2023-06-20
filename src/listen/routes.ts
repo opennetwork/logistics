@@ -1,5 +1,5 @@
 import {FastifyInstance} from "fastify";
-import {viewRoutes} from "../view";
+import {REACT_CLIENT_DIRECTORY, viewRoutes} from "../view";
 import {backgroundRoutes} from "./background";
 import {systemLogRoutes} from "./system-log";
 import {partnerRoutes} from "./partner";
@@ -7,6 +7,10 @@ import {authenticationRoutes} from "./auth";
 import {productRoutes} from "./product";
 import {fileRoutes} from "./file";
 import {offerRoutes} from "./offer";
+import etag from "@fastify/etag";
+import files from "@fastify/static";
+import {join} from "node:path";
+import {importmapRoot, importmapRootName, name, root} from "../package";
 
 export async function routes(fastify: FastifyInstance) {
 

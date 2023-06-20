@@ -161,7 +161,7 @@ export function BaseLayout({
   title,
 }: PropsWithChildren<LayoutProps>) {
   const script = `
-    const { client } = await import("/client/pages/index.js");
+    const { client } = await import("/${name}/client/pages/index.js");
     try {
         await client();
     } catch (error) {
