@@ -59,7 +59,7 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                 const credentials = await listUserCredentials(userId);
                 const excludeCredentials = credentials.flatMap((credential) => {
                     return credential.credentialId.split("_")
-                        .map(credentialId => ({
+                        .map((credentialId): PublicKeyCredentialDescriptorFuture => ({
                             id: Buffer.from(credentialId, "base64"),
                             type: "public-key",
                             transports: undefined
@@ -134,8 +134,8 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
             schema,
             preHandler: authenticate(fastify, {anonymous: true}),
             async handler(request, response) {
-                const stateKey = new Headers(request.headers).get("X-Challenge-State");
-                ok(stateKey, "Expected header X-Challenge-State");
+                const stateKey = request.headers["x-challenge-state"];
+                ok(typeof stateKey === "string", "Expected header X-Challenge-State");
                 const {body} = request;
 
                 ok<RegistrationResponseJSON>(body);
