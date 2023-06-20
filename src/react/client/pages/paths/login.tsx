@@ -1,6 +1,7 @@
 import {ok} from "../../utils";
 import {browserSupportsWebAuthn} from "@simplewebauthn/browser";
 import {Authsignal} from "@authsignal/browser";
+import {getAuthsignalClient, getAuthsignalMeta, passkey} from "../../authsignal";
 
 export async function login() {
 
@@ -15,16 +16,6 @@ export async function login() {
     const form = document.getElementById("login-authsignal");
     ok<HTMLFormElement>(form);
 
-    const tenantIdMeta = form.querySelector("meta[name=authsignal-tenant-id]");
-    const regionMeta = form.querySelector("meta[name=authsignal-region]");
-    const trackMeta = form.querySelector("meta[name=authsignal-track-url]");
-
-    ok<HTMLMetaElement>(tenantIdMeta);
-    ok<HTMLMetaElement>(regionMeta);
-    ok<HTMLMetaElement>(trackMeta);
-
-    const trackUrl = trackMeta.content;
-
     const input = form.querySelector("input[name=email]");
     ok<HTMLInputElement>(input);
 
@@ -32,19 +23,6 @@ export async function login() {
     ok<HTMLButtonElement>(submit);
 
     submit.textContent = "Login with Passkey";
-
-    /*
-
-        <meta name="authsignal-tenant-id" content={AUTHSIGNAL_TENANT} />
-        <meta name="authsignal-region" content={AUTHSIGNAL_BASE_URL} />
-     */
-
-    const authsignal = new Authsignal({
-        tenantId: tenantIdMeta.content,
-        baseUrl: regionMeta.content
-    });
-
-    console.log({ authsignal });
 
     form.addEventListener("submit", event => {
         event.preventDefault();
@@ -68,52 +46,6 @@ export async function login() {
 
         const email = input.value;
 
-        const response = await fetch(
-            trackUrl,
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    email
-                }),
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            },
-        );
-
-        const {
-            token,
-            enrolledVerificationMethods,
-            redirectUrl
-        } = await response.json();
-
-        const isPasskeyEnrolled = enrolledVerificationMethods?.includes("PASSKEY");
-
-        console.log({
-            isPasskeyEnrolled
-        })
-
-        let accessToken;
-        if (isPasskeyEnrolled) {
-            accessToken = await authsignal.passkey.signIn({
-                token
-            })
-        } else {
-            accessToken = await authsignal.passkey.signUp({
-                userName: email,
-                token
-            })
-        }
-
-        console.log({ email, accessToken });
-
-        const redirectingUrl = new URL(
-            redirectUrl,
-            location.href
-        );
-
-        redirectingUrl.searchParams.set("token", accessToken);
-
-        location.href = redirectingUrl.toString();
+        await passkey(email, getAuthsignalMeta(form));
     }
 }

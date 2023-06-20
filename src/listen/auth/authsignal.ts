@@ -23,6 +23,7 @@ import { v4 } from "uuid";
 import jsonwebtoken from "jsonwebtoken";
 import { getExpiresAt } from "../../data/expiring-kv";
 import "@fastify/cookie";
+import {setUserCredential} from "../../data/user-credential";
 
 ok(jsonwebtoken.decode);
 
@@ -37,12 +38,32 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         token: {
           type: "string",
         },
+        credentialId: {
+          type: "string",
+          nullable: true
+        },
+        deviceId: {
+          type: "string",
+          nullable: true
+        },
+        name: {
+          type: "string",
+          nullable: true
+        },
+        verifiedAt: {
+          type: "string",
+          nullable: true
+        }
       },
       required: ["token"],
     };
     type Schema = {
       Querystring: {
         token: string;
+        credentialId?: string;
+        deviceId?: string;
+        name?: string;
+        verifiedAt?: string;
       };
     };
     const schema = {
@@ -52,7 +73,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
     fastify.get<Schema>("/authsignal/callback", {
       schema,
       async handler(request, response) {
-        const { token } = request.query;
+        const { token, credentialId } = request.query;
 
         const decoded = jsonwebtoken.decode(token, {
           json: true,
@@ -98,10 +119,19 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           return;
         }
 
-        const userInfo = await authsignal.getUser({
-          userId
-        })
         const user = await getExternalUser("authsignal", userId);
+
+        let userCredential;
+        if (credentialId) {
+          const { deviceId, name, verifiedAt } = request.query;
+          userCredential = await setUserCredential({
+            userId: user.userId,
+            credentialId,
+            deviceId,
+            name,
+            verifiedAt
+          });
+        }
 
         const userRoles = await getUserAuthenticationRoleForUser(user);
 
@@ -117,6 +147,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
             type: "authsignal",
             createdAt: state.createdAt,
           },
+          userCredentialId: userCredential?.userCredentialId
         });
 
         response.setCookie("state", stateId, {

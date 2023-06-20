@@ -38,7 +38,9 @@ export function Login() {
         <meta name="authsignal-tenant-id" content={AUTHSIGNAL_TENANT} />
         <meta name="authsignal-region" content={AUTHSIGNAL_CHALLENGE_API_URL} />
         <meta name="authsignal-track-url" content="/api/authentication/authsignal/track" />
-        <input type="hidden" name="state" value={state} />
+        {
+          state ? <input type="hidden" name="state" value={state} /> : undefined
+        }
         <div className="flex flex-col">
           <label className={FORM_GROUP_CLASS}>
             <span className="text-gray-700">Email Address</span>

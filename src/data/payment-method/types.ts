@@ -9,6 +9,10 @@ export interface PaymentMethodData extends Record<string, unknown> {
   type: PaymentMethodType;
   userId?: string;
   organisationId?: string;
+  paymentMethodName?: string;
+  issuerName?: string;
+  issuerId?: string;
+  issuerPaymentMethodId?: string;
 }
 
 export interface PaymentMethod extends PaymentMethodData {
