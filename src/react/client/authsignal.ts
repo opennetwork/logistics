@@ -5,6 +5,7 @@ import type {PasskeyApiClient} from "@authsignal/browser/dist/api";
 import {startAuthentication, startRegistration} from "@simplewebauthn/browser";
 import {AuthenticationExtensionsClientInputs} from "@simplewebauthn/typescript-types/dist/dom";
 import {PublicKeyCredentialRequestOptionsJSON} from "@simplewebauthn/typescript-types";
+import {AddAuthenticatorRequest, VerifyRequest} from "@authsignal/browser/dist/api/types";
 
 interface AuthsignalMeta {
     tenantId: string;
@@ -190,13 +191,11 @@ class AuthsignalCustomPasskey {
                 }
             }
             const authenticationResponse = await startAuthentication(options, params?.autofill);
-
-            const verifyResponse = await this.api.verify({
+            const verifyResponse = await this.verifyAuthenticator({
                 challengeId: optionsResponse.challengeId,
                 authenticationCredential: authenticationResponse,
                 token: params?.token,
             });
-
             return verifyResponse?.accessToken;
         } catch (error) {
             console.error(error);
@@ -219,8 +218,7 @@ class AuthsignalCustomPasskey {
             };
             console.log(options);
             const registrationResponse = await startRegistration(options);
-
-            const addAuthenticatorResponse = await this.api.addAuthenticator({
+            const addAuthenticatorResponse = await this.addAuthenticator({
                 challengeId: optionsResponse.challengeId,
                 registrationCredential: registrationResponse,
                 token,
@@ -229,6 +227,14 @@ class AuthsignalCustomPasskey {
         } catch (error) {
             console.error(error);
         }
+    }
+
+    verifyAuthenticator(request: VerifyRequest) {
+        return this.api.verify(request);
+    }
+
+    addAuthenticator(request: AddAuthenticatorRequest) {
+        return this.api.addAuthenticator(request);
     }
 }
 
