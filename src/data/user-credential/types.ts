@@ -1,8 +1,10 @@
 import {Expiring} from "../expiring";
 
-export interface UserCredentialData extends Expiring {
+export interface UserCredentialData extends Expiring, Record<string, unknown> {
   userId: string;
   credentialId: string;
+  credentialPublicKey?: string;
+  credentialCounter?: number;
   deviceId?: string;
   name?: string;
   verifiedAt?: string;

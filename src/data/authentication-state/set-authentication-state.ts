@@ -10,7 +10,7 @@ export async function setAuthenticationState(
   data: AuthenticationStateData & Partial<AuthenticationState>
 ) {
   const stateId = data.stateId || v4();
-  const stateKey = data.stateKey || stateId;
+  const stateKey = stateId;
   const createdAt = data.createdAt || new Date().toISOString();
   const state: AuthenticationState = {
     createdAt,
