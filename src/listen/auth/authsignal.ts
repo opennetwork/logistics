@@ -19,7 +19,7 @@ import {
 } from "../../authentication/authsignal";
 import { createHash } from "crypto";
 import { getClientIp } from "request-ip";
-import { v4 } from "uuid";
+import {v4, validate} from "uuid";
 import jsonwebtoken from "jsonwebtoken";
 import { getExpiresAt } from "../../data/expiring-kv";
 import "@fastify/cookie";
@@ -95,7 +95,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
 
         ok(state, "Expected to find authentication state");
 
-        const { type, userId, userState } = state;
+        const { type, userId, userState, authenticatorUserId } = state;
 
         ok(type === "authsignal", "Expected type to be authsignal");
         ok(userId === sub, "Expected token subject to match our given userId");
@@ -133,7 +133,12 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
             credentialId,
             deviceId,
             name,
-            verifiedAt
+            verifiedAt,
+            authenticatorUserId: (
+                typeof authenticatorUserId === "string" ?
+                    authenticatorUserId :
+                    undefined
+            )
           });
         }
 
@@ -214,7 +219,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           type: "string",
           nullable: true,
         },
-        authenticatorId: {
+        authenticatorUserId: {
           type: "string",
           nullable: true
         }
@@ -226,7 +231,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         actionCode?: string;
         deviceId?: string;
         state?: string;
-        authenticatorId?: string;
+        authenticatorUserId?: string;
       };
       Querystring: {
         state?: string
@@ -234,18 +239,18 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
     };
 
     async function getAuthsignalState(request: FastifyRequest<Schema>) {
-      const { email, deviceId, state: userStateBody, actionCode: givenActionCode, authenticatorId } = request.body;
+      const { email, deviceId, state: userStateBody, actionCode: givenActionCode, authenticatorUserId: givenAuthenticatorUserId } = request.body;
       const { state: userStateQuery } = request.query;
       const userState = userStateBody || userStateQuery;
 
       const hash = createHash("sha256");
       hash.update(AUTHSIGNAL_TENANT);
+      let authenticatorUserId = givenAuthenticatorUserId;
       if (email) {
         hash.update(email);
-      } else if (authenticatorId) {
-        hash.update(authenticatorId);
       } else {
-        hash.update(v4());
+        authenticatorUserId = (authenticatorUserId && validate(authenticatorUserId)) ? authenticatorUserId : v4();
+        hash.update(authenticatorUserId);
       }
       const userId = hash.digest().toString("hex");
 
@@ -292,6 +297,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         authsignalEnrolledVerificationMethods: enrolledVerificationMethods,
         expiresAt: getExpiresAt(DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS),
         userState,
+        authenticatorUserId,
         from: currentState ? {
           type: currentState.type,
           stateId: currentState.stateId,

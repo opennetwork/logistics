@@ -6,6 +6,7 @@ export interface UserCredentialData extends Expiring {
   deviceId?: string;
   name?: string;
   verifiedAt?: string;
+  authenticatorUserId?: string;
 }
 
 export interface UserCredential extends UserCredentialData {
