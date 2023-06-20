@@ -1,5 +1,10 @@
-import {Authsignal} from "@authsignal/browser";
+import {Authsignal, AuthsignalOptions} from "@authsignal/browser";
 import {ok} from "./utils";
+import type {Passkey} from "@authsignal/browser/dist/passkey";
+import type {PasskeyApiClient} from "@authsignal/browser/dist/api";
+import {startAuthentication, startRegistration} from "@simplewebauthn/browser";
+import {AuthenticationExtensionsClientInputs} from "@simplewebauthn/typescript-types/dist/dom";
+import {PublicKeyCredentialRequestOptionsJSON} from "@simplewebauthn/typescript-types";
 
 interface AuthsignalMeta {
     tenantId: string;
@@ -23,13 +28,13 @@ export function getAuthsignalMeta(element = document.body): AuthsignalMeta {
     };
 }
 
-const clients = new WeakMap<AuthsignalMeta, Authsignal>();
+const clients = new WeakMap<AuthsignalMeta, AuthsignalCustomClient>();
 
-export function getAuthsignalClient(meta = getAuthsignalMeta()) {
+export function getAuthsignalClient(meta = getAuthsignalMeta()): AuthsignalCustomClient {
     const existing = clients.get(meta);
     if (existing) return existing;
     const { tenantId, baseUrl } = meta;
-    const client = new Authsignal({ tenantId, baseUrl });
+    const client = new AuthsignalCustomClient({ tenantId, baseUrl });
     clients.set(meta, client);
     return client;
 }
@@ -71,13 +76,23 @@ export async function passkey(email: string, meta: AuthsignalMeta = getAuthsigna
         const authsignal = getAuthsignalClient(meta);
 
         if (isPasskeyEnrolled) {
-            return await authsignal.passkey.signIn({
+            return await authsignal.extendedPasskey.signIn({
                 token
             })
         } else {
-            return await authsignal.passkey.signUp({
+            return await authsignal.extendedPasskey.signUp({
                 userName: email,
-                token
+                token,
+                authenticatorSelection: {
+                    userVerification: "required",
+                    residentKey: "required",
+                    authenticatorAttachment: "platform",
+                },
+                extensions: {
+                    "payment": {
+                        isPayment: true,
+                    }
+                }
             })
         }
 
@@ -117,4 +132,93 @@ export async function passkey(email: string, meta: AuthsignalMeta = getAuthsigna
         const found = authenticators.find(authenticator => authenticator.verificationMethod === "PASSKEY");
         return found?.webauthnCredential
     }
+}
+
+class AuthsignalCustomPasskey {
+
+    base: Passkey;
+
+    constructor(base: Passkey) {
+        this.base = base;
+    }
+
+    private get api(): PasskeyApiClient {
+        const base: unknown = this.base;
+        ok<{ api: PasskeyApiClient }>(base);
+        return base.api;
+    };
+
+    signIn(params?: { token: string, extensions?: Record<string, unknown> }): Promise<string | undefined>;
+    signIn(params?: { autofill: boolean, extensions?: Record<string, unknown> }): Promise<string | undefined>;
+    async signIn(params?: {token?: string; autofill?: boolean, extensions?: Record<string, unknown> } | undefined) {
+        if (params?.token && params.autofill) {
+            throw new Error("Autofill is not supported when providing a token");
+        }
+
+        const optionsResponse = await this.api.authenticationOptions({token: params?.token});
+
+        try {
+            const givenOptions: PublicKeyCredentialRequestOptionsJSON = optionsResponse.options;
+            const options: PublicKeyCredentialRequestOptionsJSON = {
+                ...givenOptions,
+                extensions: {
+                    ...givenOptions.extensions,
+                    ...params.extensions
+                }
+            }
+            const authenticationResponse = await startAuthentication(options, params?.autofill);
+
+            const verifyResponse = await this.api.verify({
+                challengeId: optionsResponse.challengeId,
+                authenticationCredential: authenticationResponse,
+                token: params?.token,
+            });
+
+            return verifyResponse?.accessToken;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async signUp({userName, token, extensions, authenticatorSelection}: { userName: string, token: string, extensions?: Record<string, unknown>, authenticatorSelection?: Record<string, unknown> }): Promise<string | undefined> {
+        const optionsResponse = await this.api.registrationOptions({userName, token});
+        try {
+            const options = {
+                ...optionsResponse.options,
+                authenticatorSelection: {
+                    ...optionsResponse.options.authenticatorSelection,
+                    ...authenticatorSelection
+                },
+                extensions: {
+                    ...optionsResponse.options.extensions,
+                    ...extensions
+                }
+            };
+            console.log(options);
+            const registrationResponse = await startRegistration(options);
+
+            const addAuthenticatorResponse = await this.api.addAuthenticator({
+                challengeId: optionsResponse.challengeId,
+                registrationCredential: registrationResponse,
+                token,
+            });
+            return addAuthenticatorResponse?.accessToken;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+}
+
+class AuthsignalCustomClient extends Authsignal {
+
+    extendedPasskey: AuthsignalCustomPasskey;
+
+    constructor(options: AuthsignalOptions) {
+        super(options);
+        this.extendedPasskey = new AuthsignalCustomPasskey(this.passkey);
+        const passkey: unknown = this.extendedPasskey;
+        ok<Passkey>(passkey);
+        this.passkey = passkey;
+    }
+
 }

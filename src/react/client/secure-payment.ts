@@ -67,6 +67,7 @@ export interface PaymentMethodInfo {
 }
 
 export async function authenticatePaymentMethod({ credentialIds, challenge, paymentMethodName, payeeOrigin }: PaymentMethodInfo) {
+    console.log(`${location.hostname}`)
     const request = new PaymentRequest([{
         // Specify `secure-payment-confirmation` as payment method.
         supportedMethods: "secure-payment-confirmation",
@@ -120,6 +121,7 @@ export async function authenticatePaymentMethod({ credentialIds, challenge, paym
         // } else {
         //     await response.complete('fail');
         // }
+
     } catch (err) {
         // SPC cannot be used; merchant should fallback to traditional flows
         console.error(err);
