@@ -15,10 +15,10 @@
     "@jridgewell/gen-mapping" "^0.3.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
-"@authsignal/browser@^0.1.6":
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/@authsignal/browser/-/browser-0.1.6.tgz#1ce6a2f66deb77aa4a42ad483d23e66ab9ad9bdc"
-  integrity sha512-u7FPo5nlEiYMADyXzJmgFBFq1DMkSC+cwJo0kOufXwWOhkaQoEc7RpdChrP5FzieY8C71hewCn0Nh6k4YahrNA==
+"@authsignal/browser@^0.1.7":
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/@authsignal/browser/-/browser-0.1.7.tgz#c7111d46efd5b5c1a38afad54d5ff5d1e6804c6f"
+  integrity sha512-fm6NciWUCu3iAx5uSH7mW4u4vFIRK1/UrTW5mOSYUxmqtzhYrO2FY/RsUVDX46oq21QcQ6w1ZmQq6uVYvjkyWQ==
   dependencies:
     "@fingerprintjs/fingerprintjs" "^3.3.6"
     "@simplewebauthn/browser" "^7.2.0"

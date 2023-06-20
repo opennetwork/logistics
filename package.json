@@ -55,7 +55,7 @@
   "author": "Fabian Cook <hello@fabiancook.dev>",
   "license": "MIT",
   "dependencies": {
-    "@authsignal/browser": "^0.1.6",
+    "@authsignal/browser": "^0.1.7",
     "@authsignal/node": "^0.0.43",
     "@aws-sdk/client-s3": "^3.350.0",
     "@aws-sdk/s3-request-presigner": "^3.350.0",

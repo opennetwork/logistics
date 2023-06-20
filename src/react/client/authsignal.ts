@@ -158,7 +158,7 @@ export async function passkey({ email, payment }: PasskeyOptions, meta: Authsign
     }
 }
 
-class AuthsignalCustomPasskey {
+class AuthsignalCustomPasskey implements Passkey {
 
     base: Passkey;
 
@@ -166,10 +166,8 @@ class AuthsignalCustomPasskey {
         this.base = base;
     }
 
-    private get api(): PasskeyApiClient {
-        const base: unknown = this.base;
-        ok<{ api: PasskeyApiClient }>(base);
-        return base.api;
+    get api(): PasskeyApiClient {
+        return this.base.api;
     };
 
     signIn(params?: { token: string, extensions?: Record<string, unknown> }): Promise<string | undefined>;
@@ -191,7 +189,7 @@ class AuthsignalCustomPasskey {
                 }
             }
             const authenticationResponse = await startAuthentication(options, params?.autofill);
-            const verifyResponse = await this.verifyAuthenticator({
+            const verifyResponse = await this.api.verify({
                 challengeId: optionsResponse.challengeId,
                 authenticationCredential: authenticationResponse,
                 token: params?.token,
@@ -218,7 +216,7 @@ class AuthsignalCustomPasskey {
             };
             console.log(options);
             const registrationResponse = await startRegistration(options);
-            const addAuthenticatorResponse = await this.addAuthenticator({
+            const addAuthenticatorResponse = await this.api.addAuthenticator({
                 challengeId: optionsResponse.challengeId,
                 registrationCredential: registrationResponse,
                 token,
@@ -227,14 +225,6 @@ class AuthsignalCustomPasskey {
         } catch (error) {
             console.error(error);
         }
-    }
-
-    verifyAuthenticator(request: VerifyRequest) {
-        return this.api.verify(request);
-    }
-
-    addAuthenticator(request: AddAuthenticatorRequest) {
-        return this.api.addAuthenticator(request);
     }
 }
 
