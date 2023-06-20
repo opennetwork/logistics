@@ -5,6 +5,7 @@ import {View} from "../../view";
 
 export * from "./data";
 export * from "./paths";
+export * from "./layout";
 
 export interface OpenNetworkServerProps extends ReactData {
   url: string;

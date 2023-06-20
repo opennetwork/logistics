@@ -5,7 +5,7 @@ import { useData, useIsTrusted, useQuery, useQuerySearch } from "./data";
 import { importmapPath, name } from "../../package";
 import { readFile } from "node:fs/promises";
 
-const importMapJSON = await readFile(importmapPath, "utf-8");
+export const importMapJSON = await readFile(importmapPath, "utf-8");
 
 export interface LayoutProps {
   title?: string;
