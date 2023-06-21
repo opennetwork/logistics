@@ -13,6 +13,7 @@ export async function home() {
     console.log("Hello from home!");
 
     const element = document.getElementById("react-home");
+    if (!element) return;
     const root = ReactDOM.createRoot(element);
     root.render(<Home />);
 
