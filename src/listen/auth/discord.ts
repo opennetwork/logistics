@@ -136,9 +136,7 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
 
         const existingUser = getMaybeUser();
         const externalUser = await getExternalReference("discord", user.id);
-        if (externalUser && !existingUser) {
-          throw new Error("Login required before linking user");
-        }
+        
         if (externalUser && existingUser && externalUser.userId !== existingUser.userId) {
           throw new Error("Expected user to be logged in");
         }

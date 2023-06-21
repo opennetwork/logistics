@@ -272,9 +272,6 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
       const externalUser = await getExternalReference("authsignal", userId);
       const existingUser = getMaybeUser();
 
-      if (externalUser && !existingUser) {
-        throw new Error("Login required before linking user");
-      }
       if (externalUser && existingUser && externalUser.userId !== existingUser.userId) {
         throw new Error("Expected user to be logged in");
       }
