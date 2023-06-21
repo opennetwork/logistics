@@ -11,7 +11,7 @@ import {
   getExternalUser,
   getUserAuthenticationRoleForUser,
   getAuthenticationState,
-  getInviteURL,
+  getInviteURL, getExternalReference,
 } from "../../data";
 import "@fastify/cookie";
 import {authenticate} from "../authentication";
@@ -135,6 +135,14 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
         const roles = mapRoles();
 
         const existingUser = getMaybeUser();
+        const externalUser = await getExternalReference("discord", user.id);
+        if (externalUser && !existingUser) {
+          throw new Error("Login required before linking user");
+        }
+        if (externalUser && existingUser && externalUser.userId !== existingUser.userId) {
+          throw new Error("Expected user to be logged in");
+        }
+
         const internalUser = await getExternalUser("discord", user.id, existingUser);
 
         if (!existingUser) {

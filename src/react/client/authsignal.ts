@@ -68,10 +68,11 @@ export function getAuthsignalClient(meta = getAuthsignalMeta()): AuthsignalCusto
 
 export interface PasskeyOptions {
     email?: string;
-    payment?: boolean
+    payment?: boolean;
+    register?: boolean;
 }
 
-export async function authsignalPasskey({ email, payment }: PasskeyOptions, meta: AuthsignalMeta = getAuthsignalMeta()) {
+export async function authsignalPasskey({ email, payment, register }: PasskeyOptions, meta: AuthsignalMeta = getAuthsignalMeta()) {
     const { baseUrl } = meta;
 
     const authenticatorUserId = payment ?
@@ -113,7 +114,7 @@ export async function authsignalPasskey({ email, payment }: PasskeyOptions, meta
     }
 
     async function getAccessToken() {
-        const isPasskeyEnrolled = enrolledVerificationMethods?.includes("PASSKEY");
+        const isPasskeyEnrolled = !register && enrolledVerificationMethods?.includes("PASSKEY");
 
         const authsignal = getAuthsignalClient(meta);
 
@@ -134,7 +135,7 @@ export async function authsignalPasskey({ email, payment }: PasskeyOptions, meta
                         "payment": {
                             isPayment: true,
                         }
-                    }
+                    },
                 }
             }
             return await authsignal.extendedPasskey.signUp({
@@ -155,13 +156,15 @@ export async function authsignalPasskey({ email, payment }: PasskeyOptions, meta
                 body: JSON.stringify({
                     email,
                     authenticatorUserId,
-                    authenticatorType
+                    authenticatorType,
+                    register
                 }),
                 headers: {
                     "Content-Type": "application/json"
                 }
             },
         );
+        ok(response.ok);
         return await response.json();
     }
 
@@ -177,6 +180,7 @@ export async function authsignalPasskey({ email, payment }: PasskeyOptions, meta
                 }
             }
         );
+        ok(response.ok);
         const authenticators = await response.json();
         ok(Array.isArray(authenticators));
         const found = authenticators.find(authenticator => authenticator.verificationMethod === "PASSKEY");

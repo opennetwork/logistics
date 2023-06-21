@@ -9,7 +9,6 @@ import {startAuthentication, startRegistration} from "@simplewebauthn/browser";
 
 export interface AuthenticateOptions extends WebAuthnOptionsOptions {
     payment?: boolean;
-    register?: boolean;
 }
 
 export async function authenticate(options: AuthenticateOptions) {
@@ -51,6 +50,9 @@ export async function authenticate(options: AuthenticateOptions) {
 
     let response;
     if (options.register || !authentication) {
+        if (!registration) {
+            return alert("Can only register new credentials on original device");
+        }
         response = await verify({
             registration: await startRegistration(registration.options),
             state: registration.state
@@ -69,6 +71,7 @@ export async function authenticate(options: AuthenticateOptions) {
 
 export interface WebAuthnOptionsOptions {
     email?: string
+    register?: boolean;
     authenticatorType?: string;
     registration?: Record<string, unknown>
     authentication?: Record<string, unknown>

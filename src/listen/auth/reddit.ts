@@ -13,7 +13,7 @@ import {
   getExternalUser,
   getUserAuthenticationRoleForUser,
   getAuthenticationState,
-  getInviteURL,
+  getInviteURL, getExternalReference,
 } from "../../data";
 import { packageIdentifier } from "../../package";
 import { getExpiresAt, MONTH_MS } from "../../data";
@@ -148,6 +148,14 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
         ]);
 
         const existingUser = getMaybeUser();
+        const externalUser = await getExternalReference("reddit", me.name);
+        if (externalUser && !existingUser) {
+          throw new Error("Login required before linking user");
+        }
+        if (externalUser && existingUser && externalUser.userId !== existingUser.userId) {
+          throw new Error("Expected user to be logged in");
+        }
+
         const internalUser = await getExternalUser("reddit", me.name, existingUser);
 
         if (!existingUser) {

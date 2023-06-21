@@ -16,16 +16,37 @@ export async function login() {
     const form = document.getElementById("login-authsignal");
     ok<HTMLFormElement>(form);
 
+    const isNative = !isAuthsignalMeta(form);
+
     const input = form.querySelector("input[name=email]");
-    ok<HTMLInputElement>(input);
 
     const submit = form.querySelector("button[type=submit]");
     ok<HTMLButtonElement>(submit);
 
     submit.textContent = "Login with Passkey";
 
+    const register = submit.cloneNode(true);
+    ok<HTMLButtonElement>(register);
+    register.textContent = "Register new Passkey";
+    register.type = "button";
+    submit.parentElement.appendChild(register);
+
+    register.addEventListener("click", event => {
+        event.preventDefault();
+
+        onSubmit(true);
+    })
+
     form.addEventListener("submit", event => {
         event.preventDefault();
+
+        onSubmit();
+    })
+
+    function onSubmit(isRegister?: boolean) {
+        ok<HTMLInputElement>(input);
+        ok<HTMLButtonElement>(submit);
+        ok<HTMLButtonElement>(register);
 
         if (!input.value?.trim()) {
             return;
@@ -33,23 +54,26 @@ export async function login() {
 
         input.disabled = true;
         submit.disabled = true;
-        void onSubmit()
+        register.disabled = true;
+
+        void onSubmitAsync(isRegister)
             .finally(() => {
                 input.disabled = false;
                 submit.disabled = false;
+                register.disabled = false;
             });
-    })
+    }
 
-    async function onSubmit() {
+    async function onSubmitAsync(isRegister?: boolean) {
         ok<HTMLFormElement>(form);
         ok<HTMLInputElement>(input);
 
         const email = input.value;
 
-        if (isAuthsignalMeta(form)) {
-            await authsignalPasskey({ email });
+        if (isNative) {
+            await authenticate({ email, register: isRegister });
         } else {
-            await authenticate({ email });
+            await authsignalPasskey({ email, register: isRegister });
         }
     }
 }

@@ -62,7 +62,7 @@ export function Login() {
         <div id="action-section">
           <button
             type="submit"
-            className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white"
+            className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white mr-2"
           >
             Login with Email
           </button>

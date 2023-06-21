@@ -82,9 +82,14 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
             async handler(request, response) {
                 const { email, authenticatorType, registration, authentication, redirectUrl } = request.body;
                 const externalId = createUserId();
-                const userId: string | undefined = getMaybeUser()?.userId || (
-                    await getExternalReference("credential", externalId)
-                )?.userId;
+                const reference = await getExternalReference("credential", externalId);
+                const existingUser = getMaybeUser();
+
+                if (reference && existingUser && reference.userId !== existingUser.userId) {
+                    throw new Error("Expected user to be logged in");
+                }
+
+                const userId: string | undefined = existingUser?.userId || reference?.userId;
                 const credentials = userId ? await listUserCredentials(userId) : []
 
                 const registrationPromise = createRegistration();
@@ -132,6 +137,9 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                 }
 
                 async function createRegistration() {
+                    if (reference && !existingUser) {
+                        return undefined;
+                    }
                     const excludeCredentials = credentials.flatMap((credential) => {
                         return credential.credentialId.split("_")
                             .map((credentialId): PublicKeyCredentialDescriptorFuture => ({
@@ -223,12 +231,21 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                 await deleteAuthenticationState(state.stateId);
 
                 const reference = await getExternalReference("credential", state.externalId);
+                const existingUser = getMaybeUser();
+
+                const { registration, authentication } = request.body;
+
+                if (registration && reference && !existingUser) {
+                    throw new Error("Login required before linking user");
+                }
+                if (reference && existingUser && reference.userId !== existingUser.userId) {
+                    throw new Error("Expected user to be logged in");
+                }
 
                 const expectedChallenge = state.challenge;
                 const redirectUrl = state.redirectUrl || WEBAUTHN_REDIRECT_URL || "/";
 
                 try {
-                    const { registration, authentication } = request.body;
                     if (registration) {
                         console.log(registration);
                         ok<RegistrationResponseJSON>(body);

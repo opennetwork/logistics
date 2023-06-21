@@ -10,7 +10,7 @@ import {
   getExternalUser,
   getInviteURL,
   getUserAuthenticationRoleForUser,
-  AuthenticationRole,
+  AuthenticationRole, getExternalReference,
 } from "../../data";
 import {
   authsignal,
@@ -231,6 +231,10 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         authenticatorType: {
           type: "string",
           nullable: true
+        },
+        register: {
+          type: "boolean",
+          nullable: true
         }
       }
     };
@@ -242,6 +246,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         state?: string;
         authenticatorUserId?: string;
         authenticatorType?: string;
+        register?: boolean;
       };
       Querystring: {
         state?: string
@@ -249,7 +254,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
     };
 
     async function getAuthsignalState(request: FastifyRequest<Schema>) {
-      const { email, deviceId, state: userStateBody, actionCode: givenActionCode, authenticatorUserId: givenAuthenticatorUserId, authenticatorType } = request.body;
+      const { email, deviceId, state: userStateBody, actionCode: givenActionCode, authenticatorUserId: givenAuthenticatorUserId, authenticatorType, register } = request.body;
       const { state: userStateQuery } = request.query;
       const userState = userStateBody || userStateQuery;
 
@@ -264,6 +269,16 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
       }
       const userId = hash.digest().toString("hex");
 
+      const externalUser = await getExternalReference("authsignal", userId);
+      const existingUser = getMaybeUser();
+
+      if (externalUser && !existingUser) {
+        throw new Error("Login required before linking user");
+      }
+      if (externalUser && existingUser && externalUser.userId !== existingUser.userId) {
+        throw new Error("Expected user to be logged in");
+      }
+
       const { isEnrolled, enrolledVerificationMethods = [] } = await authsignal.getUser({
         userId,
       });
@@ -272,7 +287,13 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
           AUTHSIGNAL_REDIRECT_URL ||
           `${getOrigin()}${fastify.prefix}/authsignal/callback`;
 
-      const actionCode = isEnrolled ? (givenActionCode || "authenticate") : "enroll";
+      const actionCode = register ?
+          "enroll" :
+          (
+              isEnrolled ?
+                  (givenActionCode || "authenticate") :
+                  "enroll"
+          );
       const ipAddress = getClientIp(request.raw);
 
       const stateId = v4();
@@ -292,6 +313,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         userAgent: request.headers["user-agent"],
         ipAddress: ipAddress || undefined,
         redirectUrl,
+        scope: register ? "enroll" : undefined
       });
 
       const currentState = getMaybeAuthenticationState();
