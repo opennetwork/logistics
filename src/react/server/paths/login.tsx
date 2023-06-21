@@ -1,7 +1,7 @@
 import { useData } from "../data";
 import {DISCORD_CLIENT_ID} from "../../../listen/auth/discord";
 import {REDDIT_CLIENT_ID} from "../../../listen/auth/reddit";
-import {AUTHSIGNAL_CHALLENGE_API_URL, AUTHSIGNAL_TENANT} from "../../../authentication/authsignal";
+import {AUTHSIGNAL_CHALLENGE_API_URL, AUTHSIGNAL_TENANT, AUTHSIGNAL_WEBAUTHN} from "../../../authentication/authsignal";
 
 export const path = "/login";
 export const anonymous = true;
@@ -35,9 +35,15 @@ export function Login() {
         action="/api/authentication/authsignal/redirect"
         method="post"
       >
-        <meta name="authsignal-tenant-id" content={AUTHSIGNAL_TENANT} />
-        <meta name="authsignal-region" content={AUTHSIGNAL_CHALLENGE_API_URL} />
-        <meta name="authsignal-track-url" content="/api/authentication/authsignal/track" />
+        {
+          AUTHSIGNAL_WEBAUTHN ? (
+            <>
+              <meta name="authsignal-tenant-id" content={AUTHSIGNAL_TENANT} />
+              <meta name="authsignal-region" content={AUTHSIGNAL_CHALLENGE_API_URL} />
+              <meta name="authsignal-track-url" content="/api/authentication/authsignal/track" />
+            </>
+          ) : undefined
+        }
         {
           state ? <input type="hidden" name="state" value={state} /> : undefined
         }

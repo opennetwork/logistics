@@ -13,10 +13,36 @@ interface AuthsignalMeta {
     trackUrl: string;
 }
 
-export function getAuthsignalMeta(element = document.body): AuthsignalMeta {
+function getMetaElements(element: HTMLElement) {
     const tenantIdMeta = element.querySelector("meta[name=authsignal-tenant-id]");
     const regionMeta = element.querySelector("meta[name=authsignal-region]");
     const trackMeta = element.querySelector("meta[name=authsignal-track-url]");
+    return {
+        tenantIdMeta,
+        regionMeta,
+        trackMeta
+    }
+}
+
+export function isAuthsignalMeta(element = document.body) {
+    const {
+        tenantIdMeta,
+        trackMeta,
+        regionMeta
+    } = getMetaElements(element);
+    return !!(
+        tenantIdMeta &&
+        trackMeta &&
+        regionMeta
+    );
+}
+
+export function getAuthsignalMeta(element = document.body): AuthsignalMeta {
+    const {
+        tenantIdMeta,
+        trackMeta,
+        regionMeta
+    } = getMetaElements(element);
 
     ok<HTMLMetaElement>(tenantIdMeta);
     ok<HTMLMetaElement>(regionMeta);
@@ -45,7 +71,7 @@ export interface PasskeyOptions {
     payment?: boolean
 }
 
-export async function passkey({ email, payment }: PasskeyOptions, meta: AuthsignalMeta = getAuthsignalMeta()) {
+export async function authsignalPasskey({ email, payment }: PasskeyOptions, meta: AuthsignalMeta = getAuthsignalMeta()) {
     const { baseUrl } = meta;
 
     const authenticatorUserId = payment ?

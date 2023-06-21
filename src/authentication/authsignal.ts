@@ -5,6 +5,7 @@ export const {
   AUTHSIGNAL_KEY,
   AUTHSIGNAL_SECRET,
   AUTHSIGNAL_REDIRECT_URL,
+  AUTHSIGNAL_WEBAUTHN
 } = process.env;
 
 export const AUTHSIGNAL_BASE_URL = process.env.AUTHSIGNAL_API_URL || "https://au.signal.authsignal.com/v1";

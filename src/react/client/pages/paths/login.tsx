@@ -1,7 +1,6 @@
 import {ok} from "../../utils";
 import {browserSupportsWebAuthn} from "@simplewebauthn/browser";
-import {Authsignal} from "@authsignal/browser";
-import {getAuthsignalClient, getAuthsignalMeta, passkey} from "../../authsignal";
+import {authsignalPasskey, isAuthsignalMeta} from "../../authsignal";
 import {authenticate} from "../../webauthn";
 
 export async function login() {
@@ -47,6 +46,10 @@ export async function login() {
 
         const email = input.value;
 
-        await authenticate({ email });
+        if (isAuthsignalMeta(form)) {
+            await authsignalPasskey({ email });
+        } else {
+            await authenticate({ email });
+        }
     }
 }
