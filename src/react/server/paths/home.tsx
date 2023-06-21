@@ -41,19 +41,13 @@ export function Home() {
           <br />
           <br />
           <p>
-            {
-              (DISCORD_CLIENT_ID || REDDIT_CLIENT_ID || AUTHSIGNAL_TENANT) ? (
-                  <>
-                    <a
-                        href="/login"
-                        className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
-                    >
-                      Login
-                    </a>
-                    <br />
-                  </>
-              ) : undefined
-            }
+            <a
+                href="/login"
+                className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
+            >
+              Login
+            </a>
+            <br />
           </p>
           <br />
           <br />

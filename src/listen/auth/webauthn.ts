@@ -29,6 +29,7 @@ import {ok} from "../../is";
 import base64 from "@hexagon/base64";
 import fromArrayBuffer = base64.fromArrayBuffer;
 import toArrayBuffer = base64.toArrayBuffer;
+import {getOrigin} from "../config";
 
 const INVALID_MESSAGE = "Authentication state invalid or expired";
 
@@ -39,9 +40,6 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
         WEBAUTHN_RP_ORIGIN,
         WEBAUTHN_REDIRECT_URL = "/"
     } = process.env;
-
-    if (!WEBAUTHN_RP_ID) return;
-    if (!WEBAUTHN_RP_ORIGIN) return;
 
     {
         const body = {
@@ -149,6 +147,8 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                             }))
                     });
 
+                    const { hostname } = new URL(getOrigin());
+
                     const options = generateRegistrationOptions({
                         // Don't prompt users for additional information about the authenticator
                         // (Recommended for smoother UX)
@@ -156,8 +156,8 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                         // Prevent users from re-registering existing authenticators
                         excludeCredentials,
                         ...registration,
-                        rpName: WEBAUTHN_RP_NAME,
-                        rpID: WEBAUTHN_RP_ID,
+                        rpName: WEBAUTHN_RP_NAME || hostname,
+                        rpID: WEBAUTHN_RP_ID || hostname,
                         userID: userId,
                         userName: email,
                     });
@@ -177,8 +177,10 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                 }
 
                 function createUserId() {
+                    const { hostname } = new URL(getOrigin());
+                    console.log({ hostname });
                     const hash = createHash("sha256");
-                    hash.update(WEBAUTHN_RP_ID);
+                    hash.update(WEBAUTHN_RP_ID || hostname);
                     hash.update(email);
                     return hash.digest().toString("hex");
                 }
@@ -247,13 +249,14 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
 
                 try {
                     if (registration) {
-                        console.log(registration);
                         ok<RegistrationResponseJSON>(body);
+                        const { hostname, origin } = new URL(getOrigin());
+
                         const { verified, registrationInfo } = await verifyRegistrationResponse({
                             response: registration,
                             expectedChallenge,
-                            expectedOrigin: WEBAUTHN_RP_ORIGIN,
-                            expectedRPID: WEBAUTHN_RP_ID
+                            expectedOrigin: WEBAUTHN_RP_ORIGIN || origin,
+                            expectedRPID: WEBAUTHN_RP_ID || hostname
                         });
 
                         const existingUser = getMaybeUser();
@@ -264,7 +267,6 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
 
                         if (verified) {
 
-                            console.log(registrationInfo);
                             const { credentialPublicKey, credentialID, counter } = registrationInfo;
                             const userCredential = await setUserCredential({
                                 userId: user.userId,
@@ -302,7 +304,6 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
 
                         response.send({ verified, redirectUrl: verified ? redirectUrl : undefined });
                     } else if (authentication) {
-                        console.log(authentication);
                         ok(reference, `Expected to find reference for user ${state.userId}`);
                         const userId = reference.userId;
                         const credentials = await listUserCredentials(userId);
@@ -313,11 +314,12 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                         const user = existingUser ?? await getUser(userId);
                         const found = credentials.find(credential => credential.credentialId === authentication.id);
                         ok(found, `Expected to find credential for user ${userId}`);
+                        const { hostname, origin } = new URL(getOrigin());
                         const { verified, authenticationInfo } = await verifyAuthenticationResponse({
                             response: authentication,
                             expectedChallenge,
-                            expectedOrigin: WEBAUTHN_RP_ORIGIN,
-                            expectedRPID: WEBAUTHN_RP_ID,
+                            expectedOrigin: WEBAUTHN_RP_ORIGIN || origin,
+                            expectedRPID: WEBAUTHN_RP_ID || hostname,
                             authenticator: {
                                 credentialID: new Uint8Array(toArrayBuffer(found.credentialId, true)),
                                 credentialPublicKey: new Uint8Array(toArrayBuffer(found.credentialPublicKey, true)),
