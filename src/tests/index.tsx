@@ -1,6 +1,12 @@
 /* c8 ignore start */
+
+import * as dotenv from "dotenv";
+
+dotenv.config();
+
 import why from "why-is-node-still-running";
-import {isRedisMemory, listProducts, seed, startRedisMemory, stopData, stopRedisMemory} from "../data";
+
+const {isRedisMemory, listProducts, seed, startRedisMemory, stopData, stopRedisMemory} = await import("../data");
 
 try {
   if (isRedisMemory()) {

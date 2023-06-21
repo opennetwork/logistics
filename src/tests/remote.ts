@@ -1,8 +1,10 @@
+import * as dotenv from "dotenv";
+
+dotenv.config();
+
 import {File, getRemoteSourceKey, getRemoteSources, Product, setProduct, TYPE_BASE_NAMES} from "../data";
 import {importRemoteSource} from "../remote/import";
-import {getResolvedUrl} from "../data/file/resolve-file";
 import {ok} from "../is";
-import {readFile} from "node:fs/promises";
 
 const sources = getRemoteSources();
 

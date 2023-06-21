@@ -29,7 +29,7 @@ export interface RemoteSourceOptions<T> {
     json?: boolean;
     files?: boolean;
     is?: ValueIs<T>;
-    headers?: boolean;
+    headers?: boolean | Headers;
     handler(contents: T): Promise<ResolvedFilePart | ResolvedFilePart[] | unknown | undefined | void>;
     contents?(options: RemoteSourceOptions<T>): Promise<Blob>
 }
@@ -198,8 +198,12 @@ export async function getRemoteSourceContents(url: string, options: RemoteSource
         return options.contents(options);
     }
     const token = options.token || getRemoteSourceKey(options.source, "token");
-    const headers = new Headers();
-    if (options.headers === false) {
+    const headers = new Headers(
+        options.headers instanceof Headers ?
+                options.headers :
+                undefined
+    );
+    if (options.headers !== false) {
         if (token) {
             headers.set("Authorization", `Bearer ${token}`);
         }
