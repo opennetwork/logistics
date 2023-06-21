@@ -24,3 +24,4 @@ export * from "./file";
 export * from "./payment";
 export * from "./payment-method";
 export * from "./offer";
+export * from "./user-credential";

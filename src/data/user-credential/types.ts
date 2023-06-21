@@ -1,4 +1,5 @@
 import {Expiring} from "../expiring";
+import {AuthenticatorTransportFuture} from "@simplewebauthn/typescript-types";
 
 export interface UserCredentialData extends Expiring, Record<string, unknown> {
   userId: string;
@@ -10,6 +11,7 @@ export interface UserCredentialData extends Expiring, Record<string, unknown> {
   verifiedAt?: string;
   authenticatorUserId?: string;
   authenticatorType?: string;
+  authenticatorTransports?: AuthenticatorTransportFuture[];
 }
 
 export interface UserCredential extends UserCredentialData {

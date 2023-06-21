@@ -16,7 +16,7 @@ export function getUser(userId: string) {
   return store.get(userId);
 }
 
-async function getExternalReference(externalType: AuthenticationStateType, externalId: string) {
+export async function getExternalReference(externalType: AuthenticationStateType, externalId: string) {
   const store = getExternalUserReferenceStore();
   const key = getExternalReferenceKey(externalType, externalId);
   return await store.get(key);

@@ -10,7 +10,8 @@ export type AuthenticationStateType =
   | "attendee"
   | "invitee"
   | "exchange"
-  | "challenge";
+  | "challenge"
+  | "credential";
 
 export interface AuthenticationStateFromData {
   type: AuthenticationStateType | string;
@@ -25,6 +26,7 @@ export interface UntypedAuthenticationStateData extends Expiring {
   externalScope?: string;
   externalState?: string;
   externalKey?: string;
+  externalId?: string;
   roles?: AuthenticationRole[];
   partnerId?: string;
   userId?: string;
