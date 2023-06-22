@@ -129,7 +129,7 @@ export interface Expiring {
     expiresAt?: string;
 }
 
-export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile"
+export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile" | "inventoryItem" | "order" | "orderItem"
 export type BaseFileRemoteSourceName = "discord" | BaseFileStoreType;
 export type RemoteFileSourceName = BaseFileRemoteSourceName | `${BaseFileRemoteSourceName}_${number}`;
 

@@ -96,6 +96,35 @@ export const fileData = {
     expiresAt: {
       type: "string",
       nullable: true
+    },
+    productId: {
+      type: "string",
+      nullable: true
+    },
+    offerId: {
+      type: "string",
+      nullable: true
+    },
+    orderId: {
+      type: "string",
+      nullable: true
+    },
+    orderItemId: {
+      type: "string",
+      nullable: true
+    },
+    inventoryId: {
+      type: "string",
+      nullable: true
+    },
+    inventoryItemId: {
+      type: "string",
+      nullable: true
+    },
+    reactionCounts: {
+      type: "object",
+      properties: {},
+      additionalProperties: true
     }
   },
   additionalProperties: false,

@@ -2,7 +2,7 @@ import {isNumberString, ok} from "../../is";
 import {BaseFileRemoteSourceName, RemoteFileSourceName} from "../data";
 import {index} from "cheerio/lib/api/traversing";
 
-export const TYPE_BASE_NAMES: BaseFileRemoteSourceName[] = ["product", "inventory", "offer"];
+export const TYPE_BASE_NAMES: BaseFileRemoteSourceName[] = ["product", "inventory", "offer", "inventoryItem", "order", "orderItem"];
 const NAMES: BaseFileRemoteSourceName[] = ["discord", ...TYPE_BASE_NAMES, "productFile", "inventoryFile", "offerFile"];
 const NAMES_STRINGS: string[] = NAMES;
 
