@@ -24,7 +24,8 @@ export const productOfferItem = {
   },
   additionalProperties: false,
   required: [
-      "type"
+      "type",
+      "productId"
   ]
 }
 
@@ -72,6 +73,14 @@ export const offerData = {
     public: {
       type: "boolean",
       nullable: true,
+    },
+    price: {
+      type: "string",
+      nullable: true
+    },
+    currency: {
+      type: "string",
+      nullable: true
     }
   },
   required: ["status", "items"],

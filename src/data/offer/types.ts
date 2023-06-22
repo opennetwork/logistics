@@ -1,7 +1,7 @@
 import {Identifier} from "../identifier";
 
 
-export type MaybeNumberString = `${number}` | number | string;
+export type MaybeNumberString = `${number}` | string;
 
 export interface OfferPrice {
   price: MaybeNumberString;

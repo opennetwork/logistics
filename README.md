@@ -129,7 +129,7 @@ export interface Expiring {
     expiresAt?: string;
 }
 
-export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile"
+export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile" | "metrics"
 export type BaseFileRemoteSourceName = "discord" | BaseFileStoreType;
 export type RemoteFileSourceName = BaseFileRemoteSourceName | `${BaseFileRemoteSourceName}_${number}`;
 
@@ -366,7 +366,7 @@ export interface Location extends LocationData {
   updatedAt: string;
 }
 
-export type MaybeNumberString = `${number}` | number | string;
+export type MaybeNumberString = `${number}` | string;
 
 export interface OfferPrice {
   price: MaybeNumberString;
@@ -386,6 +386,7 @@ export type OfferItem =
 export type OfferItemType = OfferItem["type"];
 
 export type OfferStatus =
+    | "speculative"
     | "preSale"
     | "preOrder"
     | "onlineOnly"
@@ -394,8 +395,7 @@ export type OfferStatus =
     | "backOrder"
     | "limitedAvailability"
     | "soldOut"
-    | "void"
-
+    | "void";
 
 export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> {
   status: OfferStatus;
