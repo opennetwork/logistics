@@ -129,7 +129,7 @@ export interface Expiring {
     expiresAt?: string;
 }
 
-export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile" | "metrics"
+export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile"
 export type BaseFileRemoteSourceName = "discord" | BaseFileStoreType;
 export type RemoteFileSourceName = BaseFileRemoteSourceName | `${BaseFileRemoteSourceName}_${number}`;
 
@@ -371,6 +371,8 @@ export type MaybeNumberString = `${number}` | string;
 export interface OfferPrice {
   price: MaybeNumberString;
   currency: string;
+  currencyCode?: string;
+  countryCode?: string;
 }
 
 export interface ProductOfferItem {

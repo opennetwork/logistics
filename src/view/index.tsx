@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import OpenNetworkServer, {OpenNetworkServerProps, ReactData} from "../react/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+  listOffers,
   listOrganisations,
   listPartners, listProducts,
 } from "../data";

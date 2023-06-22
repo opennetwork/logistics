@@ -2,7 +2,16 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-import {File, getRemoteSourceKey, getRemoteSources, Product, setProduct, TYPE_BASE_NAMES} from "../data";
+import {
+    File,
+    getRemoteSourceKey,
+    getRemoteSources,
+    Offer,
+    Product,
+    setOffer,
+    setProduct,
+    TYPE_BASE_NAMES
+} from "../data";
 import {importRemoteSource} from "../remote/import";
 import {ok} from "../is";
 
@@ -16,16 +25,33 @@ const bases = sources.filter(source => !typed.includes(source));
 const imported: File[] = [];
 
 for (const source of bases) {
-    const file = await importRemoteSource({
-        source,
-        json: true,
-        async handler(input: Product[]) {
+
+    let handler;
+
+    if (source === "product") {
+        handler = async function handler(input: Product[]) {
             // console.log(input);
             for (const product of input) {
                 await setProduct(product);
             }
+            console.log("Updated products");
             return input;
         }
+    } else if (source === "offer") {
+        handler = async function handler(input: Offer[]) {
+            // console.log(input);
+            for (const offer of input) {
+                await setOffer(offer);
+            }
+            console.log("Updated offers");
+            return input;
+        }
+    }
+    if (!handler) continue;
+    const file = await importRemoteSource<unknown>({
+        source,
+        json: true,
+        handler
     });
     console.log(file);
     imported.push(file);

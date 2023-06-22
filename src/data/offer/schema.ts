@@ -81,6 +81,14 @@ export const offerData = {
     currency: {
       type: "string",
       nullable: true
+    },
+    currencyCode: {
+      type: "string",
+      nullable: true
+    },
+    countryCode: {
+      type: "string",
+      nullable: true
     }
   },
   required: ["status", "items"],

@@ -1,5 +1,5 @@
 import {useData, useInput, useProducts} from "../../data";
-import {listProductFiles, File} from "../../../../data";
+import {listProductFiles, File, listOffers, Offer} from "../../../../data";
 import {isAnonymous} from "../../../../authentication";
 import {FastifyRequest} from "fastify";
 import {ok} from "../../../../is";
@@ -13,6 +13,7 @@ export const cache = true;
 export interface ProductInfo {
     images600: File[]
     productImages: Record<string, File>
+    offers: Offer[];
 }
 
 type Params = {
@@ -39,7 +40,10 @@ export async function handler(): Promise<ProductInfo> {
             }
         )
     )
-    return { images600, productImages };
+    const offers = await listOffers({
+        public: isAnonymous()
+    })
+    return { images600, productImages, offers };
 }
 
 const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offset-2";
@@ -47,9 +51,10 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 export function ListProducts() {
     const products = useProducts();
     const { isAnonymous } = useData();
-    const { images600, productImages } = useInput<ProductInfo>();
+    const { images600, productImages, offers } = useInput<ProductInfo>();
     const sorted = useMemo(() => {
         return [...products]
+            .filter(product => !product.generic)
             .sort((a, b) => {
                 if (productImages[a.productId] && !productImages[b.productId]) {
                     return -1;
@@ -66,19 +71,30 @@ export function ListProducts() {
                 {!isAnonymous ? <a href="/product/create" className={LINK_CLASS}>Create Product</a> : undefined}
                 <div className="mt-8 grid grid-cols-1 gap-y-12 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8">
                     {sorted.map(product => {
-                        const image = images600.find(file => file.productId === product.productId);
+                        const images = images600.filter(file => file.productId === product.productId);
+                        const productOffer = offers.find(offer => (
+                            offer.items.length === 1 &&
+                            offer.items.find(item => item.type === "product" && item.productId === product.productId)
+                        ))
                         return (
-                            <div key={product.productId}>
+                            <div key={product.productId} className="flex justify-between flex-col">
                                 <div className="relative">
                                     <div className="relative h-72 w-full overflow-hidden rounded-lg">
                                         {
-                                            image ? (
-                                                <img
-                                                    src={image.url}
-                                                    alt={String(image.alt || product.productName)}
-                                                    className="h-full w-full object-cover object-center"
-                                                />
-                                            ) : undefined
+                                            images.map(
+                                                (image, index, array) => (
+                                                    <img
+                                                        data-index={index}
+                                                        data-length={array.length}
+                                                        loading={index === 0 ? "eager" : "lazy"}
+                                                        hidden={index !== 0}
+                                                        key={index}
+                                                        src={image.url}
+                                                        alt={String(image.alt || product.productName)}
+                                                        className="h-full w-full object-cover object-center"
+                                                    />
+                                                )
+                                            )
                                         }
                                     </div>
                                     <div className="relative mt-4">
@@ -90,7 +106,7 @@ export function ListProducts() {
                                             aria-hidden="true"
                                             className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black opacity-50"
                                         />
-                                        <p className="relative text-lg font-semibold text-white">$PRICE</p>
+                                        <p className="relative text-lg font-semibold text-white">{productOffer ? `${productOffer.currencyCode ?? "$"}${productOffer.price}` : ""}</p>
                                     </div>
                                 </div>
                                 <div className="mt-6">
