@@ -37,6 +37,7 @@ export const offerItem = {
 export const offerStatus = {
   type: "string",
   enum: [
+    "speculative",
     "preSale",
     "preOrder",
     "onlineOnly",
