@@ -21,6 +21,7 @@ export type OfferItem =
 export type OfferItemType = OfferItem["type"];
 
 export type OfferStatus =
+    | "speculative"
     | "preSale"
     | "preOrder"
     | "onlineOnly"
@@ -29,8 +30,7 @@ export type OfferStatus =
     | "backOrder"
     | "limitedAvailability"
     | "soldOut"
-    | "void"
-
+    | "void";
 
 export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> {
   status: OfferStatus;
