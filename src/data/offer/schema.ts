@@ -22,6 +22,7 @@ export const productOfferItem = {
       nullable: true
     }
   },
+  additionalProperties: false,
   required: [
       "type"
   ]
@@ -29,6 +30,8 @@ export const productOfferItem = {
 
 export const offerItem = {
   type: "object",
+  properties: {},
+  additionalProperties: true,
   oneOf: [
       productOfferItem
   ]
