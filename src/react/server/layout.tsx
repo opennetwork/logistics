@@ -125,7 +125,7 @@ function Logo() {
     <div className="flex flex-row align-start items-center">
       <img
         role="presentation"
-        src="/public/example-3.svg"
+        src={`/${name}/public/example-3.svg`}
         alt="Brand Image"
         className="h-8 w-auto fill-white"
         title="Open Network Happening"

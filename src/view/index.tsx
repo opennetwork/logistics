@@ -33,22 +33,23 @@ const DIRECTORY = dirname(pathname);
 export const REACT_CLIENT_DIRECTORY = join(DIRECTORY, "../react/client");
 
 export async function fileRoutes(fastify: FastifyInstance) {
-  fastify.register(etag);
-  fastify.addHook("onRequest", (request, response, done) => {
+  await fastify.register(etag);
+  await fastify.addHook("onRequest", (request, response, done) => {
     response.header("Cache-Control", "max-age=1800"); // Give it something
     done();
   });
-  fastify.register(files, {
+  await fastify.register(files, {
     root: REACT_CLIENT_DIRECTORY,
+    decorateReply: !fastify.hasReplyDecorator("sendFile"),
     prefix: `/${name}/client`,
   });
   const publicPath = join(root, "./public");
-  fastify.register(files, {
+  await fastify.register(files, {
     root: publicPath,
     decorateReply: false,
     prefix: `/${name}/public`,
   });
-  fastify.register(files, {
+  await fastify.register(files, {
     // Relative to top level of this module
     // NOT relative to cwd
     root: importmapRoot,
