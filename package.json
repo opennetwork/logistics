@@ -204,5 +204,10 @@
       "@simplewebauthn/browser": "node_modules/@simplewebauthn/browser/dist/bundle/index.js",
       "@authsignal/browser": "node_modules/@authsignal/browser/dist/index.js"
     }
-  }
+  },
+  "staticReferences": [
+    "./public",
+    "./esnext/react/client/pages/index.js",
+    "./esnext/react/client/index.js"
+  ]
 }

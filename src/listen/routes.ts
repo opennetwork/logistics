@@ -1,3 +1,7 @@
+// It appears vercel serverless requires strong references
+// for inclusion in the file system
+import "../references";
+
 import {FastifyInstance} from "fastify";
 import {REACT_CLIENT_DIRECTORY, viewRoutes} from "../view";
 import {backgroundRoutes} from "./background";
