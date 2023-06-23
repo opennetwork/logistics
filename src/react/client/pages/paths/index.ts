@@ -1,3 +1,7 @@
+async function productList() {
+  const { productList: fn } = await import("./product-list");
+  return fn();
+}
 
 async function home() {
   const { home: fn } = await import("./home");
@@ -18,7 +22,8 @@ export const paths: Record<string, () => void | Promise<void>> = {
   "/": home,
   "/home": home,
   "/login": login,
-  "/payment-method/select": paymentMethodSelect
+  "/payment-method/select": paymentMethodSelect,
+  "/products": productList
 };
 
 export function runPath() {

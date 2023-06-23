@@ -1,6 +1,10 @@
 import {File, FileType, getNamedFile, listNamedFiles} from "../file";
 import {getMaybeResolvedFile, getResolvedFile, ResolveFileOptions} from "./resolve-file";
 
+export const {
+    MEDIA_PREFER_FIXED_ORDER
+} = process.env;
+
 export interface ListResolvedNamedFileOptions extends ResolveFileOptions {
     accept?: string;
 }
@@ -69,11 +73,27 @@ export async function getResolvedNamedFile(type: FileType, typeId: string, optio
             if (typeof index === "number") {
                 return pinned[index];
             }
+            if (MEDIA_PREFER_FIXED_ORDER) {
+                return pickPopularFile(pinned);
+            }
             return pickWeightedFiles(pinned);
         }
         // Only allow viewing the pinned images if public
         if (isPublic) return undefined;
         return files[index ?? pickIndex(files.length)];
+    }
+
+    function pickPopularFile(files: File[]) {
+        const reactions = new Map(
+            files.map(file => {
+                const totalReactions = Object.values(file.reactionCounts || {})
+                    .reduce((sum, value) => sum + value, 0);
+                return [file, totalReactions] as const;
+            })
+        );
+        const sorted = [...files]
+            .sort((a, b) => reactions.get(a) > reactions.get(b) ? -1 : 1);
+        return sorted[0];
     }
 
     function pickWeightedFiles(files: File[]) {
