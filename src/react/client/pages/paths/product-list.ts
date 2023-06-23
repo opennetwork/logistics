@@ -51,7 +51,7 @@ export async function productList() {
                 const url = new URL(href);
                 // Remove any redirect functionality
                 url.searchParams.delete("redirect");
-                const response = await fetch(href);
+                const response = await fetch(url);
                 ok(response.ok);
                 // Let it be empty but resolved... ? idk
                 await response.text();
