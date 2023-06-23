@@ -40,7 +40,7 @@ export const orderItem = {
     },
     ...orderItemData.properties,
   },
-  required: ["orderItemId", "quantity", "identifiers"]
+  required: ["orderItemId", "createdAt", "updatedAt", "orderId"]
 }
 
 export const orderProductItem = {

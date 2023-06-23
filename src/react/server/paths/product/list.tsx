@@ -1,6 +1,6 @@
 import {useData, useInput, useProducts} from "../../data";
-import {listProductFiles, File, listOffers, Offer} from "../../../../data";
-import {isAnonymous} from "../../../../authentication";
+import {listProductFiles, File, listOffers, Offer, Order, getUserPendingOrder} from "../../../../data";
+import {getUser, isAnonymous} from "../../../../authentication";
 import {FastifyRequest} from "fastify";
 import {ok} from "../../../../is";
 import {useMemo} from "react";
@@ -14,6 +14,7 @@ export interface ProductInfo {
     images600: File[]
     productImages: Record<string, File>
     offers: Offer[];
+    order: Order;
 }
 
 type Params = {
@@ -43,15 +44,17 @@ export async function handler(): Promise<ProductInfo> {
     const offers = await listOffers({
         public: isAnonymous()
     })
-    return { images600, productImages, offers };
+    const order = await getUserPendingOrder(getUser().userId)
+    return { images600, productImages, offers, order };
 }
 
 const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offset-2";
 
 export function ListProducts() {
     const products = useProducts();
-    const { isAnonymous } = useData();
-    const { images600, productImages, offers } = useInput<ProductInfo>();
+    const { isAnonymous, url } = useData();
+    const { pathname } = new URL(url);
+    const { images600, productImages, offers, order, order: { orderId } } = useInput<ProductInfo>();
     const sorted = useMemo(() => {
         return [...products]
             .filter(product => !product.generic)
@@ -111,7 +114,7 @@ export function ListProducts() {
                                 </div>
                                 <div className="mt-6">
                                     <a
-                                        href={`/order/product/${product.productId}`}
+                                        href={`/api/version/1/orders/${orderId}/items/${productOffer ? "offers" : "products"}/${productOffer ? productOffer.offerId : product.productId}/add?redirect=${pathname}`}
                                         className="relative flex items-center justify-center rounded-md border border-transparent bg-gray-100 px-8 py-2 text-sm font-medium text-gray-900 hover:bg-gray-200"
                                     >
                                         Add to bag<span className="sr-only">, {product.productName}</span>

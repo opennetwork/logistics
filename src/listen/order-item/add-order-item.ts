@@ -1,4 +1,4 @@
-import { FastifyInstance } from "fastify";
+import {FastifyInstance, FastifyReply, FastifyRequest} from "fastify";
 import {addOrderItem, getOffer, getOrder, getProduct, OrderItemData, orderItemSchema} from "../../data";
 import { authenticate } from "../authentication";
 import {getMaybePartner, getMaybeUser} from "../../authentication";
@@ -51,34 +51,36 @@ export async function addOrderItemRoutes(fastify: FastifyInstance) {
         },
       ],
     };
+    async function handler(request: FastifyRequest<Schema>, response: FastifyReply) {
+      const order = await getOrder(request.params.orderId, {
+        userId: getMaybeUser()?.userId,
+        organisationId: getMaybePartner()?.organisationId
+      });
+      if (!order) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const orderItem = await addOrderItem({
+        ...request.body,
+        orderId: request.params.orderId
+      });
+      const { redirect } = request.query;
+      if (redirect) {
+        const url = redirect.replace(":orderItemId", orderItem.orderItemId);
+        response.header("Location", url);
+        response.status(302);
+        response.send();
+        return;
+      }
+      response.status(201);
+      response.send(orderItem);
+    }
+
     fastify.post<Schema>("/", {
       schema,
       preHandler: authenticate(fastify),
-      async handler(request, response) {
-        const order = await getOrder(request.params.orderId, {
-          userId: getMaybeUser()?.userId,
-          organisationId: getMaybePartner()?.organisationId
-        });
-        if (!order) {
-          response.status(404);
-          response.send();
-          return;
-        }
-        const orderItem = await addOrderItem({
-          ...request.body,
-          orderId: request.params.orderId
-        });
-        const { redirect } = request.query;
-        if (redirect) {
-          const url = redirect.replace(":orderItemId", orderItem.orderItemId);
-          response.header("Location", url);
-          response.status(302);
-          response.send();
-          return;
-        }
-        response.status(201);
-        response.send(orderItem);
-      },
+      handler,
     });
   } catch {}
 
@@ -106,11 +108,10 @@ export async function addOrderItemRoutes(fastify: FastifyInstance) {
       required: ["orderId", "offerId"]
     };
 
-    const schema = {
+    const base = {
       description: "Add a new order item",
       tags: ["order item"],
       summary: "",
-      body: orderItemSchema.orderItemData,
       response,
       params,
       security: [
@@ -119,42 +120,55 @@ export async function addOrderItemRoutes(fastify: FastifyInstance) {
         },
       ],
     };
+
+    const schema = {
+      ...base,
+      body: orderItemSchema.orderItemData,
+    };
+
+    async function handler(request: FastifyRequest<Schema>, response: FastifyReply) {
+      const order = await getOrder(request.params.orderId, {
+        userId: getMaybeUser()?.userId,
+        organisationId: getMaybePartner()?.organisationId
+      });
+      if (!order) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const offer = await getOffer(request.params.offerId)
+      if (!offer) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const orderItem = await addOrderItem({
+        ...request.body,
+        productId: undefined,
+        offerId: offer.offerId,
+        orderId: request.params.orderId
+      });
+      const { redirect } = request.query;
+      if (redirect) {
+        const url = redirect.replace(":orderItemId", orderItem.orderItemId);
+        response.header("Location", url);
+        response.status(302);
+        response.send();
+        return;
+      }
+      response.status(201);
+      response.send(orderItem);
+    }
+
     fastify.post<Schema>("/offers/:offerId", {
       schema,
       preHandler: authenticate(fastify),
-      async handler(request, response) {
-        const order = await getOrder(request.params.orderId, {
-          userId: getMaybeUser()?.userId,
-          organisationId: getMaybePartner()?.organisationId
-        });
-        if (!order) {
-          response.status(404);
-          response.send();
-          return;
-        }
-        const offer = await getOffer(request.params.offerId)
-        if (!offer) {
-          response.status(404);
-          response.send();
-          return;
-        }
-        const orderItem = await addOrderItem({
-          ...request.body,
-          productId: undefined,
-          offerId: offer.offerId,
-          orderId: request.params.orderId
-        });
-        const { redirect } = request.query;
-        if (redirect) {
-          const url = redirect.replace(":orderItemId", orderItem.orderItemId);
-          response.header("Location", url);
-          response.status(302);
-          response.send();
-          return;
-        }
-        response.status(201);
-        response.send(orderItem);
-      },
+      handler,
+    });
+    fastify.get<Schema>("/offers/:offerId/add", {
+      schema: base,
+      preHandler: authenticate(fastify),
+      handler,
     });
   } catch {}
 
@@ -183,11 +197,10 @@ export async function addOrderItemRoutes(fastify: FastifyInstance) {
       required: ["orderId", "productId"]
     };
 
-    const schema = {
+    const base = {
       description: "Add a new order item",
       tags: ["order item"],
       summary: "",
-      body: orderItemSchema.orderItemData,
       response,
       params,
       security: [
@@ -196,42 +209,56 @@ export async function addOrderItemRoutes(fastify: FastifyInstance) {
         },
       ],
     };
+
+    const schema = {
+      ...base,
+      body: orderItemSchema.orderItemData,
+    };
+
+    async function handler(request: FastifyRequest<Schema>, response: FastifyReply) {
+      const order = await getOrder(request.params.orderId, {
+        userId: getMaybeUser()?.userId,
+        organisationId: getMaybePartner()?.organisationId
+      });
+      if (!order) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const product = await getProduct(request.params.productId)
+      if (!product) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const orderItem = await addOrderItem({
+        ...request.body,
+        offerId: undefined,
+        productId: product.productId,
+        orderId: request.params.orderId
+      });
+      const { redirect } = request.query;
+      if (redirect) {
+        const url = redirect.replace(":orderItemId", orderItem.orderItemId);
+        response.header("Location", url);
+        response.status(302);
+        response.send();
+        return;
+      }
+      response.status(201);
+      response.send(orderItem);
+    }
+
     fastify.post<Schema>("/products/:productId", {
       schema,
       preHandler: authenticate(fastify),
-      async handler(request, response) {
-        const order = await getOrder(request.params.orderId, {
-          userId: getMaybeUser()?.userId,
-          organisationId: getMaybePartner()?.organisationId
-        });
-        if (!order) {
-          response.status(404);
-          response.send();
-          return;
-        }
-        const product = await getProduct(request.params.productId)
-        if (!product) {
-          response.status(404);
-          response.send();
-          return;
-        }
-        const orderItem = await addOrderItem({
-          ...request.body,
-          offerId: undefined,
-          productId: product.productId,
-          orderId: request.params.orderId
-        });
-        const { redirect } = request.query;
-        if (redirect) {
-          const url = redirect.replace(":orderItemId", orderItem.orderItemId);
-          response.header("Location", url);
-          response.status(302);
-          response.send();
-          return;
-        }
-        response.status(201);
-        response.send(orderItem);
-      },
+      handler
     });
-  } catch {}
+    fastify.get<Schema>("/products/:productId/add", {
+      schema: base,
+      preHandler: authenticate(fastify),
+      handler
+    });
+  } catch {
+  }
 }
