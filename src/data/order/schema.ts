@@ -1,29 +1,12 @@
-import { identifierSchema } from "../identifier";
 import { shipmentSchema } from "../shipment";
-
-export const orderProduct = {
-  type: "object",
-  properties: {
-    productId: {
-      type: "string"
-    },
-    quantity: {
-      type: "number"
-    },
-    identifiers: {
-      type: "array",
-      items: identifierSchema.identifier
-    }
-  },
-  required: ["productId", "quantity", "identifiers"]
-}
+import {orderItem, orderItemData, orderProductItem} from "../order-item/schema";
 
 export const orderData = {
   type: "object",
   properties: {
-    products: {
+    items: {
       type: "array",
-      items: orderProduct,
+      items: orderItemData,
       nullable: true
     },
     to: {
@@ -31,9 +14,7 @@ export const orderData = {
       nullable: true
     }
   },
-  required: [
-  ],
-} as const;
+};
 
 export const order = {
   type: "object",
@@ -48,6 +29,16 @@ export const order = {
       type: "string",
     },
     ...orderData.properties,
+    items: {
+      type: "array",
+      items: orderItem,
+      nullable: true
+    },
+    products: {
+      type: "array",
+      items: orderProductItem,
+      nullable: true
+    },
   },
-  required: ["orderId", "createdAt", "updatedAt", ...orderData.required],
+  required: ["orderId", "createdAt", "updatedAt"],
 } as const;

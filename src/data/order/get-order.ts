@@ -7,14 +7,17 @@ import {addExpiring, deleteCached, getCached} from "../cache";
 import {DAY_MS, getExpiresAt} from "../expiring-kv";
 import {Order} from "./types";
 import {setOrder} from "./set-order";
+import {ShipmentLocation} from "../shipment";
+import {isOrderShipmentLocationMatch} from "./list-orders";
 
 const PENDING_ORDER_ID = "PendingOrder";
 const PENDING_ORDER_EXPIRES_IN = 7 * DAY_MS;
 
-export async function getOrder(id: string): Promise<Order> {
+export async function getOrder(id: string, location?: ShipmentLocation): Promise<Order> {
   const store = getOrderStore();
   const order = await store.get(id);
   if (!order) return undefined;
+  if (location && !isOrderShipmentLocationMatch(order, location)) return undefined;
   const items = await listOrderItems(order.orderId);
   return {
     ...order,
@@ -40,7 +43,9 @@ export async function getUserPendingOrder(userId: string, loadItems = true): Pro
   const key = getUserPendingOrderCacheKey(userId);
   const cached = await getCached(key, true);
   const orderId = cached ?? v4();
-  let order = await getOrder(orderId);
+  let order = await getOrder(orderId, {
+    userId
+  });
   const items: OrderItem[] = loadItems ? await listOrderItems(orderId) : [];
 
   if (order) {
@@ -60,7 +65,8 @@ export async function getUserPendingOrder(userId: string, loadItems = true): Pro
     await addExpiring({
       key,
       value: orderId,
-      expiresAt: getExpiresAt(PENDING_ORDER_EXPIRES_IN)
+      expiresAt: getExpiresAt(PENDING_ORDER_EXPIRES_IN),
+      stable: true
     });
   }
 

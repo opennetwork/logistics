@@ -1,18 +1,52 @@
 import { identifierSchema } from "../identifier";
 
-export const orderItem = {
+export const orderItemData = {
   type: "object",
   properties: {
-    itemId: {
-      type: "string"
+    offerId: {
+      type: "string",
+      nullable: true
+    },
+    productId: {
+      type: "string",
+      nullable: true
     },
     quantity: {
-      type: "number"
+      type: "number",
+      nullable: true
     },
     identifiers: {
       type: "array",
-      items: identifierSchema.identifier
+      items: identifierSchema.identifier,
+      nullable: true
+    }
+  }
+}
+
+export const orderItem = {
+  type: "object",
+  properties: {
+    orderItemId: {
+      type: "string"
+    },
+    createdAt: {
+      type: "string"
+    },
+    updatedAt: {
+      type: "string"
+    },
+    ...orderItemData.properties,
+  },
+  required: ["orderItemId", "quantity", "identifiers"]
+}
+
+export const orderProductItem = {
+  type: "object",
+  properties: {
+    ...orderItem.properties,
+    productId: {
+      type: "string"
     }
   },
-  required: ["itemId", "quantity", "identifiers"]
+  required: [...orderItem.required, "productId"]
 }

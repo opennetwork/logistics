@@ -15,6 +15,7 @@ import etag from "@fastify/etag";
 import files from "@fastify/static";
 import {join} from "node:path";
 import {importmapRoot, importmapRootName, name, root} from "../package";
+import {orderRoutes} from "./order";
 
 export async function routes(fastify: FastifyInstance) {
 
@@ -23,6 +24,7 @@ export async function routes(fastify: FastifyInstance) {
         fastify.register(partnerRoutes);
         fastify.register(productRoutes);
         fastify.register(offerRoutes);
+        fastify.register(orderRoutes);
         fastify.register(fileRoutes);
     }
 
