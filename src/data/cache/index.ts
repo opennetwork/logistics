@@ -104,3 +104,12 @@ export async function getCached<T = string>(
   }
   return value.value;
 }
+
+export async function deleteCached(
+    givenKey: string,
+    stable?: boolean) {
+  const store = getCacheStore<unknown>();
+  const roles = getSortedRoles();
+  const key = stable ? givenKey : getCacheKey(givenKey, roles);
+  await store.delete(key);
+}

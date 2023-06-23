@@ -10,8 +10,8 @@ export async function listOrderItems(orderId: string): Promise<
   return store.values();
 }
 
-export async function listOrderProducts(orderId: string, offers = true): Promise<OrderProductItem[]> {
-  const items = await listOrderItems(orderId);
+export async function listOrderProducts(orderId: string, offers = true, orderItems?: OrderItem[]): Promise<OrderProductItem[]> {
+  const items = orderItems ?? await listOrderItems(orderId);
   const products = items.filter(isOrderProductItem);
   if (!offers) return products;
   const offerProducts = await Promise.all(
