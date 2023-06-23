@@ -26,6 +26,9 @@ export const orderItemData = {
 export const orderItem = {
   type: "object",
   properties: {
+    orderId: {
+      type: "string"
+    },
     orderItemId: {
       type: "string"
     },

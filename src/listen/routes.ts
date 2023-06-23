@@ -16,6 +16,7 @@ import files from "@fastify/static";
 import {join} from "node:path";
 import {importmapRoot, importmapRootName, name, root} from "../package";
 import {orderRoutes} from "./order";
+import {orderItemRoutes} from "./order-item";
 
 export async function routes(fastify: FastifyInstance) {
 
@@ -25,6 +26,7 @@ export async function routes(fastify: FastifyInstance) {
         fastify.register(productRoutes);
         fastify.register(offerRoutes);
         fastify.register(orderRoutes);
+        fastify.register(orderItemRoutes);
         fastify.register(fileRoutes);
     }
 
