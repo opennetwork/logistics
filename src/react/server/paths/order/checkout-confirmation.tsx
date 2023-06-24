@@ -5,28 +5,54 @@ import {listPaymentMethods, PaymentMethod, setOrder, ShipmentLocation} from "../
 import {FastifyReply, FastifyRequest} from "fastify";
 import {getUser} from "../../../../authentication";
 import {getOrderPrice} from "../../../../data/order-item/get-order-item-info";
+import {InputConfig, PaymentForm} from "./types";
+import {getConfig} from "../../../../config";
+import {ReactNode, useMemo} from "react";
+import exp from "constants";
 export const path = "/order/checkout/confirmation";
 
 export interface OrderCheckoutConfirmationComponentInfo extends OrderCheckoutReviewComponentInfo {
     paymentMethods: PaymentMethod[];
+    paymentMethodForm?: PaymentForm;
 }
 
 export async function handler(): Promise<OrderCheckoutConfirmationComponentInfo> {
-    const base = await baseHandler();
+    const base: OrderCheckoutReviewComponentInfo = await baseHandler();
     const paymentMethods = await listPaymentMethods({
         userId: getUser().userId
-    })
-    return {
+    });
+    const info: OrderCheckoutConfirmationComponentInfo = {
         ...base,
         paymentMethods
+    }
+    // const exampleDefaultData = new FormData();
+    // exampleDefaultData.set("example", "test")
+    // const exampleDefaultForm: PaymentForm = {
+    //     url: "/some-example",
+    //     method: "GET",
+    //     data: exampleDefaultData,
+    //     inputs: {
+    //         savePaymentMethod: true
+    //     }
+    // };
+    const paymentMethodFormReturned = await getConfig().getPaymentForm?.(info); // ?? exampleDefaultForm;
+    const paymentMethodForm =
+        typeof paymentMethodFormReturned === "string" ?
+            { url: paymentMethodFormReturned } :
+            paymentMethodFormReturned;
+
+    return {
+        ...info,
+        paymentMethods,
+        paymentMethodForm
     }
 }
 
 type Body = {
-    to: ShipmentLocation;
-    paymentMethod: {
-        to: ShipmentLocation;
-    }
+    type: "existingPaymentMethod" | "newPaymentMethod";
+    paymentMethodId?: string;
+    paymentMethodName?: string;
+    savePaymentMethod?: boolean;
 }
 
 type Schema = {
@@ -51,16 +77,64 @@ export async function submit(request: FastifyRequest<Schema>, response: FastifyR
     response.send();
 }
 
+function getInputConfig(inputs: undefined | Record<string, boolean | InputConfig>, name: string, enabled?: boolean): InputConfig {
+    if (!enabled) {
+        return {
+            enabled: false,
+            name
+        }
+    }
+    const found = inputs?.[name];
+    if (typeof found === "boolean" || !found) {
+        return {
+            enabled: !!(found ?? true),
+            name
+        }
+    }
+    return {
+        ...found,
+        enabled: found.enabled !== false
+    }
+}
+
 export function Component() {
     const {
         order,
         total,
-        paymentMethods
+        paymentMethods,
+        paymentMethodForm
     } = useInput<OrderCheckoutConfirmationComponentInfo>();
+
+    const newPaymentMethodFormData = useMemo(() => {
+        if (!paymentMethodForm?.data) return undefined;
+
+        let data: ReactNode[] = [];
+
+        paymentMethodForm.data.forEach(
+            (value, name) => {
+                data.push(
+                    <input type="hidden" value={String(value)} name={name} />
+                )
+            }
+        )
+
+        if (!data.length) return undefined;
+        return (
+            <>{data}</>
+        )
+    }, [paymentMethodForm?.data])
 
     if (!order.products.length) {
         return <CheckoutEmpty />
     }
+
+    const inputsEnabled = paymentMethodForm?.method !== "GET"
+    const nameOnCard = getInputConfig(paymentMethodForm?.inputs, "nameOnCard", inputsEnabled);
+    const cardNumber = getInputConfig(paymentMethodForm?.inputs, "cardNumber", inputsEnabled);
+    const expirationMonth = getInputConfig(paymentMethodForm?.inputs, "expirationMonth", inputsEnabled);
+    const expirationYear = getInputConfig(paymentMethodForm?.inputs, "expirationYear", inputsEnabled);
+    const cvc = getInputConfig(paymentMethodForm?.inputs, "cvc", inputsEnabled);
+    const savePaymentMethod = getInputConfig(paymentMethodForm?.inputs, "savePaymentMethod", inputsEnabled);
 
     return (
         <div id="checkout-confirmation" className="lg:flex lg:min-h-full flex flex-col">
@@ -145,8 +219,16 @@ export function Component() {
 
             {
                 paymentMethods.length === 0 ?
-            <form action={path} method="POST" className="checkout-payment-method px-4 pb-36 pt-16 sm:px-6 lg:col-start-1 lg:row-start-1 lg:px-0 lg:pb-16">
-                <input type="hidden" name="type" value="newPaymentMethod" />
+            <form action={paymentMethodForm?.url ?? path} encType={paymentMethodForm?.encoding} method={paymentMethodForm?.method ?? "POST"} className="checkout-payment-method px-4 pb-36 pt-16 sm:px-6 lg:col-start-1 lg:row-start-1 lg:px-0 lg:pb-16">
+                {newPaymentMethodFormData}
+                {paymentMethodForm?.header}
+                {
+                    !paymentMethodForm?.url ? (
+                        <>
+                            <input type="hidden" name="type" value="newPaymentMethod" />
+                        </>
+                    ) : undefined
+                }
                 <div className="mx-auto max-w-lg lg:max-w-none">
 
                     <section aria-labelledby="payment-heading" className="mt-10">
@@ -155,113 +237,177 @@ export function Component() {
                         </h2>
 
                         <div className="mt-6 grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4">
-                            <div className="col-span-3 sm:col-span-4">
-                                <label htmlFor="name-on-card" className="block text-sm font-medium text-gray-700">
-                                    Name on card
-                                </label>
-                                <div className="mt-1">
-                                    <input
-                                        type="text"
-                                        id="name-on-card"
-                                        name="name-on-card"
-                                        autoComplete="cc-name"
-                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    />
-                                </div>
-                            </div>
+                            {
+                                nameOnCard.enabled ? (
+                                    <div className="col-span-3 sm:col-span-4">
+                                        <label htmlFor={nameOnCard.name} className="block text-sm font-medium text-gray-700">
+                                            Name on card
+                                        </label>
+                                        <div className="mt-1">
+                                            <input
+                                                maxLength={64}
+                                                type="text"
+                                                id={nameOnCard.name}
+                                                name={nameOnCard.name}
+                                                autoComplete="cc-name"
+                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                {...nameOnCard.props}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : undefined
+                            }
 
-                            <div className="col-span-3 sm:col-span-4">
-                                <label htmlFor="card-number" className="block text-sm font-medium text-gray-700">
-                                    Card number
-                                </label>
-                                <div className="mt-1">
-                                    <input
-                                        type="text"
-                                        id="card-number"
-                                        name="card-number"
-                                        autoComplete="cc-number"
-                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    />
-                                </div>
-                            </div>
+                            {
+                                cardNumber.enabled ? (
+                                    <div className="col-span-3 sm:col-span-4">
+                                        <label htmlFor={cardNumber.name} className="block text-sm font-medium text-gray-700">
+                                            Card number
+                                        </label>
+                                        <div className="mt-1">
+                                            <input
+                                                minLength={14}
+                                                maxLength={16}
+                                                type="text"
+                                                id={cardNumber.name}
+                                                name={cardNumber.name}
+                                                autoComplete="cc-number"
+                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                {...cardNumber.props}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : undefined
+                            }
 
-                            <div className="col-span-2 sm:col-span-3">
-                                <label htmlFor="expiration-date" className="block text-sm font-medium text-gray-700">
-                                    Expiration date (MM/YY)
-                                </label>
-                                <div className="mt-1">
-                                    <input
-                                        type="text"
-                                        name="expiration-date"
-                                        id="expiration-date"
-                                        autoComplete="cc-exp"
-                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    />
-                                </div>
-                            </div>
+                            {
+                                expirationMonth.enabled ? (
+                                    <div>
+                                        <label htmlFor={expirationMonth.name} className="block text-sm font-medium text-gray-700">
+                                            Expiration Month
+                                        </label>
+                                        <div className="mt-1">
+                                            <input
+                                                minLength={2}
+                                                maxLength={2}
+                                                type="text"
+                                                name={expirationMonth.name}
+                                                id={expirationMonth.name}
+                                                autoComplete="cc-exp-month"
+                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                {...expirationMonth.props}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : undefined
+                            }
 
-                            <div>
-                                <label htmlFor="cvc" className="block text-sm font-medium text-gray-700">
-                                    CVC
-                                </label>
-                                <div className="mt-1">
-                                    <input
-                                        type="text"
-                                        name="cvc"
-                                        id="cvc"
-                                        autoComplete="csc"
-                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex items-center col-span-3">
-                                <input
-                                    id="save"
-                                    name="save"
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <div className="ml-2">
-                                    <label htmlFor="save" className="text-sm font-medium text-gray-900">
-                                        Save Payment Method
-                                    </label>
-                                </div>
-                            </div>
+                            {
+                                expirationYear.enabled ? (
+                                    <div>
+                                        <label htmlFor={expirationYear.name} className="block text-sm font-medium text-gray-700">
+                                            Expiration Year
+                                        </label>
+                                        <div className="mt-1">
+                                            <input
+                                                minLength={2}
+                                                maxLength={2}
+                                                type="text"
+                                                name={expirationYear.name}
+                                                id={expirationYear.name}
+                                                autoComplete="cc-exp-year"
+                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                {...expirationYear.props}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : undefined
+                            }
+
+                            {
+                                cvc.enabled ? (
+                                    <div className="col-span-2">
+                                        <label htmlFor={cvc.name} className="block text-sm font-medium text-gray-700">
+                                            CVC
+                                        </label>
+                                        <div className="mt-1">
+                                            <input
+                                                type="text"
+                                                name={cvc.name}
+                                                id={cvc.name}
+                                                minLength={3}
+                                                maxLength={4}
+                                                autoComplete="cc-csc"
+                                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                {...cvc.props}
+                                            />
+                                        </div>
+                                    </div>
+                                ) : undefined
+                            }
+
+                            {
+                                savePaymentMethod.enabled ? (
+                                    <>
+                                        <div className="flex items-center col-span-3">
+                                            <input
+                                                id="savePaymentMethod"
+                                                name={savePaymentMethod.name}
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <div className="ml-2">
+                                                <label htmlFor={savePaymentMethod.name} className="text-sm font-medium text-gray-900">
+                                                    Save Payment Method
+                                                </label>
+                                            </div>
+                                        </div>
 
 
 
-                            <style dangerouslySetInnerHTML={{__html: `
+                                        <style dangerouslySetInnerHTML={{__html: `
                         
                         .checkout-payment-method:has(input#save:checked) .block-if-save {
                             display: block;
                         }
+                        .checkout-payment-method:has(input#save:checked) .hide-if-save {
+                            display: none;
+                        }
                         
                         `.trim()}} />
 
-                            <div className="col-span-3 sm:col-span-4 hidden block-if-save">
-                                <label htmlFor="paymentMethodName" className="block text-sm font-medium text-gray-700">
-                                    Payment Method Name
-                                </label>
-                                <div className="mt-1">
-                                    <input
-                                        type="text"
-                                        id="paymentMethodName"
-                                        name="paymentMethodName"
-                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                    />
-                                </div>
-                            </div>
+                                        <div className="col-span-3 sm:col-span-4 hidden block-if-save">
+                                            <label htmlFor="paymentMethodName" className="block text-sm font-medium text-gray-700">
+                                                Payment Method Name
+                                            </label>
+                                            <div className="mt-1">
+                                                <input
+                                                    type="text"
+                                                    id="paymentMethodName"
+                                                    name="paymentMethodName"
+                                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : undefined
+                            }
+
                         </div>
                     </section>
 
-                    <div className="mt-10 border-t border-gray-200 pt-6 flex justify-end">
-                        <button
-                            type="submit"
-                            className="w-full rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50 sm:order-last sm:ml-6 sm:w-auto"
-                        >
-                            Confirm Order
-                        </button>
-                    </div>
+                    {
+                        paymentMethodForm?.submit ?? (
+                            <div className="mt-10 border-t border-gray-200 pt-6 flex justify-end">
+                                <input
+                                    value={paymentMethodForm?.method === "GET" ? "Continue to payment" : "Submit"}
+                                    type="submit"
+                                    className="w-full rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50 sm:order-last sm:ml-6 sm:w-auto"
+                                />
+                            </div>
+                        )
+                    }
+                    {paymentMethodForm?.footer}
                 </div>
             </form>
             : undefined }

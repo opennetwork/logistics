@@ -22,9 +22,10 @@ export async function handler(): Promise<OrderCheckoutReviewComponentInfo> {
 
 export interface CheckoutItemsProps {
     className?: string; // Replaces class name, not adds
+    remove?: boolean
 }
 
-export function CheckoutItems({ className }: CheckoutItemsProps) {
+export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) {
     const {
         order,
         order: { orderId },
@@ -88,16 +89,20 @@ export function CheckoutItems({ className }: CheckoutItemsProps) {
 
                                     {/*<span>{product.inStock ? 'In stock' : `Will ship in ${product.leadTime}`}</span>*/}
                                 </div>
-                                <div className="ml-4">
-                                    <a
-                                        href={`/api/version/1/orders/${orderId}/items/${offer ? "offers" : "products"}/${offer ? offer.offerId : product.productId}/delete?redirect=${pathname}`}
-                                        className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex flex-row"
-                                        title={`Remove ${item.quantity} ${product.productName} from bag`}
-                                    >
-                                        <TrashIcon className="w-5 h-5" />&nbsp;
-                                        Remove {item.quantity} from bag
-                                    </a>
-                                </div>
+                                {
+                                    remove ? (
+                                        <div className="ml-4">
+                                            <a
+                                                href={`/api/version/1/orders/${orderId}/items/${offer ? "offers" : "products"}/${offer ? offer.offerId : product.productId}/delete?redirect=${pathname}`}
+                                                className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex flex-row"
+                                                title={`Remove ${item.quantity} ${product.productName} from bag`}
+                                            >
+                                                <TrashIcon className="w-5 h-5" />&nbsp;
+                                                Remove {item.quantity} from bag
+                                            </a>
+                                        </div>
+                                    ) : undefined
+                                }
                             </div>
                         </div>
                     </li>

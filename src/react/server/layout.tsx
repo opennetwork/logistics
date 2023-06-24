@@ -6,6 +6,11 @@ import { importmapPath, name } from "../../package";
 import { readFile } from "node:fs/promises";
 import {ShoppingBagIcon} from "../client/components/icons";
 
+const {
+  IS_LOCAL,
+  DISABLE_ALPHA_WARNING_BANNER
+} = process.env;
+
 export const importMapJSON = await readFile(importmapPath, "utf-8");
 
 export interface LayoutProps {
@@ -163,30 +168,35 @@ export function BaseLayout({
         <script type="importmap" dangerouslySetInnerHTML={{ __html: importMapJSON }} />
       </head>
       <body className="h-full">
-        <div className="lg:pl-72 flex items-center gap-x-6 bg-gray-900 px-6 py-2.5 sm:px-3.5 sm:before:flex-1 sm:after:flex-1 justify-center">
-          <p className="text-sm leading-6 text-white">
-            <span className="flex items-center flex-row justify-center">
-              <strong className="font-semibold">
-                This software is still being refined
-              </strong>
-              &nbsp;&nbsp;
-              <svg
-                viewBox="0 0 2 2"
-                className="hidden lg:block mx-2 inline h-0.5 w-0.5 fill-current"
-                aria-hidden="true"
-              >
-                <circle cx="1" cy="1" r="1" />
-              </svg>
-              &nbsp;&nbsp;
-              <span>
-                Data displayed is not currently verified or checked, and will be
-                removed without further notice.
-                <br />
-                Data is intended to be used only for user experience testing.
+        {
+          !IS_LOCAL && !DISABLE_ALPHA_WARNING_BANNER ? (
+              <div className="lg:pl-72 flex items-center gap-x-6 bg-gray-900 px-6 py-2.5 sm:px-3.5 sm:before:flex-1 sm:after:flex-1 justify-center">
+                <p className="text-sm leading-6 text-white">
+              <span className="flex items-center flex-row justify-center">
+                <strong className="font-semibold">
+                  This software is still being refined
+                </strong>
+                &nbsp;&nbsp;
+                <svg
+                    viewBox="0 0 2 2"
+                    className="hidden lg:block mx-2 inline h-0.5 w-0.5 fill-current"
+                    aria-hidden="true"
+                >
+                  <circle cx="1" cy="1" r="1" />
+                </svg>
+                &nbsp;&nbsp;
+                <span>
+                  Data displayed is not currently verified or checked, and will be
+                  removed without further notice.
+                  <br />
+                  Data is intended to be used only for user experience testing.
+                </span>
               </span>
-            </span>
-          </p>
-        </div>
+                </p>
+              </div>
+          ) : undefined
+        }
+
         {children}
         <script type="module" dangerouslySetInnerHTML={{ __html: script }} />
       </body>

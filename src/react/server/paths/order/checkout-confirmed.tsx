@@ -62,7 +62,7 @@ export function Component() {
                     <dd className="mt-2 text-indigo-600">51547878755545848512</dd>
                 </dl>
 
-                <CheckoutItems className="divide-y divide-gray-200 border-gray-200" />
+                <CheckoutItems className="divide-y divide-gray-200 border-gray-200" remove={false} />
 
                 <dl className="space-y-6 border-gray-200 pt-6 text-sm font-medium text-gray-500">
                     {/*<div className="flex justify-between">*/}

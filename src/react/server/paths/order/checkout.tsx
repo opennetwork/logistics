@@ -247,7 +247,7 @@ export function Component() {
                                     id="save-as-user-default"
                                     name="to.saveAsUserDefault"
                                     type="checkbox"
-                                    defaultChecked={order.to?.saveAsUserDefault ?? true}
+                                    defaultChecked={order.to?.saveAsUserDefault ?? false}
                                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                 />
                                 <div className="ml-2">
