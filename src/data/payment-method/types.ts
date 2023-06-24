@@ -1,3 +1,5 @@
+import {ShipmentTo} from "../shipment";
+
 export type PaymentMethodType =
     | "invoice"
     | "realtime";
@@ -16,6 +18,7 @@ export interface PaymentMethodData extends Record<string, unknown>, PaymentMetho
   issuerName?: string;
   issuerId?: string;
   issuerPaymentMethodId?: string;
+  to?: ShipmentTo;
 }
 
 export interface PaymentMethod extends PaymentMethodData {

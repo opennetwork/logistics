@@ -13,6 +13,7 @@ export async function setOrder(
     ...data,
     // Don't store the products on the order itself
     items: undefined,
+    products: undefined,
     updatedAt,
   };
   await store.set(data.orderId, document);
