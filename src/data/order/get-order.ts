@@ -50,10 +50,12 @@ export async function getUserPendingOrder(userId: string, loadItems = true): Pro
 
   if (order) {
     if (order.status !== "pending") {
-      await deleteCached(key);
+      console.log("Getting new pending order, previous no longer pending");
+      await deleteCached(key, true);
       return getUserPendingOrder(userId);
     }
   } else {
+    console.log("Creating new pending order");
     order = await setOrder({
       orderId,
       status: "pending",

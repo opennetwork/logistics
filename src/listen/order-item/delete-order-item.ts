@@ -51,7 +51,6 @@ export async function deleteOrderItemRoutes(fastify: FastifyInstance) {
       description: "Delete an order item",
       tags: ["order item"],
       summary: "",
-      body: orderItemSchema.orderItemData,
       params,
       security: [
         {

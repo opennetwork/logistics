@@ -4,8 +4,6 @@ import {listPaymentMethods} from "../../../../data";
 import {getUserIdentifiers} from "./utils";
 
 export const path = "/payment-methods";
-export const anonymous = true;
-export const cache = true;
 
 export async function handler() {
     return {
@@ -17,23 +15,20 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 
 export function ListPaymentMethods() {
     const paymentMethods = usePaymentMethods();
-    const { isAnonymous } = useData();
+    const { isAnonymous, url } = useData();
+    const { pathname } = new URL(url);
     return (
         <div className="flex flex-col">
-            {!isAnonymous ? <a href="/payment-method/create" className={LINK_CLASS}>Create Payment Method</a> : undefined}
+            <a href="/payment-method/create" className={LINK_CLASS}>Create Payment Method</a>
             <div className="flex flex-col divide-y">
                 {paymentMethods.map(paymentMethod => (
                     <div key={paymentMethod.paymentMethodId} className="flex flex-row justify-between">
                         <div>{paymentMethod.paymentMethodName}</div>
-                        {
-                            !isAnonymous ? (
-                                <div>
-                                    <a href={`/offers?paymentMethodId=${paymentMethod.paymentMethodId}`} className={LINK_CLASS}>
-                                        Offers
-                                    </a>
-                                </div>
-                            ) : undefined
-                        }
+                        <div>
+                            <a href={`/api/version/1/payments/methods/${paymentMethod.paymentMethodId}/delete?redirect=${pathname}`} className={LINK_CLASS}>
+                                Delete
+                            </a>
+                        </div>
                     </div>
                 ))}
             </div>

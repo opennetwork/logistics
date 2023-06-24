@@ -424,7 +424,10 @@ export interface OrderData {
   status: OrderStatus;
   reference?: string;
   to?: ShipmentTo;
-  from?: ShipmentFrom; // Is it from a specific known location?
+  // Is it from a specific known location?
+  from?: ShipmentFrom;
+  // Partial in progress payment data, before the payment method is created or matched
+  paymentMethod?: Partial<PaymentMethodData>
   paymentId?: string;
   paymentMethodId?: string;
 }
@@ -548,6 +551,7 @@ export interface PaymentMethodData extends Record<string, unknown>, PaymentMetho
   issuerName?: string;
   issuerId?: string;
   issuerPaymentMethodId?: string;
+  to?: ShipmentTo;
 }
 
 export interface PaymentMethod extends PaymentMethodData {
@@ -582,12 +586,18 @@ export type ShipmentStatus = "pending" | "processing" | "sent" | "delivered";
 export interface ShipmentLocation {
   userId?: string;
   organisationId?: string;
+  organisationText?: string; // User given text
+  organisationName?: string; // Actual stored name
   locationId?: string;
   inventoryId?: string;
   inventoryItemId?: string;
   orderId?: string;
   address?: string[]; // Human-readable address
   countryCode?: string;
+  saveAsUserDefault?: boolean;
+  sameAsShipping?: boolean;
+  name?: string;
+  email?: string; // Yeah it is shipment information...
 }
 
 export interface ShipmentIdentifiers {
