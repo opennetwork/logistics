@@ -11,7 +11,7 @@ export async function productList() {
 
     function setup() {
         const anchors = list.querySelectorAll("a[href^='/api']");
-        console.log(anchors.length);
+        // console.log(anchors.length);
 
         for (let i = 0; i < anchors.length; i += 1) {
             const anchor = anchors.item(i);
@@ -57,19 +57,16 @@ export async function productList() {
                 await response.text();
                 const parent = anchor.closest("[id]");
                 if (!parent) return location.reload(); // Fallback
-                await reload(parent.getAttribute("id"));
+                await reload(
+                    `#${parent.getAttribute("id")}`,
+                    ".dynamic-sidebar-mobile nav",
+                    ".dynamic-sidebar-desktop nav"
+                );
             }
         }
 
-        async function reload(id: string) {
-
+        async function reload(...selectors: string[]) {
             const url = new URL(location.href);
-
-            url.pathname = url.pathname.replace(/\/$/, "");
-
-            if (!url.pathname.endsWith("/fragment")) {
-                url.pathname = `${url.pathname}/fragment`;
-            }
 
             const response = await fetch(url);
             ok(response.ok);
@@ -78,20 +75,33 @@ export async function productList() {
             const template = document.createElement("template");
 
             template.innerHTML = text;
-            const element = template.content.getElementById(id);
 
-            if (!element) {
-                console.log(`Expected ${id} to be in returned fragment`);
-                return location.reload();
+            for (const selector of selectors) {
+
+                const elements = template.content.querySelectorAll(selector);
+
+                if (!elements.length) {
+                    console.log(`Expected ${selector} to be in returned`);
+                    continue;
+                }
+                if (elements.length > 1) {
+                    console.log(`Expected 1 instance of ${selector} to be in returned`);
+                    continue;
+                }
+
+                const element = elements.item(0);
+
+                const cloned = element.cloneNode(true);
+
+                const target = document.querySelector(selector);
+
+                if (!target) {
+                    console.log(`Expected target for ${selector}`);
+                    continue;
+                }
+
+                target.replaceWith(cloned);
             }
-
-            const cloned = element.cloneNode(true);
-
-            const target = document.getElementById(id);
-
-            ok(target, "Expected target");
-
-            target.replaceWith(cloned);
 
             setup();
         }

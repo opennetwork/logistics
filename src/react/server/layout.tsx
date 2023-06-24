@@ -1,9 +1,10 @@
-import { PropsWithChildren, ReactElement } from "react";
+import {PropsWithChildren, ReactElement, useMemo} from "react";
 import { description, namespace, project } from "../../package";
 import { getOrigin } from "../../listen/config";
 import { useData, useIsTrusted, useQuery, useQuerySearch } from "./data";
 import { importmapPath, name } from "../../package";
 import { readFile } from "node:fs/promises";
+import {ShoppingBagIcon} from "../client/components/icons";
 
 export const importMapJSON = await readFile(importmapPath, "utf-8");
 
@@ -37,6 +38,8 @@ const publicItems: MenuItem[] = [
   },
 ];
 
+const MENU_ICON_CLASS = "h-6 w-6 shrink-0 text-indigo-200 group-hover:text-white";
+
 const items: UserMenuItem[] = [
   {
     path: "/home",
@@ -48,7 +51,7 @@ const items: UserMenuItem[] = [
         viewBox="0 0 24 24"
         strokeWidth={1.5}
         stroke="currentColor"
-        className="h-6 w-6 shrink-0 text-indigo-200 group-hover:text-white"
+        className={MENU_ICON_CLASS}
       >
         <path
           strokeLinecap="round"
@@ -68,7 +71,7 @@ const items: UserMenuItem[] = [
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="h-6 w-6 shrink-0 text-indigo-200 group-hover:text-white"
+            className={MENU_ICON_CLASS}
         >
           <path
               strokeLinecap="round"
@@ -76,26 +79,6 @@ const items: UserMenuItem[] = [
               d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"
           />
         </svg>
-    ),
-  },
-  {
-    path: "/feedback",
-    name: "Feedback",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={1.5}
-        stroke="currentColor"
-        className="h-6 w-6 shrink-0 text-indigo-200 group-hover:text-white"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155"
-        />
-      </svg>
     ),
   },
   {
@@ -108,7 +91,7 @@ const items: UserMenuItem[] = [
         viewBox="0 0 24 24"
         strokeWidth={1.5}
         stroke="currentColor"
-        className="h-6 w-6 shrink-0 text-indigo-200 group-hover:text-white"
+        className={MENU_ICON_CLASS}
       >
         <path
           strokeLinecap="round"
@@ -267,13 +250,30 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
   const { pathname } = new URL(url, getOrigin());
   const search = useQuerySearch();
   const isTrusted = useIsTrusted();
-  const userMenuItems = items.filter(({ trusted }) => !trusted || isTrusted);
-  console.log(userMenuItems.map((value) => value.path));
+  const { order } = useData();
+  const pendingOrder = order?.status === "pending" ? order : undefined;
+  const inOrder = pendingOrder?.products?.reduce(
+      (sum, value) => sum + (value.quantity ?? 1),
+      0
+  ) ?? 0;
+  const userMenuItems = useMemo(() => {
+    const filtered = items.filter(({ trusted }) => !trusted || isTrusted);
+    if (inOrder) {
+      const last = filtered.pop();
+      filtered.push({
+        icon: <ShoppingBagIcon className={MENU_ICON_CLASS} />,
+        path: "/order/checkout",
+        name: `Checkout ${inOrder}${inOrder > 1 ? " Items" : ""}`
+      });
+      filtered.push(last);
+    }
+    return filtered;
+  }, [items, inOrder]);
   return (
     <BaseLayout {...props}>
       <div>
         <noscript className="lg:hidden">
-          <ul role="list" className="-mx-2 space-y-1 list-none">
+          <ul role="list" className="-mx-2 space-y-1 list-none dynamic-sidebar-nojs">
             {userMenuItems.map(({ path, name, icon }, index) => (
               <li key={index}>
                 <a
@@ -299,7 +299,7 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
         </noscript>
         {/* Off-canvas menu for mobile, show/hide based on off-canvas menu state. */}
         <div
-          className="hidden sidebar lg:hidden"
+          className="hidden sidebar lg:hidden dynamic-sidebar-mobile"
           role="dialog"
           aria-modal="true"
         >
@@ -403,7 +403,7 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
         </div>
 
         {/* Static sidebar for desktop */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col dynamic-sidebar-desktop">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-indigo-600 px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center">

@@ -33,6 +33,7 @@ export interface ReactData {
   products?: Product[];
   offers?: Offer[];
   orders?: Order[];
+  order?: Order;
   paymentMethods?: PaymentMethod[];
 }
 

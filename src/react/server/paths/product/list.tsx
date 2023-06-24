@@ -83,9 +83,9 @@ export function ListProducts() {
                         const inOrder = order.products
                             .filter(value => value.productId === product.productId)
                             .reduce((sum, value) => sum + (value.quantity ?? 1), 0);
-                        if (inOrder) {
-                            console.log({ inOrder, product: product.productName });
-                        }
+                        // if (inOrder) {
+                        //     console.log({ inOrder, product: product.productName });
+                        // }
                         const redirect = encodeURIComponent(`${pathname}#product-${product.productId}`);
                         return (
                             <div key={product.productId} id={`product-${product.productId}`} className="flex justify-between flex-col">

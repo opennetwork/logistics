@@ -10,3 +10,4 @@ export * from "./wrench";
 export * from "./prescription-bottle";
 export * from "./svg-text";
 export * from "./trash";
+export * from "./bag";
