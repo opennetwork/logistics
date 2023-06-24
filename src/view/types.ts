@@ -24,10 +24,3 @@ export interface ViewConfig {
     Component?: FunctionComponent
     routes?: FastifyPluginAsync
 }
-
-
-declare global {
-    interface ApplicationConfig extends ViewConfig {
-
-    }
-}

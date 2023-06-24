@@ -30,10 +30,3 @@ export interface PaymentForm {
 export interface ReactOrderConfig {
     getPaymentForm?(info: OrderCheckoutConfirmationComponentInfo): Promise<string | PaymentForm>
 }
-
-
-declare global {
-    interface ApplicationConfig extends ReactOrderConfig {
-
-    }
-}

@@ -11,12 +11,6 @@ export interface AuthenticationRoleConfig {
   roles: AuthenticationRole[]
 }
 
-declare global {
-  interface ApplicationConfig extends Partial<Exclude<AuthenticationRoleConfig, "roles">> {
-
-  }
-}
-
 export const DEFAULT_NAMED_ROLES: NamedRolesConfig = {
   admin: "Admin",
   industry: "Industry",
