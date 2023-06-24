@@ -10,8 +10,7 @@ export const path = "/products";
 export const anonymous = true;
 export const cache = true;
 
-
-export interface ProductInfo {
+export interface ProductListComponentInfo {
     images600: File[]
     productImages: Record<string, File>
     offers: Offer[];
@@ -26,7 +25,7 @@ type Schema = {
     Params: Params
 }
 
-export async function handler(): Promise<ProductInfo> {
+export async function handler(): Promise<ProductListComponentInfo> {
     const images600 = (
         await listProductFiles({
             public: isAnonymous(),
@@ -55,7 +54,7 @@ export function ListProducts() {
     const products = useProducts();
     const { isAnonymous, url } = useData();
     const { pathname } = new URL(url);
-    const { images600, productImages, offers, order, order: { orderId } } = useInput<ProductInfo>();
+    const { images600, productImages, offers, order, order: { orderId } } = useInput<ProductListComponentInfo>();
     const sorted = useMemo(() => {
         return [...products]
             .filter(product => !product.generic)

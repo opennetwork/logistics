@@ -18,8 +18,7 @@ const chance = new Chance();
     ok(products.length >= 3, "Some products should be already seeded")
 
     const { orderId } = await addOrder({
-        status: "pending", // Pending cart order,
-        items: []
+        status: "pending", // Pending cart order
     });
 
     const defaultToQuantityOne = await addOrderItem({

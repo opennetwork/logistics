@@ -3,7 +3,7 @@ import {
     addInventoryItem,
     addOffer,
     addOrder,
-    addOrderItem,
+    addOrderItem, addOrderItems,
     addPayment,
     addPaymentMethod,
     addShipment,
@@ -16,7 +16,7 @@ import {
     listOrders,
     listProducts,
     setInventoryItem,
-    setOrder,
+    setOrder, setOrderItems,
     setOrganisation,
     setPayment,
     setPaymentMethod,
@@ -99,7 +99,6 @@ const userId = v5("userId", namespace);
 
         let order = await addOrder({
             status: "pending", // Pending cart order,
-            items: [],
             reference,
             from,
         });
@@ -248,17 +247,20 @@ const userId = v5("userId", namespace);
             {
                 // Submit the order to our partner... whoever that is
                 // Ask them to send it to our location
-                await addOrder({
+                const { orderId } = await addOrder({
                     status: "submitted",
                     from: partner,
                     to: {
                         locationId,
                         inventoryId,
                         organisationId
-                    },
-                    items: orderedProducts
-                        .map(({ productId, quantity }) => ({ productId, quantity }))
+                    }
                 });
+
+                await addOrderItems(
+                    orderedProducts
+                        .map(({ productId, quantity }) => ({ productId, quantity, orderId }))
+                )
             }
 
             {

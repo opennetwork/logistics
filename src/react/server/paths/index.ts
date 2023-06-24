@@ -39,6 +39,7 @@ export const views: View[] = [
   offer.list,
   order.create,
   order.list,
+  order.checkoutReview,
   paymentMethod.create,
   paymentMethod.list,
   paymentMethod.select

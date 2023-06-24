@@ -60,7 +60,7 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 
 export function CreateOrder() {
     const query = useQuery<{ productId?: string, offerId?: string }>();
-    const body = useMaybeBody<OrderData>();
+    const body = useMaybeBody<OrderData & Partial<Order>>();
     const queryOffer = useOffer(query.offerId ?? body?.items[0]?.offerId);
     const queryProduct = useProduct(query.productId ?? body?.items[0]?.productId);
     const timezone = useTimezone();
@@ -72,7 +72,7 @@ export function CreateOrder() {
 
     return <OrderBody body={result?.success ? undefined : body} />
 
-    function OrderBody({ body }: { body?: OrderData }) {
+    function OrderBody({ body }: { body?: OrderData & Partial<Order> }) {
         return (
             <form name="order" action="/order/create#action-section" method="post">
                 <input type="hidden" name="status" value={body?.status || "pending"} />

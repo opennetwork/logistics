@@ -262,7 +262,7 @@ export function Layout(props: PropsWithChildren<LayoutProps>) {
       const last = filtered.pop();
       filtered.push({
         icon: <ShoppingBagIcon className={MENU_ICON_CLASS} />,
-        path: "/order/checkout",
+        path: "/order/checkout/review",
         name: `Checkout ${inOrder}${inOrder > 1 ? " Items" : ""}`
       });
       filtered.push(last);

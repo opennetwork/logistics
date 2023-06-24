@@ -2,10 +2,11 @@ import {listOrderItems, listOrderProducts} from "./list-order-items";
 import {isOrderOfferItem} from "./is";
 import {getOffer, DEFAULT_CURRENCY} from "../offer";
 import {ok} from "../../is";
+import {OrderItem} from "./types";
 
 
-export async function getOrderPrice(orderId: string) {
-    const items = await listOrderItems(orderId);
+export async function getOrderPrice(orderId: string, givenItems?: OrderItem[]) {
+    const items = givenItems ?? await listOrderItems(orderId);
     const offerItems = items.filter(isOrderOfferItem);
     const offerIds = [...new Set(
         offerItems.map(item => item.offerId)
@@ -27,6 +28,13 @@ export async function getOrderPrice(orderId: string) {
     const offers = await Promise.all(
         offerIds.map(offerId => getOffer(offerId))
     );
+    if (!offers.length) {
+        return {
+            price: "",
+            currency: ""
+        }
+    }
+
     const offerMap = new Map(
         offers.map(
             offer => [offer.offerId, offer] as const
@@ -46,7 +54,7 @@ export async function getOrderPrice(orderId: string) {
     )
 
     return {
-        price,
+        price: (Math.round(price * 100) / 100).toFixed(2),
         currency: currencies[0]
     }
 }

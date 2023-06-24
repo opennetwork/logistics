@@ -6,7 +6,6 @@ export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
 export interface OrderData {
   status: OrderStatus;
   reference?: string;
-  items?: ((OrderItemIdentifierData & Partial<OrderItem>) | OrderItem)[];
   to?: ShipmentTo;
   from?: ShipmentFrom; // Is it from a specific known location?
   paymentId?: string;
@@ -17,5 +16,6 @@ export interface Order extends OrderData {
   orderId: string;
   createdAt: string;
   updatedAt: string;
+  items?: OrderItem[];
   products?: OrderProductItem[];
 }
