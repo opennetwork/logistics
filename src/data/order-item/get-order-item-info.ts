@@ -38,7 +38,7 @@ export async function getOrderPrice(orderId: string, givenItems?: OrderItem[]): 
     )];
     const currencyCode = currencies[0] ?? DEFAULT_CURRENCY;
     // TODO if this is required...
-    ok(currencies.length > 1, "Expected same currency across offers");
+    ok(currencies.length <= 1, "Expected same currency across offers");
 
     const price = offerIds.reduce(
         (sum, offerId) => {

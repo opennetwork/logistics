@@ -9,11 +9,13 @@ import {InputConfig, PaymentForm} from "./types";
 import {getConfig} from "../../../../config";
 import {ReactNode, useMemo} from "react";
 import exp from "constants";
+import {getWebAuthnAuthenticationOptions, WebAuthnAuthenticationResponse} from "../../../../listen/auth/webauthn";
 export const path = "/order/checkout/confirmation";
 
 export interface OrderCheckoutConfirmationComponentInfo extends OrderCheckoutReviewComponentInfo {
     paymentMethods: PaymentMethod[];
     paymentMethodForm?: PaymentForm;
+    credentials?: WebAuthnAuthenticationResponse
 }
 
 export async function handler(): Promise<OrderCheckoutConfirmationComponentInfo> {
@@ -21,6 +23,11 @@ export async function handler(): Promise<OrderCheckoutConfirmationComponentInfo>
     const paymentMethods = await listPaymentMethods({
         userId: getUser().userId
     });
+
+    const credentials = paymentMethods?.length ? await getWebAuthnAuthenticationOptions({
+        authenticatorType: "payment"
+    }) : undefined;
+
     const info: OrderCheckoutConfirmationComponentInfo = {
         ...base,
         paymentMethods
@@ -44,7 +51,8 @@ export async function handler(): Promise<OrderCheckoutConfirmationComponentInfo>
     return {
         ...info,
         paymentMethods,
-        paymentMethodForm
+        paymentMethodForm,
+        credentials
     }
 }
 
@@ -104,6 +112,7 @@ export function Component() {
         paymentMethods,
         paymentMethodForm,
         currencySymbol,
+        credentials
     } = useInput<OrderCheckoutConfirmationComponentInfo>();
 
     const newPaymentMethodFormData = useMemo(() => {
@@ -177,7 +186,12 @@ export function Component() {
             </section>
             {
                 paymentMethods.length ? (
-                    <form action={path} method="POST" >
+                    <form action={path} method="POST" id="payment-method-confirmation">
+                        {
+                            credentials ? (
+                                <script type="application/json" id="payment-method-credentials" dangerouslySetInnerHTML={{ __html: JSON.stringify(credentials) }} />
+                            ) : undefined
+                        }
                         <input type="hidden" name="type" value="existingPaymentMethod" />
                         <div className="px-4 pb-36 pt-16 sm:px-6 lg:col-start-1 lg:row-start-1 lg:px-0 lg:pb-16">
                             <div className="col-span-3 sm:col-span-4">
