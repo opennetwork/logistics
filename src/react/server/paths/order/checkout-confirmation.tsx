@@ -102,7 +102,8 @@ export function Component() {
         order,
         total,
         paymentMethods,
-        paymentMethodForm
+        paymentMethodForm,
+        currencySymbol,
     } = useInput<OrderCheckoutConfirmationComponentInfo>();
 
     const newPaymentMethodFormData = useMemo(() => {
@@ -170,7 +171,7 @@ export function Component() {
                 {total ? (
                     <p className="mt-6 flex items-center justify-between border-t border-gray-200 pt-6 text-sm font-medium text-gray-900">
                         <span className="text-base">Total</span>
-                        <span className="text-base">${total}</span>
+                        <span className="text-base">{currencySymbol}{total}</span>
                     </p>
                 ) : undefined}
             </section>

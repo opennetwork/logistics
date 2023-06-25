@@ -47,3 +47,5 @@ export const views: View[] = [
   paymentMethod.list,
   paymentMethod.select
 ];
+
+export * from "./types";

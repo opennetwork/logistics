@@ -61,7 +61,8 @@ export async function submit(request: FastifyRequest<Schema>, response: FastifyR
 export function Component() {
     const {
         order,
-        total
+        total,
+        currencySymbol
     } = useInput<OrderCheckoutComponentInfo>();
 
     console.log(order);
@@ -104,7 +105,7 @@ export function Component() {
                 {total ? (
                     <p className="mt-6 flex items-center justify-between border-t border-gray-200 pt-6 text-sm font-medium text-gray-900">
                         <span className="text-base">Total</span>
-                        <span className="text-base">${total}</span>
+                        <span className="text-base">{currencySymbol}{total}</span>
                     </p>
                 ) : undefined}
             </section>

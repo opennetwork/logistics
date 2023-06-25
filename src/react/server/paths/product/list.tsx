@@ -8,7 +8,6 @@ import {TrashIcon} from "../../../client/components/icons";
 
 export const path = "/products";
 export const anonymous = true;
-export const cache = true;
 
 export interface ProductListComponentInfo {
     images600: File[]

@@ -5,8 +5,10 @@ export type MaybeNumberString = `${number}` | string;
 
 export interface OfferPrice {
   price: MaybeNumberString;
+  locale?: string;
   currency: string;
   currencyCode?: string;
+  currencySymbol?: string;
   countryCode?: string;
 }
 

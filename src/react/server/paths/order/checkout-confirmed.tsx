@@ -40,7 +40,7 @@ export function Component() {
     const {
         order,
         total,
-        paymentMethods
+        currencySymbol
     } = useInput<OrderCheckoutConfirmedComponentInfo>();
 
     if (!order.products.length) {
@@ -82,7 +82,7 @@ export function Component() {
 
                     <div className="flex items-center justify-between border-t border-gray-200 pt-6 text-gray-900">
                         <dt className="text-base">Total</dt>
-                        <dd className="text-base">${total}</dd>
+                        <dd className="text-base">{currencySymbol}{total}</dd>
                     </div>
                 </dl>
 

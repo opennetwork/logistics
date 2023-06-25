@@ -3,20 +3,23 @@ import {useData, useInput, useProducts} from "../../data";
 import {TrashIcon} from "../../../client/components/icons";
 import {getOrderPrice} from "../../../../data/order-item/get-order-item-info";
 import {CheckoutEmpty} from "../../../client/components/checkout";
+import {OfferPrice} from "../../../../data";
 
 export const path = "/order/checkout/review";
 
-export interface OrderCheckoutReviewComponentInfo extends ProductListComponentInfo {
-    total: string;
+export interface OrderCheckoutReviewComponentInfo extends ProductListComponentInfo, OfferPrice {
+    total: string
 }
 
 export async function handler(): Promise<OrderCheckoutReviewComponentInfo> {
     const base: ProductListComponentInfo = await baseHandler();
-    const { price } = await getOrderPrice(base.order.orderId, base.order.items);
+    const price = await getOrderPrice(base.order.orderId, base.order.items);
 
     return {
         ...base,
-        total: price
+        ...price,
+        // Be explicit that the price is the total price
+        total: price.price
     }
 }
 
@@ -31,6 +34,7 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
         order: { orderId },
         offers,
         images600,
+        currencySymbol
     } = useInput<OrderCheckoutReviewComponentInfo>();
     const products = useProducts();
     const { url } = useData();
@@ -73,7 +77,7 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
                                             {product.productName}
                                         </a>
                                     </h4>
-                                    <p className="ml-4 text-sm font-medium text-gray-900">{offer ? `$${offer.price}` : ""}</p>
+                                    <p className="ml-4 text-sm font-medium text-gray-900">{offer ? `${currencySymbol}${offer.price}` : ""}</p>
                                 </div>
                                 {/*<p className="mt-1 text-sm text-gray-500">{product.color}</p>*/}
                                 {/*<p className="mt-1 text-sm text-gray-500">{product.size}</p>*/}
@@ -116,7 +120,8 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
 export function Component() {
     const {
         order,
-        total
+        total,
+        currencySymbol
     } = useInput<OrderCheckoutReviewComponentInfo>();
 
     if (!order.products.length) {
@@ -148,7 +153,7 @@ export function Component() {
                                 <dl className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <dt className="text-base font-medium text-gray-900">Subtotal</dt>
-                                        <dd className="ml-4 text-base font-medium text-gray-900">${total}</dd>
+                                        <dd className="ml-4 text-base font-medium text-gray-900">{currencySymbol}{total}</dd>
                                     </div>
                                 </dl>
                                 <p className="mt-1 text-sm text-gray-500">Shipping and taxes will be calculated at checkout.</p>
