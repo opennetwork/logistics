@@ -189,7 +189,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
     };
   }
   function createPathSubmitHandler(view: View) {
-    const { submit, handler: baseHandler, path } = view;
+    const { submit, handler: baseHandler, path, deferHandlerWhenSubmit } = view;
     ok(
       typeof submit === "function",
       `Expected pathSubmit.${path} to be a function`
@@ -199,16 +199,19 @@ export async function viewRoutes(fastify: FastifyInstance) {
       request: FastifyRequest,
       response: FastifyReply
     ) {
-      let baseResult;
+      let baseResultGiven;
 
-      if (baseHandler) {
-        baseResult = await baseHandler(request, response);
+      if (baseHandler && deferHandlerWhenSubmit !== false) {
+        baseResultGiven = {
+          value: await baseHandler(request, response)
+        };
         if (response.sent) return;
       }
 
       let result, error;
       try {
-        result = await submit(request, response, baseResult);
+        result = await submit(request, response, baseResultGiven?.value);
+        if (response.sent) return;
       } catch (caught) {
         error = caught;
       }
@@ -220,7 +223,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
           submitted: true,
         },
         false,
-          { value: baseResult }
+          baseResultGiven
       );
       await pathHandler(request, response);
     };

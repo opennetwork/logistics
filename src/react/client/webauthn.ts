@@ -3,34 +3,24 @@ import {GenerateAuthenticationOptionsOpts} from "@simplewebauthn/server";
 import {
     AuthenticationResponseJSON,
     PublicKeyCredentialCreationOptionsJSON,
-    PublicKeyCredentialRequestOptionsJSON, RegistrationResponseJSON
+    PublicKeyCredentialRequestOptionsJSON,
+    RegistrationResponseJSON
 } from "@simplewebauthn/typescript-types";
 import {startAuthentication, startRegistration} from "@simplewebauthn/browser";
+import type {PaymentRequestOptionsJSON, PaymentResponseJSON} from "../../listen/auth/types";
+import {startPaymentRequest} from "./secure-payment";
+import {PartialPaymentRequestOptionsJSON} from "../../listen/auth/types";
+
 
 export interface AuthenticateOptions extends WebAuthnOptionsOptions {
-    payment?: boolean;
+    payment?: boolean | PartialPaymentRequestOptionsJSON;
+    response?: WebAuthnOptionsResponse;
+    redirect?: boolean;
 }
 
-export async function authenticate(options: AuthenticateOptions) {
+export async function authenticate(options: AuthenticateOptions): Promise<VerifyResponse> {
 
     if (options.payment) {
-        options = {
-            ...options,
-            registration: {
-                ...options.registration,
-                authenticatorSelection: {
-                    userVerification: "required",
-                    residentKey: "required",
-                    authenticatorAttachment: "platform",
-                },
-                extensions: {
-                    "payment": {
-                        isPayment: true,
-                    }
-                }
-            }
-        }
-
         if (!options.authenticatorType) {
             options = {
                 ...options,
@@ -46,16 +36,48 @@ export async function authenticate(options: AuthenticateOptions) {
         }
     }
 
-    const { registration, authentication } = await generateOptions(options);
 
+    const { registration, authentication, payment } = options.response ?? await generateOptions(options);
+
+    console.log(options, { registration, authentication, payment });
     let response;
-    if (options.register || !authentication) {
+    if (options.register || (!authentication && !payment)) {
         if (!registration) {
-            return alert("Can only register new credentials on original device");
+            const message = "Can only register new credentials on original device";
+            alert(message);
+            throw new Error(message);
         }
         response = await verify({
             registration: await startRegistration(registration.options),
             state: registration.state
+        });
+    } else if (payment) {
+        const paymentPartialOptions: PartialPaymentRequestOptionsJSON = typeof options.payment !== "boolean" ? options.payment : {
+
+        }
+        const paymentOptions: PaymentRequestOptionsJSON = {
+            ...payment.options,
+            ...paymentPartialOptions,
+            data: {
+                ...payment.options.data,
+                ...paymentPartialOptions?.data,
+                instrument: {
+                    ...payment.options.data.instrument,
+                    ...paymentPartialOptions?.data?.instrument
+                },
+            },
+            details: {
+                ...payment.options.details,
+                ...paymentPartialOptions.details,
+                total: {
+                    ...payment.options.details.total,
+                    ...paymentPartialOptions.details?.total
+                }
+            }
+        }
+        response = await verify({
+            payment: await startPaymentRequest(paymentOptions),
+            state: authentication.state
         });
     } else {
         response = await verify({
@@ -64,9 +86,14 @@ export async function authenticate(options: AuthenticateOptions) {
         });
     }
 
-    if (response?.verified && response?.redirectUrl) {
-        location.href = response.redirectUrl;
+    if (options.redirect !== false) {
+
+        if (response?.verified && response?.redirectUrl) {
+            location.href = response.redirectUrl;
+        }
     }
+
+    return response;
 }
 
 export interface WebAuthnOptionsOptions {
@@ -85,6 +112,10 @@ export interface WebAuthnOptionsResponse {
     authentication?: {
         state: string;
         options: PublicKeyCredentialRequestOptionsJSON;
+    },
+    payment?: {
+        state: string;
+        options: PaymentRequestOptionsJSON;
     }
 }
 
@@ -102,11 +133,14 @@ async function generateOptions(options: WebAuthnOptionsOptions): Promise<WebAuth
 interface VerifyOptions {
     registration?: RegistrationResponseJSON;
     authentication?: AuthenticationResponseJSON;
+    payment?: PaymentResponseJSON;
     state: string;
 }
 
 interface VerifyResponse {
     verified: boolean;
+    userCredentialId?: string;
+    userCredentialState?: string;
     redirectUrl?: string;
 }
 

@@ -17,6 +17,7 @@ import {
 } from "@simplewebauthn/typescript-types";
 import {GenerateRegistrationOptionsOpts} from "@simplewebauthn/server/dist/registration/generateRegistrationOptions";
 import {
+    addAuthenticationState,
     addCookieState,
     addExternalUser, AuthenticationRole,
     AuthenticationState, AuthenticationStateData,
@@ -25,42 +26,57 @@ import {
     getUser, getUserAuthenticationRoleForUser,
     setAuthenticationState, setExternalReference, UntypedAuthenticationStateData
 } from "../../data";
-import {ok} from "../../is";
+import {isNumberString, ok} from "../../is";
 import base64 from "@hexagon/base64";
 import fromArrayBuffer = base64.fromArrayBuffer;
 import toArrayBuffer = base64.toArrayBuffer;
 import {getOrigin} from "../config";
 import {v4} from "uuid";
+import {PaymentRequestDataJSON, PaymentRequestOptionsJSON, PaymentResponseJSON} from "./types";
 
 const INVALID_MESSAGE = "Authentication state invalid or expired";
+
+type WithChallenge = AuthenticationState & { challenge: string, authenticatorType?: string };
 
 export interface WebAuthnAuthenticationOptionsBody extends Pick<UserCredential, "authenticatorType"> {
     email?: string
     redirectUrl?: string;
+    register?: boolean;
     registration?: Partial<GenerateRegistrationOptionsOpts>
     authentication?: Partial<GenerateAuthenticationOptionsOpts>
+    payment?: Partial<PaymentRequestOptionsJSON>
 }
 
-export interface WebAuthnAuthenticationResponse {
-    authentication: {
+export interface WebAuthnAuthenticationPaymentOptions {
+    options: PaymentRequestOptionsJSON;
+    state: string;
+}
+
+export interface WebAuthnAuthenticationResponse extends Pick<UserCredential, "authenticatorType"> {
+    authentication?: {
         options: PublicKeyCredentialRequestOptionsJSON;
         state: string;
+        required?: boolean
     };
-    registration: {
+    registration?: {
         options: PublicKeyCredentialCreationOptionsJSON;
         state: string;
     };
+    payment?: WebAuthnAuthenticationPaymentOptions
 }
 
 export interface VerifyWebAuthnAuthenticationOptionsBody {
     registration?: RegistrationResponseJSON;
     authentication?: AuthenticationResponseJSON;
+    payment?: PaymentResponseJSON;
     state: string;
 }
 
 export interface VerifyWebAuthnAuthenticationResponse {
     verified: boolean;
     redirectUrl?: string;
+    userCredentialId?: string;
+    userCredentialState?: string;
 }
 
 export async function webauthnRoutes(fastify: FastifyInstance) {
@@ -162,13 +178,20 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
 export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticationOptionsBody): Promise<WebAuthnAuthenticationResponse> {
     const {
         WEBAUTHN_RP_NAME = name,
-        WEBAUTHN_RP_ID
+        WEBAUTHN_RP_ID,
+        WEBAUTHN_PAYMENT_ORIGIN,
+        WEBAUTHN_TIMEOUT
     } = process.env;
+
+    const timeout = isNumberString(WEBAUTHN_TIMEOUT) ? +WEBAUTHN_TIMEOUT : 360000;
 
     const { email, authenticatorType, registration, authentication, redirectUrl } = body;
 
     const existingUser = getMaybeUser();
-    const existingUserCredentials = existingUser ? await listUserCredentials(existingUser?.userId) : undefined;
+    const existingUserCredentials = existingUser ? (
+        (await listUserCredentials(existingUser?.userId))
+            .filter(credential => credential.authenticatorType === authenticatorType)
+    ): undefined;
 
     const externalId = createUserId();
     const reference = await getExternalReference("credential", externalId);
@@ -183,12 +206,52 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
     ) : []
 
     const registrationPromise = createRegistration();
-    const authenticationPromise = createAuthentication();
+    const authenticationOptions = await createAuthentication();
+
+    let payment: WebAuthnAuthenticationPaymentOptions | undefined = undefined;
+    if (authenticatorType === "payment" && body.payment?.details) {
+        payment = createPayment(authenticationOptions);
+    }
 
     return {
+        authenticatorType,
         registration: await registrationPromise,
-        authentication: await authenticationPromise,
+        authentication: authenticationOptions,
+        payment,
     };
+
+    function createPayment(authentication: WebAuthnAuthenticationResponse["authentication"]): WebAuthnAuthenticationPaymentOptions {
+        const {
+            challenge,
+            allowCredentials,
+            timeout
+        } = authentication.options;
+        const { hostname, origin } = new URL(getOrigin());
+        const data: PaymentRequestDataJSON = {
+            rpId: WEBAUTHN_RP_ID || hostname,
+            challenge,
+            allowCredentials,
+            timeout,
+            ...body.payment.data,
+            instrument: {
+                displayName: `${hostname} payment`,
+                icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseKgAAAABJRU5ErkJggg==",
+                iconMustBeShown: false,
+                ...body.payment?.data?.instrument
+            },
+            payeeOrigin: WEBAUTHN_PAYMENT_ORIGIN || origin
+        };
+        const options = {
+            data,
+            details: body.payment.details
+        };
+        console.log(options.data, options.details);
+        ok<PaymentRequestOptionsJSON>(options);
+        return {
+            state: authentication.state,
+            options
+        }
+    }
 
     async function createAuthentication() {
 
@@ -204,6 +267,7 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
 
         const options = generateAuthenticationOptions({
             userVerification: "preferred",
+            timeout,
             ...authentication,
             allowCredentials: allowCredentials.length ? allowCredentials : undefined,
         });
@@ -218,7 +282,8 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
 
         return {
             options,
-            state
+            state,
+            required: !!existingUserCredentials.length
         }
     }
 
@@ -226,16 +291,35 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
         if (reference && !existingUser) {
             return undefined;
         }
-        const excludeCredentials = credentials.flatMap((credential) => {
-            return credential.credentialId.split("_")
-                .map((credentialId): PublicKeyCredentialDescriptorFuture => ({
-                    id: Buffer.from(credentialId, "base64"),
-                    type: "public-key",
-                    transports: undefined
-                }))
-        });
+        const excludeCredentials = credentials.map((credential): PublicKeyCredentialDescriptorFuture => ({
+            id: toArrayBuffer(credential.credentialId, true),
+            type: "public-key",
+            transports: credential.authenticatorTransports
+        }));
 
         const { hostname } = new URL(getOrigin());
+
+        let registrationOptions = registration || {};
+
+        if (authenticatorType === "payment") {
+            const paymentOptions: unknown = {
+                authenticatorSelection: {
+                    userVerification: "required",
+                    residentKey: "required",
+                    authenticatorAttachment: "platform",
+                },
+                extensions: {
+                    "payment": {
+                        isPayment: true,
+                    }
+                }
+            };
+            ok<Partial<GenerateRegistrationOptionsOpts>>(paymentOptions);
+            registrationOptions = {
+                ...registrationOptions,
+                ...paymentOptions
+            }
+        }
 
         const options = generateRegistrationOptions({
             // Don't prompt users for additional information about the authenticator
@@ -243,11 +327,18 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
             attestationType: "none",
             // Prevent users from re-registering existing authenticators
             excludeCredentials,
-            ...registration,
+            timeout,
+            ...registrationOptions,
+            authenticatorSelection: {
+                ...registrationOptions.authenticatorSelection
+            },
+            extensions: {
+                ...registrationOptions.extensions
+            },
             rpName: WEBAUTHN_RP_NAME || hostname,
             rpID: WEBAUTHN_RP_ID || hostname,
             userID: userId,
-            userName: email || userId,
+            userName: email || authenticatorType,
             userDisplayName: email || authenticatorType
         });
 
@@ -260,7 +351,11 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
         });
 
         return {
-            options,
+            options: {
+                ...options,
+                authenticatorSelection: registrationOptions.authenticatorSelection || options.authenticatorSelection,
+                extensions: registrationOptions.extensions ?? options.extensions
+            },
             state
         }
     }
@@ -272,9 +367,8 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
         if (existingUser) {
             hash.update(existingUser.userId);
             hash.update(authenticatorType);
-        } else if (email) {
-            hash.update(email);
         } else {
+            // Always a new id for each registration if not logged in
             hash.update(v4());
             hash.update(authenticatorType);
         }
@@ -295,7 +389,7 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
     const reference = await getExternalReference("credential", state.externalId);
     const existingUser = getMaybeUser();
 
-    const { registration, authentication } = body;
+    const { registration, authentication, payment } = body;
 
     if (registration && reference && !existingUser) {
         throw new Error("Login required before linking user");
@@ -324,6 +418,8 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
             externalId: state.externalId
         }, existingUser);
 
+        let partial: Partial<VerifyWebAuthnAuthenticationResponse> = {};
+
         if (verified) {
 
             const { credentialPublicKey, credentialID, counter } = registrationInfo;
@@ -335,6 +431,15 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                 authenticatorType: state.authenticatorType,
                 verifiedAt: new Date().toISOString()
             });
+
+            partial.userCredentialId = userCredential.userCredentialId;
+            const userCredentialState = await addAuthenticationState({
+                type: "credential",
+                userCredentialId: userCredential.userCredentialId,
+                userId: user.userId,
+                authenticatorType: userCredential.authenticatorType
+            });
+            partial.userCredentialState = userCredentialState.stateId;
 
             if (!existingUser && response) {
                 const userRoles = await getUserAuthenticationRoleForUser(user);
@@ -360,8 +465,7 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
             }
         }
 
-
-        return { verified, redirectUrl: verified ? redirectUrl : undefined };
+        return { verified, redirectUrl: verified ? redirectUrl : undefined, ...partial };
     } else if (authentication) {
         ok(reference, `Expected to find reference for user ${state.userId}`);
         const userId = reference.userId;
@@ -386,12 +490,22 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                 counter: found.credentialCounter ?? 0
             }
         });
+        let partial: Partial<VerifyWebAuthnAuthenticationResponse> = {};
         if (verified) {
             const { newCounter } = authenticationInfo;
             await setUserCredential({
                 ...found,
                 credentialCounter: newCounter
             });
+
+            partial.userCredentialId = found.userCredentialId;
+            const userCredentialState = await addAuthenticationState({
+                type: "credential",
+                userCredentialId: found.userCredentialId,
+                userId: user.userId,
+                authenticatorType: found.authenticatorType
+            });
+            partial.userCredentialState = userCredentialState.stateId;
 
             if (!existingUser && response) {
                 const userRoles = await getUserAuthenticationRoleForUser(user);
@@ -419,11 +533,53 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
         }
 
         return { verified, redirectUrl: verified ? redirectUrl : undefined };
-    } else {
-        throw new Error("Unknown verication type")
-    }
+    } else if (payment) {
+        ok(reference, `Expected to find reference for user ${state.userId}`);
+        const userId = reference.userId;
+        const credentials = await listUserCredentials(userId);
+        const existingUser = getMaybeUser();
+        if (existingUser) {
+            ok(existingUser.userId === userId, "Expected userId to match logged in");
+        }
+        const user = existingUser ?? await getUser(userId);
+        const found = credentials.find(credential => credential.credentialId === payment.details.id);
+        ok(found, `Expected to find credential for user ${userId}`);
+        const {hostname, origin} = new URL(getOrigin());
+        const {verified, authenticationInfo} = await verifyAuthenticationResponse({
+            response: payment.details,
+            expectedChallenge,
+            expectedOrigin: WEBAUTHN_RP_ORIGIN || origin,
+            expectedRPID: WEBAUTHN_RP_ID || hostname,
+            authenticator: {
+                credentialID: new Uint8Array(toArrayBuffer(found.credentialId, true)),
+                credentialPublicKey: new Uint8Array(toArrayBuffer(found.credentialPublicKey, true)),
+                transports: found.authenticatorTransports,
+                counter: found.credentialCounter ?? 0
+            }
+        });
+        let partial: Partial<VerifyWebAuthnAuthenticationResponse> = {};
 
-    type WithChallenge = AuthenticationState & { challenge: string, authenticatorType?: string };
+        if (verified) {
+            const {newCounter} = authenticationInfo;
+            await setUserCredential({
+                ...found,
+                credentialCounter: newCounter
+            });
+
+            partial.userCredentialId = found.userCredentialId;
+            const userCredentialState = await addAuthenticationState({
+                type: "credential",
+                userCredentialId: found.userCredentialId,
+                userId: user.userId,
+                authenticatorType: found.authenticatorType
+            });
+            partial.userCredentialState = userCredentialState.stateId;
+        }
+
+        return { verified, redirectUrl: verified ? redirectUrl : undefined, ...partial };
+    } else {
+        throw new Error("Unknown verification type")
+    }
 
     function assertChallenge(state?: AuthenticationState): asserts state is WithChallenge {
         ok<WithChallenge>(state, INVALID_MESSAGE);

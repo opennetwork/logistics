@@ -1,3 +1,14 @@
+import {PaymentRequestOptionsJSON, PaymentResponseJSON} from "../../listen/auth/types";
+import base64 from "@hexagon/base64";
+import toArrayBuffer = base64.toArrayBuffer;
+import {isLike, ok} from "./utils";
+import fromArrayBuffer = base64.fromArrayBuffer;
+import {
+    AuthenticationResponseJSON,
+    AuthenticatorAssertionResponseJSON, Base64URLString,
+    PublicKeyCredentialJSON
+} from "@simplewebauthn/typescript-types";
+
 interface PaymentRequestOptions {
 
 }
@@ -6,7 +17,22 @@ interface NewPaymentRequest {
     new (): PaymentRequest
 }
 
-interface PaymentRequest {
+export interface PaymentCredentialResponse extends PaymentResponse {
+    complete(): Promise<void>
+    retry(): Promise<void>
+    details: PublicKeyCredential & { response: AuthenticatorAssertionResponse }
+    methodName: string;
+    payerEmail?: string;
+    payerName?: string;
+    payerPhone?: string;
+    requestId: string;
+    shippingAddress?: unknown;
+    shippingOption?: unknown;
+    toJSON(): unknown;
+}
+
+interface PaymentCredentialRequest {
+    show(): Promise<PaymentCredentialResponse>;
     canMakePayment(): Promise<boolean>;
 }
 
@@ -107,7 +133,9 @@ export async function authenticatePaymentMethod({ credentialIds, challenge, paym
     });
 
     try {
+        ok<PaymentCredentialRequest>(request);
         const response = await request.show();
+        ok<PaymentCredentialResponse>(response);
 
         console.log(response.details);
         //
@@ -142,4 +170,85 @@ function base64ToArrayBuffer(base64: string) {
         bytes[i] = binaryString.charCodeAt(i);
     }
     return bytes.buffer;
+}
+
+export async function startPaymentRequest(options: PaymentRequestOptionsJSON): Promise<PaymentResponseJSON> {
+    let { data: { allowCredentials, challenge, ...rest }, details } = options;
+
+    ok(allowCredentials.length, "Expected credentials");
+
+    const data = {
+        ...rest,
+        credentialIds: allowCredentials.map(
+            credential => toArrayBuffer(credential.id, true)
+        ),
+        challenge: toArrayBuffer(challenge, true)
+    }
+
+    console.log(data);
+
+    const request = new PaymentRequest([{
+        // Specify `secure-payment-confirmation` as payment method.
+        supportedMethods: "secure-payment-confirmation",
+        data
+    }], details);
+
+    ok<PaymentCredentialRequest>(request);
+    const response = await request.show();
+    ok<PaymentCredentialResponse>(response);
+
+    console.log(response);
+
+    const assertionResponse: AuthenticatorAssertionResponse = response.details.response;
+    const assertionResponseJSON: AuthenticatorAssertionResponseJSON = {
+        authenticatorData: toBase64URLString(assertionResponse.authenticatorData),
+        clientDataJSON: toBase64URLString(assertionResponse.clientDataJSON),
+        signature: toBase64URLString(assertionResponse.signature),
+        userHandle: toBase64URLString(assertionResponse.userHandle)
+    }
+    const clientExtensionResults: AuthenticationExtensionsClientOutputs = {};
+    /*
+    id: Base64URLString;
+    rawId: Base64URLString;
+    response: AuthenticatorAssertionResponseJSON;
+    authenticatorAttachment?: AuthenticatorAttachment;
+    clientExtensionResults: AuthenticationExtensionsClientOutputs;
+    type: PublicKeyCredentialType;
+     */
+    const authenticatorAttachmentInput = response.details.authenticatorAttachment;
+    const authenticatorAttachment: AuthenticatorAttachment | undefined = isLike<AuthenticatorAttachment>(authenticatorAttachmentInput) ? authenticatorAttachmentInput : undefined;
+    const type = response.details.type;
+    ok<PublicKeyCredentialType>(type);
+
+    const detailsJSON: AuthenticationResponseJSON = {
+        clientExtensionResults,
+        authenticatorAttachment,
+        id: response.details.id,
+        rawId: toBase64URLString(response.details.rawId),
+        response: assertionResponseJSON,
+        type
+    };
+
+    function toBase64URLString(input: ArrayBuffer) {
+        const string = fromArrayBuffer(input, true);
+        ok<Base64URLString>(string);
+        return string;
+    }
+
+    const json: PaymentResponseJSON = {
+        details: detailsJSON,
+        methodName: response.methodName,
+        payerEmail: response.payerName,
+        payerName: response.payerName,
+        payerPhone: response.payerPhone,
+        requestId: response.requestId,
+        shippingAddress: response.shippingAddress,
+        shippingOption: response.shippingOption,
+    }
+
+    console.log(json);
+
+    await response.complete();
+
+    return json;
 }

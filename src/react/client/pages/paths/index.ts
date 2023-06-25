@@ -18,10 +18,16 @@ async function paymentMethodSelect() {
   return fn();
 }
 
+async function orderConfirmation() {
+  const { orderConfirmation: fn } = await import("./order-confirmation");
+  return fn();
+}
+
 export const paths: Record<string, () => void | Promise<void>> = {
   "/": home,
   "/home": home,
   "/login": login,
+  "/order/checkout/confirmation": orderConfirmation,
   "/payment-method/select": paymentMethodSelect,
   "/products": productList
 };

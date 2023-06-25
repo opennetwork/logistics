@@ -1,6 +1,5 @@
 import {FastifyPluginAsync, FastifyRequest} from "fastify";
 import {FunctionComponent} from "react";
-import {LogisticsConfig} from "../config/types";
 
 export interface ViewUnknownFn {
     (...args: unknown[]): (void | unknown | Promise<unknown | void>)
@@ -10,6 +9,7 @@ export interface View {
     path: string;
     anonymous?: boolean;
     cached?: boolean;
+    deferHandlerWhenSubmit?: boolean;
     handler?: ViewUnknownFn;
     submit?: ViewUnknownFn;
     Component: FunctionComponent;

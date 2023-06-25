@@ -1,5 +1,5 @@
 import { FastifyRequest } from "fastify";
-import {useError, useMaybeBody, useMaybeResult, useSubmitted, useTimezone} from "../../data";
+import {useError, useInput, useMaybeBody, useMaybeResult, useSubmitted, useTimezone} from "../../data";
 import {
     PaymentMethod,
     PaymentMethodData,
@@ -7,6 +7,7 @@ import {
 } from "../../../../data";
 import {ok} from "../../../../is";
 import {getMaybePartner, getMaybeUser} from "../../../../authentication";
+import {getWebAuthnAuthenticationOptions, WebAuthnAuthenticationResponse} from "../../../../listen/auth/webauthn";
 
 export const path = "/payment-method/create";
 
@@ -57,7 +58,7 @@ export function CreatePaymentMethod() {
 
     function PaymentMethodBody({ body }: { body?: PaymentMethodData }) {
         return (
-            <form name="paymentMethod" action={`${path}#action-section`} method="post">
+            <form name="paymentMethodCreate" id="paymentMethodCreate" action={`${path}#action-section`} method="post">
                 <div className="flex flex-col">
                     <label className={FORM_GROUP_CLASS}>
                         <span className="text-gray-700">Payment Method Name</span>

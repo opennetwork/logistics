@@ -1,9 +1,9 @@
 import {OrderCheckoutReviewComponentInfo, handler as baseHandler, CheckoutItems} from "./checkout-review";
 import {useInput} from "../../data";
 import {CheckoutEmpty} from "../../../client/components/checkout";
-import {listPaymentMethods, PaymentMethod, setOrder, ShipmentLocation} from "../../../../data";
+import {addPaymentMethod, listPaymentMethods, PaymentMethod, setOrder, ShipmentLocation} from "../../../../data";
 import {FastifyReply, FastifyRequest} from "fastify";
-import {getUser} from "../../../../authentication";
+import {getMaybePartner, getMaybeUser, getUser} from "../../../../authentication";
 import {getOrderPrice} from "../../../../data/order-item/get-order-item-info";
 import {InputConfig, PaymentForm} from "./types";
 import {getConfig} from "../../../../config";
@@ -11,6 +11,10 @@ import {ReactNode, useMemo} from "react";
 import exp from "constants";
 import {getWebAuthnAuthenticationOptions, WebAuthnAuthenticationResponse} from "../../../../listen/auth/webauthn";
 export const path = "/order/checkout/confirmation";
+
+const {
+    IS_DEMO
+} = process.env;
 
 export interface OrderCheckoutConfirmationComponentInfo extends OrderCheckoutReviewComponentInfo {
     paymentMethods: PaymentMethod[];
@@ -20,13 +24,32 @@ export interface OrderCheckoutConfirmationComponentInfo extends OrderCheckoutRev
 
 export async function handler(): Promise<OrderCheckoutConfirmationComponentInfo> {
     const base: OrderCheckoutReviewComponentInfo = await baseHandler();
+
+    const {
+        total,
+        currencyCode
+    } = base;
+
     const paymentMethods = await listPaymentMethods({
         userId: getUser().userId
     });
 
-    const credentials = paymentMethods?.length ? await getWebAuthnAuthenticationOptions({
-        authenticatorType: "payment"
-    }) : undefined;
+    const details: PaymentDetailsInit = {
+        total: {
+            label: "Total",
+            amount: {
+                currency: currencyCode,
+                value: total
+            },
+        }
+    }
+
+    const credentials = await getWebAuthnAuthenticationOptions({
+        authenticatorType: "payment",
+        payment: {
+            details
+        }
+    });
 
     const info: OrderCheckoutConfirmationComponentInfo = {
         ...base,
@@ -56,11 +79,11 @@ export async function handler(): Promise<OrderCheckoutConfirmationComponentInfo>
     }
 }
 
-type Body = {
+interface Body extends Record<string, string> {
     type: "existingPaymentMethod" | "newPaymentMethod";
     paymentMethodId?: string;
     paymentMethodName?: string;
-    savePaymentMethod?: boolean;
+    savePaymentMethod?: string;
 }
 
 type Schema = {
@@ -69,7 +92,7 @@ type Schema = {
 
 export async function submit(request: FastifyRequest<Schema>, response: FastifyReply, info: OrderCheckoutConfirmationComponentInfo) {
 
-    const { order } = info;
+    const { order, paymentMethodForm } = info;
 
     const total = await getOrderPrice(order.orderId);
 
@@ -79,6 +102,31 @@ export async function submit(request: FastifyRequest<Schema>, response: FastifyR
         ...order,
         status: "submitted"
     });
+
+    const inputsEnabled = paymentMethodForm?.method !== "GET"
+    const savePaymentMethod = getInputConfig(paymentMethodForm?.inputs, "savePaymentMethod", inputsEnabled);
+    const paymentMethodName = getInputConfig(paymentMethodForm?.inputs, "paymentMethodName", inputsEnabled);
+
+    console.log(request.body, savePaymentMethod, paymentMethodName);
+
+    if (savePaymentMethod.enabled && paymentMethodName.enabled) {
+        const isSaveInput = request.body[savePaymentMethod.name];
+        let isSave = false;
+        if (typeof isSaveInput === "string") {
+            isSave = isSaveInput === "on" || isSaveInput === "1" || isSaveInput === "true";
+        }
+        const name = request.body[paymentMethodName.name];
+        console.log({ isSaveInput, isSave, name });
+        if (isSave && name) {
+            await addPaymentMethod({
+                status: "available",
+                type: "realtime",
+                userId: getMaybeUser()?.userId,
+                organisationId: getMaybePartner()?.organisationId,
+                paymentMethodName: name,
+            });
+        }
+    }
 
     response.header("Location", `/order/checkout/confirmed/${order.orderId}`);
     response.status(302);
@@ -145,6 +193,7 @@ export function Component() {
     const expirationYear = getInputConfig(paymentMethodForm?.inputs, "expirationYear", inputsEnabled);
     const cvc = getInputConfig(paymentMethodForm?.inputs, "cvc", inputsEnabled);
     const savePaymentMethod = getInputConfig(paymentMethodForm?.inputs, "savePaymentMethod", inputsEnabled);
+    const paymentMethodName = getInputConfig(paymentMethodForm?.inputs, "paymentMethodName", inputsEnabled);
 
     return (
         <div id="checkout-confirmation" className="lg:flex lg:min-h-full flex flex-col">
@@ -189,7 +238,11 @@ export function Component() {
                     <form action={path} method="POST" id="payment-method-confirmation">
                         {
                             credentials ? (
-                                <script type="application/json" id="payment-method-credentials" dangerouslySetInnerHTML={{ __html: JSON.stringify(credentials) }} />
+                                <>
+                                    <script type="application/json" className="payment-method-credentials" dangerouslySetInnerHTML={{ __html: JSON.stringify(credentials) }} />
+                                    <input type="hidden" value="" name="userCredentialId" />
+                                    <input type="hidden" value="" name="userCredentialState" />
+                                </>
                             ) : undefined
                         }
                         <input type="hidden" name="type" value="existingPaymentMethod" />
@@ -234,7 +287,16 @@ export function Component() {
 
             {
                 paymentMethods.length === 0 ?
-            <form action={paymentMethodForm?.url ?? path} encType={paymentMethodForm?.encoding} method={paymentMethodForm?.method ?? "POST"} className="checkout-payment-method px-4 pb-36 pt-16 sm:px-6 lg:col-start-1 lg:row-start-1 lg:px-0 lg:pb-16">
+            <form action={paymentMethodForm?.url ?? path} encType={paymentMethodForm?.encoding} method={paymentMethodForm?.method ?? "POST"} id="checkout-confirmation-new-payment-method" className="checkout-payment-method px-4 pb-36 pt-16 sm:px-6 lg:col-start-1 lg:row-start-1 lg:px-0 lg:pb-16">
+                {
+                    credentials ? (
+                        <>
+                            <script type="application/json" className="payment-method-credentials" dangerouslySetInnerHTML={{ __html: JSON.stringify(credentials) }} />
+                            <input type="hidden" value="" name="userCredentialId" />
+                            <input type="hidden" value="" name="userCredentialState" />
+                        </>
+                    ) : undefined
+                }
                 {newPaymentMethodFormData}
                 {paymentMethodForm?.header}
                 {
@@ -264,6 +326,8 @@ export function Component() {
                                                 type="text"
                                                 id={nameOnCard.name}
                                                 name={nameOnCard.name}
+                                                disabled={!!IS_DEMO}
+                                                defaultValue={IS_DEMO ? "Kristin Watson" : ""}
                                                 autoComplete="cc-name"
                                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                 {...nameOnCard.props}
@@ -282,10 +346,12 @@ export function Component() {
                                         <div className="mt-1">
                                             <input
                                                 minLength={14}
-                                                maxLength={16}
+                                                maxLength={20}
                                                 type="text"
                                                 id={cardNumber.name}
                                                 name={cardNumber.name}
+                                                disabled={!!IS_DEMO}
+                                                defaultValue={IS_DEMO ? "5246 5910 8900 4242" : ""}
                                                 autoComplete="cc-number"
                                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                 {...cardNumber.props}
@@ -308,6 +374,8 @@ export function Component() {
                                                 type="text"
                                                 name={expirationMonth.name}
                                                 id={expirationMonth.name}
+                                                disabled={!!IS_DEMO}
+                                                defaultValue={IS_DEMO ? "12" : ""}
                                                 autoComplete="cc-exp-month"
                                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                 {...expirationMonth.props}
@@ -330,6 +398,8 @@ export function Component() {
                                                 type="text"
                                                 name={expirationYear.name}
                                                 id={expirationYear.name}
+                                                disabled={!!IS_DEMO}
+                                                defaultValue={IS_DEMO ? (new Date().getFullYear() + 1).toString() : ""}
                                                 autoComplete="cc-exp-year"
                                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                 {...expirationYear.props}
@@ -354,6 +424,8 @@ export function Component() {
                                                 maxLength={4}
                                                 autoComplete="cc-csc"
                                                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                                disabled={!!IS_DEMO}
+                                                defaultValue={IS_DEMO ? "729" : ""}
                                                 {...cvc.props}
                                             />
                                         </div>
@@ -362,11 +434,11 @@ export function Component() {
                             }
 
                             {
-                                savePaymentMethod.enabled ? (
+                                savePaymentMethod.enabled && paymentMethodName.enabled ? (
                                     <>
                                         <div className="flex items-center col-span-3">
                                             <input
-                                                id="savePaymentMethod"
+                                                id={savePaymentMethod.name}
                                                 name={savePaymentMethod.name}
                                                 type="checkbox"
                                                 className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
@@ -378,28 +450,26 @@ export function Component() {
                                             </div>
                                         </div>
 
-
-
                                         <style dangerouslySetInnerHTML={{__html: `
                         
-                        .checkout-payment-method:has(input#save:checked) .block-if-save {
+                        .checkout-payment-method:has(input#${savePaymentMethod.name}:checked) .block-if-save {
                             display: block;
                         }
-                        .checkout-payment-method:has(input#save:checked) .hide-if-save {
+                        .checkout-payment-method:has(input#${savePaymentMethod.name}:not(:checked)) .block-if-save {
                             display: none;
                         }
                         
                         `.trim()}} />
 
-                                        <div className="col-span-3 sm:col-span-4 hidden block-if-save">
-                                            <label htmlFor="paymentMethodName" className="block text-sm font-medium text-gray-700">
+                                        <div className="col-span-3 sm:col-span-4 block-if-save">
+                                            <label htmlFor={paymentMethodName.name} className="block text-sm font-medium text-gray-700">
                                                 Payment Method Name
                                             </label>
                                             <div className="mt-1">
                                                 <input
                                                     type="text"
-                                                    id="paymentMethodName"
-                                                    name="paymentMethodName"
+                                                    id={paymentMethodName.name}
+                                                    name={paymentMethodName.name}
                                                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                                 />
                                             </div>
@@ -408,6 +478,24 @@ export function Component() {
                                 ) : undefined
                             }
 
+
+                            {
+                                !credentials.authentication?.required ? (
+                                    <div className="flex items-center col-span-3">
+                                        <input
+                                            id="paymentAuthenticator"
+                                            name="paymentAuthenticator"
+                                            type="checkbox"
+                                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <div className="ml-2">
+                                            <label htmlFor="paymentAuthenticator" className="text-sm font-medium text-gray-900">
+                                                Register Keypass for Payments
+                                            </label>
+                                        </div>
+                                    </div>
+                                ) : undefined
+                            }
                         </div>
                     </section>
 

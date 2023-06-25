@@ -4,16 +4,13 @@ import {v4} from "uuid";
 import {createHash} from "crypto";
 import {getExpiresAt} from "../expiring-kv";
 
-function getUserCredentialId(data: SetUserCredential): string {
+function getUserCredentialId(data: Pick<SetUserCredential, "credentialId" | "userId">): string {
   const hash = createHash("sha256");
   hash.update(data.userId);
   if (data.credentialId) {
     hash.update(data.credentialId);
   } else {
     hash.update(v4());
-  }
-  if (data.deviceId) {
-    hash.update(data.deviceId);
   }
   return hash.digest().toString("hex");
 }

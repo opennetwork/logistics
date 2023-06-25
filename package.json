@@ -202,7 +202,8 @@
       "react-dom": "node_modules/react-dom/index.js",
       "react-dom/client": "node_modules/react-dom/client.js",
       "@simplewebauthn/browser": "node_modules/@simplewebauthn/browser/dist/bundle/index.js",
-      "@authsignal/browser": "node_modules/@authsignal/browser/dist/index.js"
+      "@authsignal/browser": "node_modules/@authsignal/browser/dist/index.js",
+      "@hexagon/base64": "node_modules/@hexagon/base64/dist/base64.min.mjs"
     }
   },
   "staticReferences": [
