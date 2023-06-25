@@ -10,7 +10,7 @@ export interface UserCredentialData extends Expiring, Record<string, unknown> {
   name?: string;
   verifiedAt?: string;
   authenticatorUserId?: string;
-  authenticatorType?: string;
+  authenticatorType?: "credential" | "payment" | string;
   authenticatorTransports?: AuthenticatorTransportFuture[];
 }
 

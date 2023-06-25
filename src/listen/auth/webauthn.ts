@@ -30,6 +30,7 @@ import base64 from "@hexagon/base64";
 import fromArrayBuffer = base64.fromArrayBuffer;
 import toArrayBuffer = base64.toArrayBuffer;
 import {getOrigin} from "../config";
+import {v4} from "uuid";
 
 const INVALID_MESSAGE = "Authentication state invalid or expired";
 
@@ -165,16 +166,21 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
     } = process.env;
 
     const { email, authenticatorType, registration, authentication, redirectUrl } = body;
+
+    const existingUser = getMaybeUser();
+    const existingUserCredentials = existingUser ? await listUserCredentials(existingUser?.userId) : undefined;
+
     const externalId = createUserId();
     const reference = await getExternalReference("credential", externalId);
-    const existingUser = getMaybeUser();
 
     if (reference && existingUser && reference.userId !== existingUser.userId) {
         throw new Error("Expected user to be logged in");
     }
 
     const userId: string | undefined = existingUser?.userId || reference?.userId;
-    const credentials = userId ? await listUserCredentials(userId) : []
+    const credentials = userId ? (
+        existingUserCredentials ?? await listUserCredentials(userId)
+    ) : []
 
     const registrationPromise = createRegistration();
     const authenticationPromise = createAuthentication();
@@ -241,7 +247,8 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
             rpName: WEBAUTHN_RP_NAME || hostname,
             rpID: WEBAUTHN_RP_ID || hostname,
             userID: userId,
-            userName: email,
+            userName: email || userId,
+            userDisplayName: email || authenticatorType
         });
 
         const { stateKey: state } = await setAuthenticationState({
@@ -260,10 +267,17 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
 
     function createUserId() {
         const { hostname } = new URL(getOrigin());
-        console.log({ hostname });
         const hash = createHash("sha256");
         hash.update(WEBAUTHN_RP_ID || hostname);
-        hash.update(email);
+        if (existingUser) {
+            hash.update(existingUser.userId);
+            hash.update(authenticatorType);
+        } else if (email) {
+            hash.update(email);
+        } else {
+            hash.update(v4());
+            hash.update(authenticatorType);
+        }
         return hash.digest().toString("hex");
     }
 }
