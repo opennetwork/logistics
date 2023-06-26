@@ -3,6 +3,7 @@ import * as invite from "./invite"
 import * as offer from "./offer"
 import * as order from "./order"
 import * as paymentMethod from "./payment-method"
+import * as userCredential from "./user-credential"
 import {View} from "../../../view";
 
 import * as PartnersView from "./partners";
@@ -45,7 +46,8 @@ export const views: View[] = [
   order.checkout,
   paymentMethod.create,
   paymentMethod.list,
-  paymentMethod.select
+  paymentMethod.select,
+  userCredential.list
 ];
 
 export * from "./types";

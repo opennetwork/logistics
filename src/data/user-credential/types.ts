@@ -21,3 +21,5 @@ export interface UserCredential extends UserCredentialData {
 }
 
 export type SetUserCredential = UserCredentialData & Pick<UserCredential, "userId"> & Partial<UserCredential>;
+
+export type UserCredentialIdentifiers = Pick<UserCredential, "userCredentialId" | "userId">

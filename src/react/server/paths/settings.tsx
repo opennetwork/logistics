@@ -47,8 +47,22 @@ export function Settings() {
                         </a>
                         <br />
                     </>
-                ) : <p>No settings to configure yet!</p>
+                ) : undefined
             }
+            <a
+                href="/user-credentials"
+                className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
+            >
+                Credentials
+            </a>
+            <br />
+            <a
+                href="/payment-methods"
+                className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
+            >
+                Payment Methods
+            </a>
+            <br />
             <br />
             <hr />
             <br />
