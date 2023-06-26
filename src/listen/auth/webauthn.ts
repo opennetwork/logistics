@@ -119,7 +119,7 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
             preHandler: authenticate(fastify, { anonymous: true }),
             async handler(request, response) {
                 response.send(
-                    getWebAuthnAuthenticationOptions(request.body)
+                    await getWebAuthnAuthenticationOptions(request.body)
                 );
             }
         })
@@ -141,12 +141,14 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                     additionalProperties: true,
                     nullable: true
                 },
-                state: {
-                    type: "string"
+                payment: {
+                    type: "object",
+                    properties: {},
+                    additionalProperties: true,
+                    nullable: true
                 }
             },
-            additionalProperties: true,
-            required: ["state"]
+            additionalProperties: true
         };
         type Schema = {
             Body: VerifyWebAuthnAuthenticationOptionsBody
@@ -196,6 +198,8 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
     const externalId = createUserId();
     const reference = await getExternalReference("credential", externalId);
 
+    console.log({ externalId, reference });
+
     if (reference && existingUser && reference.userId !== existingUser.userId) {
         throw new Error("Expected user to be logged in");
     }
@@ -205,18 +209,23 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
         existingUserCredentials ?? await listUserCredentials(userId)
     ) : []
 
-    const registrationPromise = createRegistration();
-    const authenticationOptions = await createAuthentication();
+    const registrationGenerated = await createRegistration();
+    const authenticationGenerated = await createAuthentication();
+
+    console.log({
+        registrationGenerated,
+        authenticationGenerated
+    });
 
     let payment: WebAuthnAuthenticationPaymentOptions | undefined = undefined;
     if (authenticatorType === "payment" && body.payment?.details) {
-        payment = createPayment(authenticationOptions);
+        payment = createPayment(authenticationGenerated);
     }
 
     return {
         authenticatorType,
-        registration: await registrationPromise,
-        authentication: authenticationOptions,
+        registration: registrationGenerated,
+        authentication: authenticationGenerated,
         payment,
     };
 
@@ -260,7 +269,7 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
         );
 
         const allowCredentials = matchingType.map((credential): PublicKeyCredentialDescriptorFuture => ({
-            id: toArrayBuffer(credential.credentialId),
+            id: toArrayBuffer(credential.credentialId, true),
             type: "public-key",
             transports: credential.authenticatorTransports
         }));
@@ -283,14 +292,17 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
         return {
             options,
             state,
-            required: !!existingUserCredentials.length
+            required: !!matchingType.length
         }
     }
 
     async function createRegistration() {
+        console.log({ createRegistration: true, reference, existingUser })
+
         if (reference && !existingUser) {
             return undefined;
         }
+
         const excludeCredentials = credentials.map((credential): PublicKeyCredentialDescriptorFuture => ({
             id: toArrayBuffer(credential.credentialId, true),
             type: "public-key",
