@@ -12,6 +12,10 @@ export interface OfferPrice {
   countryCode?: string;
 }
 
+export interface TotalOfferPrice extends OfferPrice {
+  total?: MaybeNumberString;
+}
+
 export interface ProductOfferItem {
   type: "product";
   productId: string;

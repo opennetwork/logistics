@@ -9,20 +9,33 @@ import {Order} from "./types";
 import {setOrder} from "./set-order";
 import {ShipmentLocation} from "../shipment";
 import {isOrderShipmentLocationMatch} from "./list-orders";
+import {getOrderPrice} from "../order-item/get-order-item-info";
 
 const PENDING_ORDER_ID = "PendingOrder";
 const PENDING_ORDER_EXPIRES_IN = 7 * DAY_MS;
 
 export async function getOrder(id: string, location?: ShipmentLocation): Promise<Order> {
+  const order = await getBaseOrder(id, location);
+  return getOrderInfo(order);
+}
+
+async function getBaseOrder(id: string, location?: ShipmentLocation): Promise<Order> {
   const store = getOrderStore();
   const order = await store.get(id);
   if (!order) return undefined;
   if (location && !isOrderShipmentLocationMatch(order, location)) return undefined;
-  const items = await listOrderItems(order.orderId);
+  return order;
+}
+
+export async function getOrderInfo(order: Order): Promise<Order> {
+  const items = order.items ?? await listOrderItems(order.orderId);
+  const products = order.products ?? await listOrderProducts(order.orderId, true, items)
+  const price = order.total ? order : await getOrderPrice(order.orderId, items);
   return {
+    ...price,
     ...order,
     items,
-    products: await listOrderProducts(order.orderId, true, items)
+    products
   }
 }
 
@@ -43,11 +56,9 @@ export async function getUserPendingOrder(userId: string, loadItems = true): Pro
   const key = getUserPendingOrderCacheKey(userId);
   const cached = await getCached(key, true);
   const orderId = cached ?? v4();
-  let order = await getOrder(orderId, {
+  let order = await getBaseOrder(orderId, {
     userId
   });
-  const items: OrderItem[] = loadItems ? await listOrderItems(orderId) : [];
-
   if (order) {
     if (order.status !== "pending") {
       console.log("Getting new pending order, previous no longer pending");
@@ -71,10 +82,5 @@ export async function getUserPendingOrder(userId: string, loadItems = true): Pro
       stable: true
     });
   }
-
-  return {
-    ...order,
-    items,
-    products: await listOrderProducts(orderId, true, items)
-  }
-}
+  return getOrderInfo(order);
+5}

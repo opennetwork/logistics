@@ -9,6 +9,7 @@ import {
 import { homepage, packageIdentifier } from "../../../package";
 import {useIsTrusted} from "../data";
 
+const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offset-2";
 export const path = "/settings";
 
 export function Settings() {
@@ -41,10 +42,12 @@ export function Settings() {
                     <>
                         <a
                             href="/invite/create"
-                            className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
+                            className={LINK_CLASS}
                         >
                             Create Role Invite
                         </a>
+                        <br />
+                        <a href="/product/create" className={LINK_CLASS}>Create Product</a>
                         <br />
                     </>
                 ) : undefined

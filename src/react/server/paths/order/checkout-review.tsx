@@ -48,6 +48,10 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
                 const product = products.find(product => product.productId === item.productId);
                 const images = images600.filter(file => file.productId === product.productId);
 
+                const total = offer ?
+                    (Math.round((+offer.price) * (item.quantity ?? 1) * 100) / 100).toFixed(2) :
+                    undefined;
+
                 return (
                     <li key={item.orderItemId} className="flex py-6">
                         <div className="flex-shrink-0">
@@ -61,7 +65,7 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
                                             hidden={index !== 0}
                                             key={index}
                                             src={image.url}
-                                            alt={String(image.alt || product.productName)}
+                                            alt={String(image.description || product.productName)}
                                             className="h-24 w-24 rounded-md object-cover object-center sm:h-32 sm:w-32"
                                         />
                                     )
@@ -77,7 +81,7 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
                                             {product.productName}
                                         </a>
                                     </h4>
-                                    <p className="ml-4 text-sm font-medium text-gray-900">{offer ? `${currencySymbol}${offer.price}` : ""}</p>
+                                    <p className="ml-4 text-sm font-medium text-gray-900">{offer ? `${currencySymbol}${total}` : ""}</p>
                                 </div>
                                 {/*<p className="mt-1 text-sm text-gray-500">{product.color}</p>*/}
                                 {/*<p className="mt-1 text-sm text-gray-500">{product.size}</p>*/}

@@ -62,6 +62,7 @@ export interface FileData extends Record<string, unknown>, Partial<FileImageSize
   resolved?: ResolvedFilePart[];
   resolvedAt?: string;
   errors?: FileErrorDescription[];
+  description?: string;
 }
 
 export interface File extends FileData {

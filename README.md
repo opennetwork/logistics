@@ -191,6 +191,7 @@ export interface FileData extends Record<string, unknown>, Partial<FileImageSize
   resolved?: ResolvedFilePart[];
   resolvedAt?: string;
   errors?: FileErrorDescription[];
+  description?: string;
 }
 
 export interface File extends FileData {
@@ -377,6 +378,10 @@ export interface OfferPrice {
   countryCode?: string;
 }
 
+export interface TotalOfferPrice extends OfferPrice {
+  total?: MaybeNumberString;
+}
+
 export interface ProductOfferItem {
   type: "product";
   productId: string;
@@ -434,7 +439,7 @@ export interface OrderData {
   paymentMethodId?: string;
 }
 
-export interface Order extends OrderData {
+export interface Order extends OrderData, Partial<TotalOfferPrice> {
   orderId: string;
   createdAt: string;
   updatedAt: string;
@@ -564,6 +569,9 @@ export interface PaymentMethod extends PaymentMethodData {
 
 export interface ProductData extends Record<string, unknown> {
   productName: string;
+
+  description?: string;
+
   // Is the product publicly visible
   public?: boolean;
   // Is the related not to a specific brand

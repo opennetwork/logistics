@@ -59,6 +59,8 @@ export function getGlobalCounterStore() {
 export async function getGlobalCount() {
   const store = getGlobalCounterStore();
   const count = await store.get(GLOBAL_COUNT_NAME);
-  ok(typeof count === "number", "Expected global count value");
+  if (typeof count !== "number") {
+    return -1;
+  }
   return count;
 }

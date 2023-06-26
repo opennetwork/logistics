@@ -81,7 +81,7 @@ export function CreateProduct() {
                     display: none;
                 }
                 
-                label:has(input:checked) + .non-generic-organisation-name {
+                label:has(input:not(:checked)) + .non-generic-organisation-name {
                     display: flex;
                 }
                 
@@ -92,7 +92,7 @@ export function CreateProduct() {
                         id="generic"
                         type="checkbox"
                         className="form-checkbox rounded m-1"
-                        defaultChecked={true}
+                        defaultChecked={false}
                     />
                     <span className="flex flex-col ml-4">
                         Is the product generic? (Not related to a brand)

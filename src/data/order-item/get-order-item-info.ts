@@ -1,11 +1,17 @@
 import {listOrderItems, listOrderProducts} from "./list-order-items";
 import {isOrderOfferItem} from "./is";
-import {getOffer, DEFAULT_CURRENCY, OfferPrice, DEFAULT_CURRENCY_SYMBOL, DEFAULT_LOCALE} from "../offer";
+import {
+    getOffer,
+    DEFAULT_CURRENCY,
+    OfferPrice,
+    DEFAULT_CURRENCY_SYMBOL,
+    DEFAULT_LOCALE,
+    TotalOfferPrice
+} from "../offer";
 import {ok} from "../../is";
 import {OrderItem} from "./types";
 
-
-export async function getOrderPrice(orderId: string, givenItems?: OrderItem[]): Promise<OfferPrice> {
+export async function getOrderPrice(orderId: string, givenItems?: OrderItem[]): Promise<TotalOfferPrice> {
     const items = givenItems ?? await listOrderItems(orderId);
     const offerItems = items.filter(isOrderOfferItem);
     const offerIds = [...new Set(
@@ -49,8 +55,11 @@ export async function getOrderPrice(orderId: string, givenItems?: OrderItem[]): 
 
     const locale = offers[0]?.locale ?? DEFAULT_LOCALE;
 
+    const total = (Math.round(price * 100) / 100).toFixed(2);
+    
     return {
-        price: (Math.round(price * 100) / 100).toFixed(2),
+        price: total,
+        total,
         currency: currencyCode,
         currencySymbol: offers[0]?.currencySymbol ?? getCurrencySymbol(locale, currencies[0]) ?? DEFAULT_CURRENCY_SYMBOL,
         currencyCode,

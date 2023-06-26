@@ -1,6 +1,7 @@
 import {useData, useOffer, useOrders, useProduct, useQuery} from "../../data";
 import {listOffers, listOrders} from "../../../../data";
-import {getMaybeUser, isAnonymous} from "../../../../authentication";
+import {getMaybePartner, getMaybeUser, isAnonymous} from "../../../../authentication";
+import {useMemo} from "react";
 
 export const path = "/orders";
 export const anonymous = true;
@@ -14,32 +15,34 @@ export async function handler() {
            public: isAnonymous()
         }),
         orders: await listOrders({
+            location: {
+                userId: getMaybeUser()?.userId,
+                organisationId: getMaybePartner()?.organisationId
+            }
         })
     }
 }
 
 export function ListOrders() {
-    const query = useQuery<{ productId?: string, offerId?: string }>();
-    const orders = useOrders();
-    const { isAnonymous } = useData();
-    const queryOffer = useOffer(query.offerId);
-    const queryProduct = useProduct(query.productId ?? queryOffer?.items[0]?.productId);
-    let createUrl = "/order/create";
-    let name = "";
-    if (queryOffer) {
-        createUrl = `${createUrl}?offerId=${queryOffer.offerId}`
-        name = ` for ${queryOffer.offerName ?? queryProduct?.productName}`;
-    } else if (queryProduct) {
-        createUrl = `${createUrl}?productId=${queryProduct.productId}`
-        name = ` for ${queryProduct.productName}`;
-    }
+    const query = useQuery<{ status?: string }>();
+    const allOrders = useOrders();
+    const orders = useMemo(() => {
+        return allOrders.filter(
+            (order) => {
+                if (query.status) {
+                    return order.status === query.status;
+                }
+                return order.status !== "pending";
+            }
+        );
+    }, [query.status, allOrders])
     return (
         <div className="flex flex-col">
-            {!isAnonymous ? <a href={createUrl} className={LINK_CLASS}>Create Order{name}</a> : undefined}
             <div className="flex flex-col divide-y">
                 {orders.map(order => (
-                    <div key={order.orderId}>
-                        {order.orderId}
+                    <div key={order.orderId} className="flex flex-col">
+                        <span>{order.orderId}</span>
+                        <span>{order.status}</span>
                     </div>
                 ))}
             </div>

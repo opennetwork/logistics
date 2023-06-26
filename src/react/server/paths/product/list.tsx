@@ -70,7 +70,6 @@ export function ListProducts() {
     return (
         <div className="bg-white" id="product-list">
             <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
-                {!isAnonymous ? <a href="/product/create" className={LINK_CLASS}>Create Product</a> : undefined}
                 <div className="mt-8 grid grid-cols-1 gap-y-12 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-3 xl:gap-x-8">
                     {sorted.map(product => {
                         const images = images600.filter(file => file.productId === product.productId);
@@ -99,7 +98,7 @@ export function ListProducts() {
                                                         hidden={index !== 0}
                                                         key={index}
                                                         src={image.url}
-                                                        alt={String(image.alt || product.productName)}
+                                                        alt={String(image.description || product.productName)}
                                                         className="h-full w-full object-cover object-center"
                                                     />
                                                 )
