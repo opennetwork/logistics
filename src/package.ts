@@ -4,8 +4,7 @@ import {
     commit,
     commitAt,
     commitAuthor,
-    commitEmail,
-    timeBetweenCommitAndBuild,
+    commitEmail
 } from "./package.readonly";
 import { ok } from "./is";
 
@@ -44,7 +43,6 @@ export function logPackage() {
         commit,
         commitAt,
         commitAuthor,
-        commitEmail,
-        timeBetweenCommitAndBuild,
+        commitEmail
     });
 }

@@ -6,6 +6,7 @@ import {writeFile} from "node:fs/promises";
 
 await import("./importmap.js");
 await import("./static-references.js");
+await import("./git-info-build.js");
 
 // await import("./correct-import-extensions.js");
 // await import("./workerd-tests.js");

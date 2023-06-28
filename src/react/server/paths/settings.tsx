@@ -3,7 +3,6 @@ import {
     commitAt,
     commitAuthor,
     secondsBetweenCommitAndTestCompletion,
-    timeBetweenCommitAndBuild,
     timeBetweenCommitAndTestCompletion,
 } from "../../../package.readonly";
 import { homepage, packageIdentifier } from "../../../package";
@@ -69,11 +68,6 @@ export function Settings() {
             <br />
             <hr />
             <br />
-            <p data-seconds="${secondsBetweenCommitAndBuild}">
-                <strong>Time between commit and build</strong>
-                <br />
-                {timeBetweenCommitAndBuild}
-            </p>
             {timeBetweenCommitAndTestCompletion ? (
                 <p data-seconds={secondsBetweenCommitAndTestCompletion}>
                     <strong>Time between commit and tests completion</strong>

@@ -3,7 +3,6 @@ import {VARIABLES_REPLACE_AFTER_TEST_COMMENT} from "./replace-between.js";
 
 const SOURCE_MAPPING_COMMENT = "//# sourceMappingURL=";
 
-const PACKAGE_GENERATED_PATH_SOURCE = "./src/package.readonly.ts"
 const PACKAGE_GENERATED_PATH_BUILD = "./esnext/package.readonly.js"
 
 {
@@ -38,7 +37,6 @@ export const timeBetweenCommitAndTestCompletion = "${timeBetweenCommitAndBuild}"
         await writeFile(path, joined, "utf-8");
     }
 
-    await replaceValuesInFile(PACKAGE_GENERATED_PATH_SOURCE)
     await replaceValuesInFile(PACKAGE_GENERATED_PATH_BUILD)
 
 }

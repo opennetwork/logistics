@@ -4,9 +4,6 @@ import {
   commitAuthor,
   homepage,
   packageIdentifier,
-  secondsBetweenCommitAndTestCompletion,
-  timeBetweenCommitAndBuild,
-  timeBetweenCommitAndTestCompletion,
 } from "../../../package";
 import {
   useData,
