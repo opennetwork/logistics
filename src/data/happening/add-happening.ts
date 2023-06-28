@@ -23,7 +23,10 @@ export async function addHappeningTree(data: HappeningTreeData) {
    const output = await Promise.all(input.map(setHappening));
    return getHappeningTree(
        parent.happeningId,
-       createGetHappeningTreeContext(output, attendees)
+       createGetHappeningTreeContext({
+           happenings: output,
+           attendees
+       })
    );
 
    function createAttendees(tree: HappeningTreeData): AttendeeData[] {

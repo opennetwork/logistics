@@ -260,26 +260,32 @@ export interface HappeningData extends HappeningEventData {
     children?: string[];
     attendees?: string[];
     timezone?: string;
+    partnerId?: string;
+    organisationId?: string;
+    userId?: string;
 }
 
 export interface Happening extends HappeningData {
     type: HappeningType | string;
     happeningId: string;
-    partnerId?: string;
-    userId?: string;
 }
 
 export type PartialHappening = HappeningData & Partial<Happening>
 
-export interface HappeningTree extends HappeningEventData {
-    happeningId: string;
-    type: HappeningType | string;
+export interface HappeningTreeNoKey extends HappeningEventData {
+    type: string;
     parent?: HappeningTree;
     children: HappeningTree[];
     attendees: Attendee[];
     partnerId?: string;
     partner?: Partner;
+    organisation?: Organisation;
     userId?: string;
+}
+
+export interface HappeningTree extends HappeningTreeNoKey {
+    id: string;
+    type: HappeningType | string;
 }
 
 export interface Identifier {
@@ -649,6 +655,27 @@ export interface SystemLogData extends Record<string, unknown> {
 export interface SystemLog extends SystemLogData {
     systemLogId: string;
     timestamp: string;
+}
+
+export type TaskType =
+    | "inventory"
+    | "packing"
+    | "picking"
+    | "order"
+    | "product"
+    | "offer"
+
+export interface TaskData extends HappeningData {
+  type: TaskType
+  taskName?: string;
+  organisationId?: string;
+  attendees: string[];
+}
+
+export interface Task extends TaskData {
+  taskId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 ```
 

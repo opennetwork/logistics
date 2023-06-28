@@ -38,14 +38,14 @@ const chance = new Chance();
         ]
     });
 
-    ok(tree.happeningId);
+    ok(tree.id);
     ok(tree.children.length === 3);
     ok(tree.children[0].children.length === 0);
     ok(tree.children[1].children.length === 0);
     ok(tree.children[2].children.length === 2);
 
     {
-        const other = await getHappeningTree(tree.happeningId);
+        const other = await getHappeningTree(tree.id);
         ok(other.children.length === 3);
         ok(other.children[0].children.length === 0);
         ok(other.children[1].children.length === 0);
@@ -53,8 +53,8 @@ const chance = new Chance();
     }
 
     {
-        const top = await getTopHappeningTree(tree.children[2].children[0].happeningId);
-        ok(top.happeningId === tree.happeningId);
+        const top = await getTopHappeningTree(tree.children[2].children[0].id);
+        ok(top.id === tree.id);
         ok(top.children.length === 3);
         ok(top.children[0].children.length === 0);
         ok(top.children[1].children.length === 0);
@@ -63,14 +63,14 @@ const chance = new Chance();
 
     console.log(tree);
 
-    ok(await getHappening(tree.happeningId));
-    ok(await getHappening(tree.children[2].children[0].happeningId));
+    ok(await getHappening(tree.id));
+    ok(await getHappening(tree.children[2].children[0].id));
 
-    await deleteHappeningTree(tree.happeningId);
+    await deleteHappeningTree(tree.id);
 
-    console.log(await getHappening(tree.happeningId));
-    ok(!await getHappening(tree.happeningId));
-    ok(!await getHappening(tree.children[2].children[0].happeningId));
+    console.log(await getHappening(tree.id));
+    ok(!await getHappening(tree.id));
+    ok(!await getHappening(tree.children[2].children[0].id));
 
 }
 

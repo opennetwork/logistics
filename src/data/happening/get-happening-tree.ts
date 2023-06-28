@@ -1,27 +1,57 @@
-import {Happening, HappeningTree} from "./types";
+import {Happening, HappeningData, HappeningTree} from "./types";
 import {getHappening} from "./get-happening";
 import {ok} from "../../is";
 import {Attendee, getAttendee} from "../attendee";
 import {getPartner, Partner} from "../partner";
+import {getOrganisation, Organisation} from "../organisation";
 
-interface GetHappeningTreeContext {
+export interface GetHappeningTreeContext<T extends HappeningData = Happening, K extends keyof T = keyof T> {
     trees: Map<string, HappeningTree>;
-    store?: Map<string, Happening>;
+    store?: Map<string, T>;
     attendees: Map<string, Attendee>;
     partners: Map<string, Partner>;
+    organisations: Map<string, Organisation>;
+    idKey: K;
+    get?(key: string): Promise<T | undefined>;
 }
 
-export function createGetHappeningTreeContext(happenings?: Happening[], attendees?: Attendee[]): GetHappeningTreeContext {
-    return {
+export interface CreateGetHappeningTreeContextOptions<T extends HappeningData = Happening, K extends keyof T = keyof T> {
+    idKey?: K
+    happenings?: T[];
+    attendees?: Attendee[]
+    organisations?: Organisation[]
+    partners?: Partner[]
+    get?(key: string): Promise<T | undefined>;
+}
+
+export function createGetHappeningTreeContext<T extends HappeningData = Happening, K extends keyof T = keyof T>(options: CreateGetHappeningTreeContextOptions<T, K> = {}): GetHappeningTreeContext<T, K> {
+    const {
+        idKey = "happeningId",
+        happenings,
+        attendees,
+        partners,
+        organisations,
+        get = getHappening
+    } = options
+    const context = {
+        idKey,
+        get,
         trees: new Map(),
         store: happenings ?
-            new Map(happenings.filter(Boolean).map(value => [value.happeningId, value])) :
+            new Map(happenings.filter(Boolean).map(value => [value[idKey], value])) :
             undefined,
         attendees: attendees ?
             new Map(attendees.filter(Boolean).map(value => [value.attendeeId, value])) :
             new Map(),
-        partners: new Map()
+        partners: partners ?
+            new Map(partners.filter(Boolean).map(value => [value.partnerId, value])) :
+            new Map(),
+        organisations: organisations ?
+            new Map(organisations.filter(Boolean).map(value => [value.organisationId, value])) :
+            new Map()
     };
+    ok<GetHappeningTreeContext<T, K>>(context);
+    return context;
 }
 
 export async function getTopHappeningTree(happeningId: string): Promise<HappeningTree> {
@@ -44,25 +74,25 @@ export async function getTopHappeningTree(happeningId: string): Promise<Happenin
     }
 }
 
-export async function getHappeningTree(happeningId: string, context = createGetHappeningTreeContext()): Promise<HappeningTree> {
+export async function getHappeningTree<T extends HappeningData = Happening, K extends keyof T = keyof T>(happeningId: string, context = createGetHappeningTreeContext<T, K>()): Promise<HappeningTree> {
     const existing = context.trees.get(happeningId);
     if (existing) return existing;
 
-    const happening = await getCachedHappening(happeningId);
+    const happening: HappeningData | undefined = await getCachedHappening(happeningId);
     ok(happening, `Expected happening ${happeningId} to exist`);
 
     const { attendees, parent, children, ...data } = happening;
 
     const instance: HappeningTree = {
-        happeningId,
+        type: "happening",
+        id: happeningId,
         ...data,
         children: [],
         attendees: []
     };
 
-    if (data.partnerId) {
-        instance.partner = await getCachedPartner(data.partnerId);
-    }
+    instance.partner = instance.partner ?? await getCachedPartner(data.partnerId);
+    instance.organisation = instance.organisation ?? await getCachedOrganisation(data.organisationId);
 
     // Put the instance in the memory cache so
     // it's object reference is used when
@@ -94,13 +124,14 @@ export async function getHappeningTree(happeningId: string, context = createGetH
 
     return instance;
 
-    async function getCachedHappening(happeningId: string) {
+    async function getCachedHappening(happeningId: string): Promise<T | undefined> {
         const existing = context.store?.get(happeningId);
         if (existing) return existing;
-        return getHappening(happeningId);
+        return context.get(happeningId);
     }
 
-    async function getCachedAttendee(attendeeId: string) {
+    async function getCachedAttendee(attendeeId?: string) {
+        if (!attendeeId) return undefined;
         const existing = context.attendees.get(attendeeId);
         if (existing) return existing;
         const value = await getAttendee(attendeeId);
@@ -109,12 +140,23 @@ export async function getHappeningTree(happeningId: string, context = createGetH
         return value;
     }
 
-    async function getCachedPartner(partnerId: string) {
+    async function getCachedPartner(partnerId?: string) {
+        if (!partnerId) return undefined;
         const existing = context.partners.get(partnerId);
         if (existing) return existing;
         const value = await getPartner(partnerId);
         if (!value) return undefined;
         context.partners.set(partnerId, value);
+        return value;
+    }
+
+    async function getCachedOrganisation(organisationId?: string) {
+        if (!organisationId) return undefined;
+        const existing = context.organisations.get(organisationId);
+        if (existing) return existing;
+        const value = await getOrganisation(organisationId);
+        if (!value) return undefined;
+        context.organisations.set(organisationId, value);
         return value;
     }
 }

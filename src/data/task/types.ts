@@ -1,16 +1,18 @@
+import {Happening, HappeningData} from "../happening";
+
 export type TaskType =
-    | "place"
     | "inventory"
     | "packing"
     | "picking"
+    | "order"
+    | "product"
+    | "offer"
 
-export interface TaskData extends Record<string, unknown> {
+export interface TaskData extends HappeningData {
   type: TaskType
   taskName?: string;
-  address?: string[];
-  countryCode?: string;
   organisationId?: string;
-  userId?: string;
+  attendees: string[];
 }
 
 export interface Task extends TaskData {

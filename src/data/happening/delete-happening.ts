@@ -18,7 +18,7 @@ export async function deleteHappeningTree(happeningId: string) {
 
    function getIdentifiers(tree: HappeningTree): string[] {
       return [
-         tree.happeningId,
+         tree.id,
          ...tree.children.flatMap<string>(getIdentifiers)
       ];
    }
