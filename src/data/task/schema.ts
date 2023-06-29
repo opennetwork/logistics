@@ -1,17 +1,19 @@
 import {identifierSchema} from "../identifier";
+import {happeningSchema} from "../happening";
 
 export const taskData = {
   type: "object",
   properties: {
-    taskName: {
-      type: "string"
+    ...happeningSchema.happeningData,
+    title: {
+      type: "string",
     },
     identifiers: {
       type: "array",
       items: identifierSchema.identifier
     }
   },
-  required: ["taskName", "identifiers"],
+  required: ["identifiers", "title"],
 } as const;
 
 export const task = {
