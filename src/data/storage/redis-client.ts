@@ -117,13 +117,15 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
   }
 
   async function values(): Promise<T[]> {
-    const client = await connect();
-    const keys = await client.keys(`${getPrefix()}*`);
-    return await Promise.all(keys.map((key: string) => internalGet(key)));
+    const values: T[] = [];
+    for await (const value of asyncIterable()) {
+      values.push(value);
+    }
+    return values;
   }
 
   async function* asyncIterable(): AsyncIterable<T> {
-    for (const key of await keys()) {
+    for await (const key of scan()) {
       const value = await internalGet(key);
       // Could return as deleted in between fetching
       if (value) {
@@ -143,18 +145,24 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
   }
 
   async function keys(): Promise<string[]> {
-    const client = await connect();
-    return await client.keys(`${getPrefix()}*`);
+    const keys = [];
+    for await (const key of scan()) {
+      keys.push(key);
+    }
+    return keys;
   }
 
   async function clear(): Promise<void> {
-    await Promise.all(
-        (
-            await keys()
-        ).map(async (key) => {
-          await deleteFn(key);
-        })
-    );
+    for await (const key of scan()) {
+      await deleteFn(key);
+    }
+  }
+
+  async function *scan() {
+    const client = await connect();
+    yield *client.scanIterator({
+      MATCH: `${getPrefix()}*`
+    });
   }
 
   async function increment(key: string): Promise<number> {

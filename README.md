@@ -667,7 +667,7 @@ export type TaskType =
 
 export interface TaskData extends HappeningData {
   type: TaskType
-  taskName?: string;
+  title: string;
   organisationId?: string;
   attendees: string[];
 }
