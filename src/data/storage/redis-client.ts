@@ -1,9 +1,9 @@
 import {KeyValueStore, KeyValueStoreOptions, MetaKeyValueStore} from "./types";
 import { ok, isNumberString } from "../../is";
-import { RedisClientType } from "@redis/client";
-import type { createClient } from "redis";
-import { RedisClient } from "./redis-types";
+import type { Redis as RedisClientType } from "ioredis";
+import type { RedisClient } from "./redis-types";
 import {getRedisPrefix, getRedisPrefixedKey, getRedisUrl} from "./redis-client-helpers";
+import * as repl from "repl";
 
 export { RedisClient }
 
@@ -11,8 +11,10 @@ const GLOBAL_CLIENTS = new Map();
 const GLOBAL_CLIENTS_PROMISE = new Map();
 const GLOBAL_CLIENT_CONNECTION_PROMISE = new WeakMap();
 
+const DEFAULT_SCAN_SIZE = 42;
+
 export function getGlobalRedisClient(): Promise<RedisClient> {
-  const url = getRedisUrl();
+  const url: string = getRedisUrl();
   // Give a stable promise result so it can be used to cache on too
   const existing = GLOBAL_CLIENTS_PROMISE.get(url);
   if (existing) {
@@ -23,35 +25,42 @@ export function getGlobalRedisClient(): Promise<RedisClient> {
   return promise;
 
   async function getClient(): Promise<RedisClient> {
-    const { createClient } = await import("redis");
-    const client: unknown = createClient<Record<string, never>, Record<string, never>, Record<string, never>>({
-      url,
-    });
-    ok<RedisClient>(client);
-    client.on("error", console.warn);
+    const ioredis = await import("ioredis");
+    const params = [url];
+    ok<ConstructorParameters<typeof ioredis.Redis>>(params);
+    const client = ioredis.Redis.createClient(...params)
+    // client.on("error", console.warn);
     GLOBAL_CLIENTS.set(url, client);
     return client;
   }
 }
 
-export async function connectGlobalRedisClient(
-    clientPromise: Promise<RedisClient> = getGlobalRedisClient()
-): Promise<RedisClient> {
-  const client: RedisClient = await clientPromise;
-  if (client.isOpen) {
-    return client;
-  }
-  const existingPromise = GLOBAL_CLIENT_CONNECTION_PROMISE.get(client);
-  if (existingPromise) return existingPromise;
-  const promise = client.connect().then(() => client);
-  GLOBAL_CLIENT_CONNECTION_PROMISE.set(client, promise);
-  promise.finally(() => {
-    if (promise === GLOBAL_CLIENT_CONNECTION_PROMISE.get(client)) {
-      GLOBAL_CLIENT_CONNECTION_PROMISE.delete(client);
-    }
-  });
-  return promise;
-}
+// export async function connectGlobalRedisClient(
+//     clientPromise: Promise<RedisClient> = getGlobalRedisClient()
+// ): Promise<RedisClient> {
+//   try {
+//
+//     const client =  await clientPromise;
+//     console.log({ client });
+//     return client;
+//   } catch (error ) {
+//     console.error({ error });
+//     throw error;
+//   }
+//   // if (client.isOpen) {
+//   //   return client;
+//   // }
+//   // const existingPromise = GLOBAL_CLIENT_CONNECTION_PROMISE.get(client);
+//   // if (existingPromise) return existingPromise;
+//   // const promise = client.connect().then(() => client);
+//   // GLOBAL_CLIENT_CONNECTION_PROMISE.set(client, promise);
+//   // promise.finally(() => {
+//   //   if (promise === GLOBAL_CLIENT_CONNECTION_PROMISE.get(client)) {
+//   //     GLOBAL_CLIENT_CONNECTION_PROMISE.delete(client);
+//   //   }
+//   // });
+//   // return promise;
+// }
 
 // export async function getRedisClient() {
 //     const client = getGlobalRedisClient();
@@ -61,6 +70,8 @@ export async function connectGlobalRedisClient(
 
 export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStoreOptions): KeyValueStore<T> {
   const clientPromise = getGlobalRedisClient();
+
+  let client: RedisClient;
 
   const isCounter = name.endsWith("Counter");
 
@@ -94,7 +105,12 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
   }
 
   async function connect() {
-    return connectGlobalRedisClient(clientPromise);
+    if (client) {
+      return client;
+    }
+    client = await clientPromise;
+    return client;
+    // return connectGlobalRedisClient(clientPromise);
   }
 
   async function get(key: string): Promise<T | undefined> {
@@ -102,7 +118,7 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
   }
 
   async function internalGet(actualKey: string): Promise<T | undefined> {
-    const client = await connect();
+    client = client ?? await connect();
     const value = await client.get(actualKey);
     return parseValue(value);
   }
@@ -111,62 +127,79 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
     if (isCounter) {
       ok(typeof value === "number", "Expected number value for counter store");
     }
-    const client = await connect();
+    client = client ?? await connect();
     const json = JSON.stringify(value);
     await client.set(getKey(key), json);
   }
 
   async function values(): Promise<T[]> {
-    const values: T[] = [];
-    for await (const value of asyncIterable()) {
-      values.push(value);
+    const returning: T[] = [];
+    for await (const values of scanValues(DEFAULT_SCAN_SIZE)) {
+      returning.push(...values);
     }
-    return values;
+    return returning;
+  }
+
+  async function* scanValues(count = DEFAULT_SCAN_SIZE): AsyncIterable<T[]> {
+    for await (const keys of scan(count)) {
+      const values = await Promise.all(
+          keys.map(get)
+      );
+      const filtered = values.filter(Boolean);
+      if (filtered.length) {
+        yield filtered;
+      }
+    }
   }
 
   async function* asyncIterable(): AsyncIterable<T> {
-    for await (const key of scan()) {
-      const value = await internalGet(key);
-      // Could return as deleted in between fetching
-      if (value) {
+    for await (const values of scanValues()) {
+      for (const value of values) {
         yield value;
       }
     }
   }
 
   async function deleteFn(key: string): Promise<void> {
-    const client = await connect();
+    client = client ?? await connect();
     await client.del(getKey(key));
   }
 
   async function has(key: string): Promise<boolean> {
-    const client = await connect();
+    client = client ?? await connect();
     return !!await client.exists(getKey(key));
   }
 
   async function keys(): Promise<string[]> {
-    const keys = [];
-    for await (const key of scan()) {
-      keys.push(key);
+    const keys: string[] = [];
+    for await (const keys of scan(DEFAULT_SCAN_SIZE)) {
+      keys.push(...keys);
     }
     return keys;
   }
 
   async function clear(): Promise<void> {
-    for await (const key of scan()) {
-      await deleteFn(key);
+    for await (const keys of scan(DEFAULT_SCAN_SIZE)) {
+      await Promise.all(keys.map(deleteFn));
     }
   }
 
-  async function *scan() {
-    const client = await connect();
-    yield *client.scanIterator({
-      MATCH: `${getPrefix()}*`
-    });
+  async function *scan(count = DEFAULT_SCAN_SIZE): AsyncIterable<string[]> {
+    client = client ?? await connect();
+    const prefix = getPrefix();
+    let cursor = "0";
+    do {
+      const reply = await client.scan(cursor, "MATCH", `${prefix}*`, "COUNT", count);
+      cursor = reply[0];
+      if (reply[1].length) {
+        yield reply[1].map(key => key.substring(prefix.length));
+      }
+    } while (cursor !== "0");
+
   }
 
   async function increment(key: string): Promise<number> {
-    const client = await connect();
+    client = client ?? await connect();
     ok(isCounter, "Expected increment to be used with a counter store only");
     await connect();
     const returnedValue = await client.incr(getKey(key));

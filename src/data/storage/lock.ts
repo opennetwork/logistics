@@ -1,5 +1,5 @@
 import {
-  connectGlobalRedisClient,
+  getGlobalRedisClient,
   RedisClient
 } from "./redis-client";
 import {isRedisMemory} from "./redis-memory";
@@ -38,7 +38,7 @@ export function getGlobalLock(): LockFn | undefined {
   const existing = GLOBAL_LOCKS.get(url);
   if (existing) return existing;
   const fn =  async (name: string) => {
-    const client = await connectGlobalRedisClient();
+    const client = await getGlobalRedisClient();
     return acquire(client, name);
   };
   GLOBAL_LOCKS.set(url, fn);
@@ -67,10 +67,7 @@ async function acquire(client: RedisClient, name: string): Promise<UnlockFn> {
 
   async function tryAcquire(): Promise<UnlockFn> {
     try {
-      const result = await client.set(key, timeoutAfter, {
-        PX: timeout,
-        NX: true
-      });
+      const result = await client.set(key, timeoutAfter, "PX", timeout, "NX");
       if (result) {
         return unlock;
       }

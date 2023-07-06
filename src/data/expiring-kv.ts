@@ -1,9 +1,9 @@
-import { KeyValueStore } from "./types";
+import {KeyValueStore} from "./types";
 import { getKeyValueStore, KeyValueStoreOptions } from "./storage";
 import {
-    connectGlobalRedisClient,
     getRedisPrefixedKey,
     isRedis,
+    getGlobalRedisClient
 } from "./storage";
 import { Expiring } from "./expiring";
 
@@ -55,7 +55,7 @@ export function getExpiringStore<T extends Expiring>(
                 // Not yet expiring
 
                 if (isRedis()) {
-                    const client = await connectGlobalRedisClient();
+                    const client = await getGlobalRedisClient();
                     await client.persist(redisKey);
                 }
 
@@ -77,7 +77,7 @@ export function getExpiringStore<T extends Expiring>(
             }
             /* c8 ignore stop */
             const expiresInSeconds = Math.ceil(expiresInMs / 1000);
-            const client = await connectGlobalRedisClient();
+            const client = await getGlobalRedisClient();
             await client.expire(redisKey, expiresInSeconds);
         },
         async get(key) {

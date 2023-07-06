@@ -101,6 +101,7 @@
     "human-readable-ids": "^1.0.4",
     "json-schema-to-ts": "^2.8.0",
     "jsonwebtoken": "^9.0.0",
+    "ioredis": "^5.3.2",
     "luxon": "^3.3.0",
     "p-limit": "^4.0.0",
     "patch-package": "^7.0.0",
