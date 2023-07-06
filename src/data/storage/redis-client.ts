@@ -3,7 +3,6 @@ import { ok, isNumberString } from "../../is";
 import type { Redis as RedisClientType } from "ioredis";
 import type { RedisClient } from "./redis-types";
 import {getRedisPrefix, getRedisPrefixedKey, getRedisUrl} from "./redis-client-helpers";
-import * as repl from "repl";
 
 export { RedisClient }
 
