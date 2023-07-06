@@ -40,6 +40,21 @@ export interface Client {
     background(query: Record<string, string> | URLSearchParams): Promise<void>;
 }
 
+export type AppointmentType =
+    | "appointment"
+
+export interface AppointmentData extends HappeningData {
+  type: AppointmentType
+  organisationId?: string;
+  attendees: string[];
+}
+
+export interface Appointment extends AppointmentData {
+  appointmentId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AttendeeData {
     reference: string;
     name?: string;

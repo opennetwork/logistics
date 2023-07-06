@@ -1,5 +1,6 @@
 // These references are auto generated, do not edit manually
 
+export * from "../data/appointment/types"
 export * from "../data/attendee/types"
 export * from "../data/authentication-role/types"
 export * from "../data/authorisation/types"
