@@ -1,11 +1,12 @@
 import {isLike, ok} from "../is";
 import {
-    AuthenticationState,
+    AuthenticationState, DEFAULT_COOKIE_STATE_EXPIRES_MS,
     getAccessToken as getAccessTokenDocument,
     getAuthenticationState,
+    setAuthenticationState as setAuthenticationStateData,
     getPartner as getPartnerDocument,
     getUser,
-    User,
+    User, getExpiresAt,
 } from "../data";
 import {
     DoneFuncWithErrOrRes,
@@ -102,9 +103,22 @@ function createCookieAuth(fastify: FastifyInstance): FastifyAuthFunction {
         ok(typeof signedStateId === "string", NOT_AUTHORIZED_ERROR_MESSAGE);
         const unsignedCookie = fastify.unsignCookie(signedStateId);
         ok(unsignedCookie.valid, NOT_AUTHORIZED_ERROR_MESSAGE);
-        const state = await getAuthenticationState(unsignedCookie.value);
+        let state = await getAuthenticationState(unsignedCookie.value);
         ok(state, NOT_AUTHORIZED_ERROR_MESSAGE);
         ok(state.type === "cookie", NOT_AUTHORIZED_ERROR_MESSAGE);
+        const timeUntilExpiry = new Date(state.expiresAt).getTime() - Date.now();
+        const resetExpiry = timeUntilExpiry < (DEFAULT_COOKIE_STATE_EXPIRES_MS / 2);
+        // 👍
+        // { timeUntilExpiry: 19085757, resetExpiry: true }
+        // { timeUntilExpiry: 1209592013, resetExpiry: false }
+        // { timeUntilExpiry: 1209559680, resetExpiry: false }
+        // console.log({ timeUntilExpiry, resetExpiry  })
+        if (resetExpiry) {
+            state = await setAuthenticationStateData({
+                ...state,
+                expiresAt: getExpiresAt(DEFAULT_COOKIE_STATE_EXPIRES_MS)
+            });
+        }
         setAuthenticationState(state);
         if (state.userId) {
             const user: User | undefined = await getUser(state.userId);

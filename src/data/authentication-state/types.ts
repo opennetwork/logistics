@@ -48,6 +48,9 @@ export interface AuthenticationState
   extends AuthenticationStateData,
     AuthenticationStateFromData {
   stateId: string;
+  /**
+   * @deprecated use stateId, same value
+   */
   stateKey: string;
   createdAt: string;
   expiresAt: string;

@@ -4,7 +4,7 @@ import { AuthenticationState } from "./types";
 const STORE_NAME = "authenticationState";
 
 export const DEFAULT_AUTHENTICATION_STATE_EXPIRES_MS = 5 * MINUTE_MS;
-export const DEFAULT_COOKIE_STATE_EXPIRES_MS = DAY_MS;
+export const DEFAULT_COOKIE_STATE_EXPIRES_MS = 14 * DAY_MS;
 // Magic email link lasts 10 minutes
 export const DEFAULT_AUTHSIGNAL_STATE_EXPIRES_MS = 12 * MINUTE_MS;
 
