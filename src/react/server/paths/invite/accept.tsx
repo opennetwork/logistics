@@ -4,22 +4,22 @@ import {
     isAnonymous,
     getUser,
     getMaybeAuthenticationState,
-    setAuthenticationState as setAuthenticatedAuthenticationState
+    setAuthenticationState as setAuthenticatedAuthenticationState, getMaybeUser
 } from "../../../../authentication";
 import {FastifyReply, FastifyRequest} from "fastify";
 import {
-    addAuthenticationState,
+    addAuthenticationState, addCookieState, AuthenticationRole,
     AuthenticationState, DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS,
     deleteAuthenticationState,
     getAuthenticationState,
-    getExpiresAt,
+    getExpiresAt, getExternalUser,
     getInviteeState,
     getUserAuthenticationRoleForUser,
     InviteeState,
     isInviteeState,
     MINUTE_MS,
     setAuthenticationState,
-    setUserAuthenticationRole,
+    setUserAuthenticationRole, User,
     UserAuthenticationRole,
 } from "../../../../data";
 import {ok} from "../../../../is";
@@ -36,14 +36,20 @@ export const anonymous = true;
 interface Body {
     stateKey: string;
     token: string;
+    submit?: "login" | string;
 }
 
 type Schema = {
     Body: Body
 }
 
+type Result = {
+    role: UserAuthenticationRole
+    user: User
+}
+
 type InputSchema = {
-    Querystring?: Partial<Body> & { state?: string }
+    Querystring?: Partial<Body> & { state?: string, login?: string }
     Body?: Body
 }
 
@@ -52,61 +58,142 @@ const INVALID_INVITE = "Invalid or expired invite";
 interface Input {
     stateId: string;
     state: InviteeState;
-    states: AuthenticationState[]
+    deletableStates: AuthenticationState[]
 }
 
-export async function handler(request: FastifyRequest<InputSchema>): Promise<Input> {
+export async function handler(request: FastifyRequest<InputSchema>, response: FastifyReply): Promise<Input> {
     const stateId = request.body?.stateKey || request.query.stateKey || request.query.state;
     const token = request.body?.token || request.query.token;
 
     ok(stateId, INVALID_INVITE);
 
-    console.log({
-        stateId,
-        token
-    });
-
     let state: InviteeState;
 
-    const states = [];
+    const deletableStates = [];
 
     if (!token) {
         const exchangeState = await getAuthenticationState(stateId);
-        states.push(exchangeState);
+        deletableStates.push(exchangeState);
         ok(exchangeState, INVALID_INVITE);
         ok(exchangeState.type === "exchange", INVALID_INVITE);
         ok(exchangeState.userState, INVALID_INVITE);
         const foundState = await getAuthenticationState(exchangeState.userState);
         ok(isInviteeState(foundState), INVALID_INVITE);
         state = foundState;
-        states.push(state);
+        if (!state.inviteRepeating) {
+            deletableStates.push(state);
+        }
     } else {
         state = await getInviteeState({
             stateId,
             token
         })
-        states.push(state);
+        if (!state.inviteRepeating) {
+            deletableStates.push(state);
+        }
     }
-
-    console.log({ state });
 
     ok(state, INVALID_INVITE);
 
-    return {
+    const input: Input = {
         state,
-        states,
+        deletableStates,
         stateId
+    }
+
+    if (state.inviteAutoAccept) {
+        const existingUser = getMaybeUser()
+        if (state.inviteAnonymous || existingUser) {
+            const { role, user } = await accept(input);
+
+            const redirect = new URL(
+                state.inviteRedirectUrl || "/",
+                getOrigin()
+            );
+
+            const { stateId, expiresAt } = await addCookieState({
+                userId: user.userId,
+                roles: role.roles,
+                from: {
+                    type: "invitee",
+                    createdAt: state.createdAt,
+                },
+            });
+
+            response.setCookie("state", stateId, {
+                path: "/",
+                signed: true,
+                expires: new Date(expiresAt),
+            });
+
+            response.header("Location", redirect.toString());
+            response.status(302);
+            response.send();
+        }
+        // Else default
+    }
+
+    return input;
+}
+
+async function accept(input: Input): Promise<Result> {
+    const {
+        state,
+        deletableStates
+    } = input;
+    const user = await getInviteeUser();
+    const existingRole = await getUserAuthenticationRoleForUser(user);
+
+    const role = await setUserAuthenticationRole({
+        ...existingRole,
+        userId: user.userId,
+        expiresAt: user.expiresAt,
+        roles: [...new Set([
+            ...(existingRole?.roles || []),
+            ...(state.roles || [])
+        ])]
+    });
+
+    for (const state of deletableStates) {
+        await deleteAuthenticationState(state.stateId);
+    }
+
+    const maybe = getMaybeAuthenticationState();
+
+    if (maybe?.stateId) {
+        const updatedState = await setAuthenticationState({
+            ...maybe,
+            roles: [...new Set([
+                ...maybe.roles,
+                ...role.roles
+            ])]
+        });
+        setAuthenticatedAuthenticationState(updatedState);
+    }
+
+    return {
+        role,
+        user
     };
+
+    async function getInviteeUser() {
+        const maybe = getMaybeUser();
+        if (state.externalId) {
+            return getExternalUser("invitee", state.externalId, maybe);
+        }
+        if (maybe) return maybe;
+        ok(state.inviteAnonymous, "Expected authenticated user to accept invite");
+        return getExternalUser("invitee", state.stateId);
+    }
 }
 
 export async function submit(request: FastifyRequest<InputSchema>, response: FastifyReply, input: Input) {
     const {
         stateId,
-        state,
-        states
+        state
     } = input;
 
-    if (isAnonymous()) {
+    if (isAnonymous() && (!input.state.inviteAnonymous || request.body.submit === "login")) {
         let expiresAt = getExpiresAt(DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS);
         // Ensure it can't be used longer than the base invite
         if (new Date(expiresAt).getTime() > new Date(state.expiresAt).getTime()) {
@@ -136,70 +223,67 @@ export async function submit(request: FastifyRequest<InputSchema>, response: Fas
         return;
     }
 
-    const user = getUser();
-    const existingRole = await getUserAuthenticationRoleForUser(user);
-
-    const role = await setUserAuthenticationRole({
-        ...existingRole,
-        userId: user.userId,
-        expiresAt: user.expiresAt,
-        roles: [...new Set([
-            ...(existingRole?.roles || []),
-            ...(state.roles || [])
-        ])]
-    });
-    console.log("created role", {
-        existingRole,
-        role
-    });
-
-    console.log("deleting states", states);
-    for (const state of states) {
-        await deleteAuthenticationState(state.stateId);
-    }
-
-    const maybe = getMaybeAuthenticationState();
-
-    if (maybe?.stateId) {
-        const updatedState = await setAuthenticationState({
-            ...maybe,
-            roles: [...new Set([
-                ...maybe.roles,
-                ...role.roles
-            ])]
-        });
-        setAuthenticatedAuthenticationState(updatedState);
-    }
-
-    return role;
+    return accept(input);
 }
 
 export function AcceptInvite() {
 
-    const input = useInput<Input>();
+    const { state } = useInput<Input>();
     const body = useMaybeBody<Body>();
     const error = useError();
     const { url, isAnonymous } = useData();
     const { searchParams } = new URL(url);
-    const result = useMaybeResult<UserAuthenticationRole>();
+    const result = useMaybeResult<Result>();
 
     console.error(error);
 
     return <Body body={body} />
 
     function Body({ body }: { body?: Body }) {
+
+        let submit = (
+            <button
+                type="submit"
+                className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white"
+            >
+                Accept Invite
+            </button>
+        )
+
+        if (!result) {
+            if (!state.inviteAnonymous) {
+                if (isAnonymous) {
+                    const loginUrl = new URL(url);
+                    loginUrl.searchParams.set("login", "true");
+                    submit = (
+                        <>
+                            {submit}
+                            <button
+                                type="submit"
+                                formAction={loginUrl.toString()}
+                                className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white"
+                            >
+                                Login & Accept Invite
+                            </button>
+                        </>
+                    )
+                }
+            } else {
+
+            }
+        }
+
         return (
-            <form name="accept-invite" action={`${path}#action-section`} method="post">
-                <input name="stateKey" value={body?.stateKey ?? searchParams.get("state") ?? searchParams.get("stateKey")} type="hidden" />
-                <input name="token" value={body?.token ?? searchParams.get("token")} type="hidden" />
-                <div id="action-section">
-                    <button
-                        type="submit"
-                        className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white"
-                    >
-                        {isAnonymous ? "Login & " : ""}Accept Invite
-                    </button>
-                </div>
+            <form name="accept-invite" action={`${url.toString()}#action-section`} method="post">
+                {!result ? (
+                    <>
+                        <input name="stateKey" value={body?.stateKey ?? searchParams.get("state") ?? searchParams.get("stateKey")} type="hidden" />
+                        <input name="token" value={body?.token ?? searchParams.get("token")} type="hidden" />
+                        <div id="action-section">
+                            {submit}
+                        </div>
+                    </>
+                ) : undefined}
                 {error ? (
                     <>
                         <hr className="my-8" />
@@ -217,7 +301,7 @@ export function AcceptInvite() {
                             <br />
                             <br />
                             <p>
-                                Assigned role{result.roles.length > 1 ? "s" : ""}: {result.roles.map(value => `"${value}"`).join(", ")}
+                                Assigned role{result.role.roles.length > 1 ? "s" : ""}: {result.role.roles.map(value => `"${value}"`).join(", ")}
                             </p>
                         </div>
                     ) : undefined

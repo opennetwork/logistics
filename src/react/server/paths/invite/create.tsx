@@ -10,8 +10,17 @@ import {useError, useMaybeBody, useMaybeResult} from "../../data";
 
 export const path = "/invite/create";
 
+const {
+    INVITE_ANONYMOUS,
+    INVITE_REPEATING,
+    INVITE_AUTO_ACCEPT
+} = process.env;
+
 type Body = {
     role: AuthenticationRole;
+    anonymous?: boolean;
+    repeating?: boolean;
+    autoAccept?: boolean;
 }
 
 type Schema = {
@@ -35,11 +44,14 @@ interface Result extends Pick<InviteeState, "inviteUrl">, Body {
 }
 
 export async function submit(request: FastifyRequest<Schema>): Promise<Result> {
-    const { role } = request.body;
+    const { role, anonymous, repeating, autoAccept } = request.body;
     console.log(role, getAuthenticationRoles());
     ok(isRole(role), "Must be the role to invite as role");
     const { inviteUrl } = await addInviteeState({
-        roles: [role]
+        roles: [role],
+        inviteAnonymous: anonymous,
+        inviteRepeating: repeating,
+        inviteAutoAccept: autoAccept
     });
     return { inviteUrl, role };
 }
@@ -66,6 +78,60 @@ export function CreateInvite() {
                         </select>
                     </label>
                 </div>
+                {
+                    INVITE_ANONYMOUS ? (
+                        <div className="flex items-center mb-4">
+                            <input
+                                id="anonymous"
+                                name="anonymous"
+                                defaultChecked={body?.anonymous}
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <div className="ml-2">
+                                <label htmlFor="save-as-user-default" className="text-sm font-medium text-gray-900">
+                                    Allow anonymous user
+                                </label>
+                            </div>
+                        </div>
+                    ) : undefined
+                }
+                {
+                    INVITE_REPEATING ? (
+                        <div className="flex items-center mb-4">
+                            <input
+                                id="repeating"
+                                name="repeating"
+                                defaultChecked={body?.repeating}
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <div className="ml-2">
+                                <label htmlFor="save-as-user-default" className="text-sm font-medium text-gray-900">
+                                    Allow repeated link use
+                                </label>
+                            </div>
+                        </div>
+                    ) : undefined
+                }
+                {
+                    INVITE_AUTO_ACCEPT ? (
+                        <div className="flex items-center mb-4">
+                            <input
+                                id="autoAccept"
+                                name="autoAccept"
+                                defaultChecked={body?.autoAccept}
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <div className="ml-2">
+                                <label htmlFor="save-as-user-default" className="text-sm font-medium text-gray-900">
+                                    Auto accept invite
+                                </label>
+                            </div>
+                        </div>
+                    ) : undefined
+                }
                 <div id="action-section">
                     <button
                         type="submit"

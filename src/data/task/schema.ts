@@ -4,7 +4,7 @@ import {happeningSchema} from "../happening";
 export const taskData = {
   type: "object",
   properties: {
-    ...happeningSchema.happeningData,
+    ...happeningSchema.happeningData.properties,
     title: {
       type: "string",
     },

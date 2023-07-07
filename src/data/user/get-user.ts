@@ -29,7 +29,7 @@ export async function getExternalUser(
 ): Promise<User> {
   let reference = await getExternalReference(externalType, externalId);
   if (!reference) {
-    console.log(`Adding external user for ${externalType}`);
+    // console.log(`Adding external user for ${externalType}`);
     return addExternalUser({
       externalId,
       externalType,

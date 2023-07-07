@@ -27,26 +27,42 @@ function getSaltOrRounds() {
     return DEFAULT_ROUNDS;
 }
 
-export function getInviteURL() {
-    return new URL(INVITEE_URL || DEFAULT_INVITEE_URL, getOrigin());
+export function getInviteURL(url?: string) {
+    return new URL(url || INVITEE_URL || DEFAULT_INVITEE_URL, getOrigin());
 }
 
-export interface InviteeStateData {
+export interface InviteeStateOptionsData {
+    inviteUrl?: string;
+    inviteAnonymous?: boolean;
+    inviteRepeating?: boolean;
+    inviteAutoAccept?: boolean;
+    inviteRedirectUrl?: string;
+}
+
+export interface InviteeStateData extends InviteeStateOptionsData {
     inviteSecretHashed: string;
     inviteUrl: string;
+}
+
+export interface InviteeStateOptions extends UntypedAuthenticationStateData, InviteeStateOptionsData {
+
 }
 
 export interface InviteeState extends AuthenticationState, InviteeStateData {
 
 }
 
-export async function addInviteeState(data: UntypedAuthenticationStateData): Promise<InviteeState> {
+export async function addInviteeState(data: InviteeStateOptions): Promise<InviteeState> {
     const inviteSecret = v4();
     const inviteSecretHashed = await hash(inviteSecret, getSaltOrRounds());
-    const intendedUrl = getInviteURL();
+    const intendedUrl = getInviteURL(data.inviteUrl);
     const inviteeState: InviteeStateData = {
         inviteSecretHashed,
-        inviteUrl: intendedUrl.toString()
+        inviteUrl: intendedUrl.toString(),
+        inviteAnonymous: !!data.inviteAnonymous,
+        inviteAutoAccept: !!data.inviteAutoAccept,
+        inviteRepeating: !!data.inviteRepeating,
+        inviteRedirectUrl: data.inviteRedirectUrl
     }
     const state = await addAuthenticationState({
         ...data,

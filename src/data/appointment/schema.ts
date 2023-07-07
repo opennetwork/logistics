@@ -4,7 +4,7 @@ import {happeningSchema} from "../happening";
 export const appointmentData = {
   type: "object",
   properties: {
-    ...happeningSchema.happeningData,
+    ...happeningSchema.happeningData.properties,
     title: {
       type: "string",
     },
@@ -13,7 +13,7 @@ export const appointmentData = {
       items: identifierSchema.identifier
     }
   },
-  required: ["identifiers", "title"],
+  required: ["identifiers", "title", "type"],
 } as const;
 
 export const appointment = {
