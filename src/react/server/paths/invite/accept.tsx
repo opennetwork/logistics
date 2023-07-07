@@ -251,10 +251,10 @@ export function AcceptInvite() {
         )
 
         if (!result) {
-            if (!state.inviteAnonymous) {
+            const loginUrl = new URL(url);
+            loginUrl.searchParams.set("login", "true");
+            if (state.inviteAnonymous) {
                 if (isAnonymous) {
-                    const loginUrl = new URL(url);
-                    loginUrl.searchParams.set("login", "true");
                     submit = (
                         <>
                             {submit}
@@ -268,8 +268,16 @@ export function AcceptInvite() {
                         </>
                     )
                 }
-            } else {
-
+            } else if (isAnonymous) {
+                submit = (
+                    <button
+                        type="submit"
+                        formAction={loginUrl.toString()}
+                        className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white"
+                    >
+                        Login & Accept Invite
+                    </button>
+                )
             }
         }
 
