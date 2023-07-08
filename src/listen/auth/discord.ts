@@ -155,7 +155,10 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
             from: {
               type: "discord",
               createdAt: state.createdAt,
+              data: state.data,
+              from: state.from
             },
+            data: state.data,
           });
 
           response.setCookie("state", stateId, {

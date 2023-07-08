@@ -17,6 +17,7 @@ export interface AuthenticationStateFromData {
   type: AuthenticationStateType | string;
   stateId?: string;
   createdAt: string;
+  data?: Record<string, unknown>
   from?: AuthenticationStateFromData;
 }
 
@@ -31,6 +32,7 @@ export interface UntypedAuthenticationStateData extends Expiring {
   partnerId?: string;
   userId?: string;
   redirectUrl?: string;
+  data?: Record<string, unknown>
 }
 
 export interface AuthenticationStateData

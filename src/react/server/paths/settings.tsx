@@ -7,6 +7,7 @@ import {
 } from "../../../package.readonly";
 import { homepage, packageIdentifier } from "../../../package";
 import {useIsTrusted} from "../data";
+import {getMaybeAuthenticationState} from "../../../authentication";
 
 const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offset-2";
 export const path = "/settings";
@@ -39,6 +40,10 @@ export function Settings() {
             {
                 isTrusted ? (
                     <>
+                        <pre>{JSON.stringify(getMaybeAuthenticationState(), undefined, "  ")}</pre>
+                        <br />
+                        <hr />
+                        <br />
                         <a
                             href="/invite/create"
                             className={LINK_CLASS}

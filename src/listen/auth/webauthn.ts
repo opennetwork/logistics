@@ -8,7 +8,7 @@ import {
 } from "@simplewebauthn/server";
 import {name} from "../../package";
 import {listUserCredentials, setUserCredential, UserCredential} from "../../data/user-credential";
-import {getMaybeUser} from "../../authentication";
+import {getMaybeAuthenticationState, getMaybeUser} from "../../authentication";
 import {createHash} from "crypto";
 import {
     AuthenticationResponseJSON, PublicKeyCredentialCreationOptionsJSON,
@@ -449,7 +449,14 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                 type: "credential",
                 userCredentialId: userCredential.userCredentialId,
                 userId: user.userId,
-                authenticatorType: userCredential.authenticatorType
+                authenticatorType: userCredential.authenticatorType,
+                from: {
+                    type: state.type,
+                    createdAt: state.createdAt,
+                    from: state.from,
+                    data: state.data
+                },
+                data: state.data
             });
             partial.userCredentialState = userCredentialState.stateId;
 
@@ -463,8 +470,11 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                     ])],
                     from: {
                         type: "credential",
-                        createdAt: state.createdAt,
+                        createdAt: userCredentialState.createdAt,
+                        from: userCredentialState.from,
+                        data: userCredentialState.data
                     },
+                    data: userCredentialState.data,
                     userCredentialId: userCredential.userCredentialId
                 }
                 const { stateId, expiresAt } = await addCookieState(data);
@@ -483,6 +493,7 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
         const userId = reference.userId;
         const credentials = await listUserCredentials(userId);
         const existingUser = getMaybeUser();
+        const existingState = getMaybeAuthenticationState();
         if (existingUser) {
             ok(existingUser.userId === userId, "Expected userId to match logged in");
         }
@@ -515,7 +526,14 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                 type: "credential",
                 userCredentialId: found.userCredentialId,
                 userId: user.userId,
-                authenticatorType: found.authenticatorType
+                authenticatorType: found.authenticatorType,
+                from: {
+                    type: state.type,
+                    createdAt: state.createdAt,
+                    data: state.data,
+                    from: state.from
+                },
+                data: state.data
             });
             partial.userCredentialState = userCredentialState.stateId;
 
@@ -530,8 +548,11 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                     ])],
                     from: {
                         type: "credential",
-                        createdAt: state.createdAt,
+                        createdAt: userCredentialState.createdAt,
+                        data: userCredentialState.data,
+                        from: userCredentialState.from,
                     },
+                    data: userCredentialState.data,
                     userCredentialId: found.userCredentialId
                 }
                 const { stateId, expiresAt } = await addCookieState(data);
@@ -541,6 +562,14 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                     signed: true,
                     expires: new Date(expiresAt),
                 });
+            } else if (existingState) {
+                await setAuthenticationState({
+                    ...existingState,
+                    data: {
+                        ...existingState.data,
+                        ...state.data
+                    }
+                })
             }
         }
 
@@ -583,7 +612,14 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                 type: "credential",
                 userCredentialId: found.userCredentialId,
                 userId: user.userId,
-                authenticatorType: found.authenticatorType
+                authenticatorType: found.authenticatorType,
+                from: {
+                    type: state.type,
+                    createdAt: state.createdAt,
+                    data: state.data,
+                    from: state.from
+                },
+                data: state.data
             });
             partial.userCredentialState = userCredentialState.stateId;
         }

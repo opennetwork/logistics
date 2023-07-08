@@ -21,6 +21,8 @@ type Body = {
     anonymous?: boolean;
     repeating?: boolean;
     autoAccept?: boolean;
+    redirectUrl?: string;
+    data?: string;
 }
 
 type Schema = {
@@ -44,14 +46,22 @@ interface Result extends Pick<InviteeState, "inviteUrl">, Body {
 }
 
 export async function submit(request: FastifyRequest<Schema>): Promise<Result> {
-    const { role, anonymous, repeating, autoAccept } = request.body;
+    const { role, anonymous, repeating, autoAccept, redirectUrl } = request.body;
     console.log(role, getAuthenticationRoles());
     ok(isRole(role), "Must be the role to invite as role");
+    let data;
+    if (request.body.data) {
+        try {
+            data = JSON.parse(request.body.data);
+        } catch {}
+    }
     const { inviteUrl } = await addInviteeState({
         roles: [role],
         inviteAnonymous: anonymous,
         inviteRepeating: repeating,
-        inviteAutoAccept: autoAccept
+        inviteAutoAccept: autoAccept,
+        inviteRedirectUrl: redirectUrl,
+        data
     });
     return { inviteUrl, role };
 }
@@ -76,6 +86,12 @@ export function CreateInvite() {
                                 (role, index) => <option key={index} value={role}>{role}</option>
                             )}
                         </select>
+                    </label>
+                </div>
+                <div className="flex flex-col">
+                    <label className={FORM_GROUP_CLASS}>
+                        <span className="text-gray-700">Redirect to URL after accepting?</span>
+                        <input type="text" name="redirectUrl" className={FORM_CLASS} defaultValue={body?.redirectUrl ?? ""} />
                     </label>
                 </div>
                 {
@@ -132,6 +148,12 @@ export function CreateInvite() {
                         </div>
                     ) : undefined
                 }
+                <div className="flex flex-col">
+                    <label className={FORM_GROUP_CLASS}>
+                        <span className="text-gray-700">Include JSON data in authentication state?</span>
+                        <textarea name="data" className={FORM_CLASS} defaultValue={body?.data ?? ""} />
+                    </label>
+                </div>
                 <div id="action-section">
                     <button
                         type="submit"

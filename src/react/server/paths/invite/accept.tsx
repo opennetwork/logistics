@@ -117,7 +117,10 @@ export async function handler(request: FastifyRequest<InputSchema>, response: Fa
                 from: {
                     type: "invitee",
                     createdAt: state.createdAt,
+                    data: state.data,
+                    from: state.from
                 },
+                data: state.data
             });
 
             response.setCookie("state", stateId, {
@@ -148,7 +151,8 @@ async function accept(input: Input): Promise<Result> {
         ...existingRole,
         userId: user.userId,
         expiresAt: user.expiresAt,
-        roles: [...new Set([
+        roles: [...new Set<AuthenticationRole>([
+            "member",
             ...(existingRole?.roles || []),
             ...(state.roles || [])
         ])]

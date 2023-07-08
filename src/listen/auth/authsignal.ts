@@ -161,8 +161,11 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
             from: {
               type: "authsignal",
               createdAt: state.createdAt,
+              data: state.data,
+              from: state.from
             },
-            userCredentialId: userCredential?.userCredentialId
+            userCredentialId: userCredential?.userCredentialId,
+            data: state.data
           });
 
           response.setCookie("state", stateId, {

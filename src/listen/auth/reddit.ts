@@ -168,7 +168,10 @@ export async function redditAuthenticationRoutes(fastify: FastifyInstance) {
             from: {
               type: "reddit",
               createdAt: state.createdAt,
+              data: state.data,
+              from: state.from
             },
+            data: state.data,
           });
 
           response.setCookie("state", stateId, {
