@@ -12,3 +12,7 @@ export * from "./svg-text";
 export * from "./trash";
 export * from "./bag";
 export * from "./magnifying-glass";
+export * from "./calendar-days";
+export * from "./credit-card";
+export * from "./user-circle";
+export * from "./clock";

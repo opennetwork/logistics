@@ -38,6 +38,7 @@ export interface HappeningEventData extends Record<string, unknown> {
     url?: string;
     title?: string;
     description?: string;
+    timezone?: string;
     options?: HappeningOptionData[];
 }
 
