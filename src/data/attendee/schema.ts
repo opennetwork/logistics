@@ -21,6 +21,7 @@ export const attendeeData = {
             nullable: true
         },
     },
+    additionalProperties: true,
     required: [
         "reference"
     ]
@@ -37,6 +38,7 @@ export const attendee = {
             type: "string",
         },
     },
+    additionalProperties: true,
     required: [
         ...attendeeData.required,
         "attendeeId",

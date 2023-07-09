@@ -5,7 +5,7 @@ const STORE_NAME = "change" as const;
 
 export function getChangeStore({ target , type }: ChangeTargetIdentifier ) {
   return getExpiringStore<Change>(STORE_NAME, {
-    counter: false,
+    counter: true,
     prefix: `change:${type}:target:${target.type}`
   });
 }

@@ -140,8 +140,6 @@ export interface AuthorisationNotification extends AuthorisationNotificationData
     stateId?: string;
 }
 
-export type ChangeType = "request" | "availability";
-
 export interface ChangeOptionData extends Record<string, unknown> {
   type?: string;
 }
@@ -156,7 +154,7 @@ export interface ChangeTarget extends ChangeTargetType {
 
 
 export interface ChangeTargetIdentifier {
-  type: ChangeType;
+  type: string;
   target: ChangeTargetType;
 }
 

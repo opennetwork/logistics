@@ -1,10 +1,13 @@
 import {FastifyInstance} from "fastify";
-import { addAppointment, AppointmentData, appointmentSchema } from "../../data";
+import {addAppointment, AppointmentData, appointmentSchema, AttendeeData, happeningSchema} from "../../data";
 import { authenticate } from "../authentication";
+import {createAttendeeReferences} from "../../data/attendee/get-referenced-attendees";
 
 export async function addAppointmentRoutes(fastify: FastifyInstance) {
   type Schema = {
-    Body: AppointmentData;
+    Body: Omit<AppointmentData, "attendees"> & {
+      attendees: (string | AttendeeData)[]
+    };
   };
 
   const response = {
@@ -32,7 +35,13 @@ export async function addAppointmentRoutes(fastify: FastifyInstance) {
       schema,
       preHandler: authenticate(fastify),
       async handler(request, response) {
-        const appointment = await addAppointment(request.body);
+        const { attendees: attendeeReferences, ...rest } = request.body
+        const attendees = await createAttendeeReferences(attendeeReferences);
+        const appointment = await addAppointment({
+          type: "appointment",
+          ...rest,
+          attendees: attendees.map(attendee => attendee.attendeeId)
+        });
         response.status(201);
         response.send(appointment);
       },

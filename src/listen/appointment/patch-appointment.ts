@@ -1,6 +1,7 @@
 import {FastifyInstance} from "fastify";
 import {getAppointment, AppointmentData, appointmentSchema, setAppointment} from "../../data";
 import { authenticate } from "../authentication";
+import {createAttendeeReferences} from "../../data/attendee/get-referenced-attendees";
 
 export async function patchAppointmentRoutes(fastify: FastifyInstance) {
   type Schema = {
@@ -66,9 +67,19 @@ export async function patchAppointmentRoutes(fastify: FastifyInstance) {
           response.status(404);
           return response.send();
         }
+        const { attendees: attendeeReferences, ...rest } = request.body
+        let patch: Partial<AppointmentData> = rest;
+        if (attendeeReferences) {
+          const attendees = await createAttendeeReferences(attendeeReferences);
+          patch = {
+            ...patch,
+            attendees: attendees.map(attendee => attendee.attendeeId),
+          }
+        }
+
         const appointment = await setAppointment({
           ...existing,
-          ...request.body,
+          ...patch,
           createdAt: existing.createdAt,
           appointmentId
         });

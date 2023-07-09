@@ -4,6 +4,7 @@ import { addAppointmentRoutes } from "./add-appointment";
 import { getAppointmentRoutes } from "./get-appointment";
 import { setAppointmentRoutes } from "./set-appointment";
 import { patchAppointmentRoutes } from "./patch-appointment";
+import { getAppointmentAttendeesRoutes } from "./get-appointment-attendees";
 
 export async function appointmentRoutes(fastify: FastifyInstance) {
   async function routes(fastify: FastifyInstance) {
@@ -12,6 +13,7 @@ export async function appointmentRoutes(fastify: FastifyInstance) {
     fastify.register(getAppointmentRoutes);
     fastify.register(setAppointmentRoutes);
     fastify.register(patchAppointmentRoutes);
+    fastify.register(getAppointmentAttendeesRoutes);
   }
 
   fastify.register(routes, {

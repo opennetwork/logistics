@@ -1,10 +1,13 @@
 import {FastifyInstance} from "fastify";
-import {getAppointment, AppointmentData, appointmentSchema, setAppointment} from "../../data";
+import {getAppointment, AppointmentData, appointmentSchema, setAppointment, AttendeeData} from "../../data";
 import { authenticate } from "../authentication";
+import {createAttendeeReferences} from "../../data/attendee/get-referenced-attendees";
 
 export async function setAppointmentRoutes(fastify: FastifyInstance) {
   type Schema = {
-    Body: AppointmentData;
+    Body: Omit<AppointmentData, "attendees"> & {
+      attendees: (string | AttendeeData)[]
+    };
     Params: {
       appointmentId: string;
     }
@@ -48,10 +51,14 @@ export async function setAppointmentRoutes(fastify: FastifyInstance) {
       async handler(request, response) {
         const { appointmentId } = request.params;
         const existing = await getAppointment(appointmentId);
+        const { attendees: attendeeReferences, ...rest } = request.body
+        const attendees = await createAttendeeReferences(attendeeReferences);
         const appointment = await setAppointment({
+          type: "appointment",
           // Completely replace excluding created at
           // createdAt must come from the server
-          ...request.body,
+          ...rest,
+          attendees: attendees.map(attendee => attendee.attendeeId),
           createdAt: existing?.createdAt,
           appointmentId
         });

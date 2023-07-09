@@ -2,22 +2,20 @@ import {HappeningData, HappeningTreeData, PartialHappening} from "./types";
 import {setHappening} from "./set-happening";
 import {v4} from "uuid";
 import {createGetHappeningTreeContext, getHappeningTree} from "./get-happening-tree";
-import {attr} from "cheerio/lib/api/attributes";
-import {Attendee, AttendeeData, setAttendee} from "../attendee";
-import {getHappening} from "./get-happening";
+import {AttendeeData} from "../attendee";
+import {
+    createAttendeeReferences,
+    getAttendeeReferenceMap,
+    parseAttendeeReferences
+} from "../attendee/get-referenced-attendees";
 
 export async function addHappening(data: HappeningData) {
    return setHappening(data);
 }
 
 export async function addHappeningTree(data: HappeningTreeData) {
-   const attendeeInput = createAttendees(data);
-   const attendees = attendeeInput.length ? await Promise.all(
-       attendeeInput.map(setAttendee)
-   ) : [];
-   const attendeeMap = new Map(
-       attendees.map(attendee => [attendee.reference, attendee])
-   );
+   const attendees = await createAttendeeReferences(createAttendees(data));
+   const attendeeMap = getAttendeeReferenceMap(attendees);
    const input = createHappenings(data);
    const [parent] = input;
    const output = await Promise.all(input.map(setHappening));
@@ -31,14 +29,8 @@ export async function addHappeningTree(data: HappeningTreeData) {
 
    function createAttendees(tree: HappeningTreeData): AttendeeData[] {
       const { children, attendees } = tree;
-
       return [
-          ...(attendees ?? []).map(attendee => {
-              if (typeof attendee === "string") {
-                  return { reference: attendee }
-              }
-              return attendee;
-          }),
+          ...parseAttendeeReferences(attendees),
           ...(children ?? []).flatMap<AttendeeData>(createAttendees)
       ]
           .filter(
