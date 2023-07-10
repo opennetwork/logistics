@@ -1,9 +1,18 @@
 import { FastifyRequest } from "fastify";
-import { Happening } from "../../../client/components/happening";
-import { useInput, useTimezone } from "../../data";
-import { getAppointmentTree, HappeningTree } from "../../../../data";
-import {UserCircleIcon, CreditCardIcon, CalendarDaysIcon, ClockIcon} from "../../../client/components/icons";
+import {useConfig, useData, useInput} from "../../data";
+import {Appointment, AppointmentTree, getAppointmentTree, HappeningTree} from "../../../../data";
+import {UserCircleIcon, CalendarDaysIcon, ClockIcon} from "../../../client/components/icons";
 import {DateTime} from "luxon";
+import {FunctionComponent} from "react";
+
+export interface AppointmentActionProps {
+  appointment: HappeningTree;
+}
+export type AppointmentActionsComponentFn = FunctionComponent<AppointmentActionProps>
+
+export interface AppointmentViewComponentConfig {
+  AppointmentActions?: AppointmentActionsComponentFn;
+}
 
 export const path = "/appointment/:appointmentId";
 export const anonymous = true;
@@ -26,8 +35,12 @@ export async function handler(request: FastifyRequest<Schema>) {
 }
 
 export function AppointmentPage() {
-  const appointment = useInput<HappeningTree>();
+  const appointment = useInput<AppointmentTree>();
   const timezone = appointment.timezone || DEFAULT_TIMEZONE;
+
+  const { url } = useData();
+  const { pathname } = new URL(url);
+  const { AppointmentActions } = useConfig();
 
   let date,
       dateString,
@@ -78,6 +91,10 @@ export function AppointmentPage() {
     dateString = `Ends at ${endInstance.toFormat(TIME_FORMAT)}, ${endInstance.toFormat(DATE_FORMAT)}`;
   }
 
+  const status = appointment.status || "scheduled";
+  const isFinished = status === "completed";
+  const statusString = (appointment.status || "scheduled").replace(/^([a-z])/, (string) => string.toUpperCase());
+
   return(
       <div className="lg:col-start-3 lg:row-end-1">
         <h2 className="sr-only">Summary</h2>
@@ -86,7 +103,7 @@ export function AppointmentPage() {
             <div className="flex-none self-end px-6 pt-4">
               <dt className="sr-only">Status</dt>
               <dd className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                Confirmed
+                {statusString}
               </dd>
             </div>
             <div className="mt-6 flex w-full flex-none gap-x-4 border-t border-gray-900/5 px-6 pt-6">
@@ -130,11 +147,35 @@ export function AppointmentPage() {
               ) : undefined
             }
           </dl>
-          <div className="border-t border-gray-900/5 px-6 py-6 flex flex-col">
-            <a href="#" className="text-sm font-semibold leading-6 text-gray-900">
-              Cancel appointment <span aria-hidden="true">&rarr;</span>
-            </a>
-          </div>
+          {
+            AppointmentActions ? (
+              <AppointmentActions appointment={appointment} />
+            ) : (
+               status === "cancelled" ? (
+                   <div className="border-t border-gray-900/5 mt-6 px-6 py-6 flex flex-col">
+                     <a href={`/api/version/1/appointments/${appointment.id}/status/scheduled?redirect=${pathname}`} className="text-sm font-semibold leading-6 text-gray-900">
+                       Reschedule appointment <span aria-hidden="true">&rarr;</span>
+                     </a>
+                   </div>
+               ) : (
+                   status === "scheduled" ? (
+                       <div className="border-t border-gray-900/5 mt-6 px-6 py-6 flex flex-col">
+                         <a href={`/api/version/1/appointments/${appointment.id}/status/cancelled?redirect=${pathname}`} className="text-sm font-semibold leading-6 text-gray-900">
+                           Cancel appointment <span aria-hidden="true">&rarr;</span>
+                         </a>
+                       </div>
+                   ) : (
+                       status === "deferred" ? (
+                           <div className="border-t border-gray-900/5 mt-6 px-6 py-6 flex flex-col">
+                             <a href={`/api/version/1/appointments/${appointment.id}/status/scheduled?redirect=${pathname}`} className="text-sm font-semibold leading-6 text-gray-900">
+                               Reschedule deferred appointment <span aria-hidden="true">&rarr;</span>
+                             </a>
+                           </div>
+                       ) : undefined
+                   )
+               )
+            )
+          }
         </div>
       </div>
   )

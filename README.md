@@ -43,16 +43,35 @@ export interface Client {
 export type AppointmentType =
     | "appointment"
 
+export type AppointmentStatus =
+    | "scheduled"
+    | "confirmed"
+    | "deferred"
+    | "cancelled"
+    | "completed"
+
+export interface AppointmentHistoryItem extends HappeningEventData {
+  status: AppointmentStatus;
+  statusAt?: string;
+}
+
 export interface AppointmentData extends HappeningData {
   type: AppointmentType
   organisationId?: string;
   attendees: string[];
+  attended?: boolean;
+  attendedAt?: string;
+  status?: AppointmentStatus;
+  history?: AppointmentHistoryItem[];
 }
 
 export interface Appointment extends AppointmentData {
   appointmentId: string;
   createdAt: string;
   updatedAt: string;
+  status: AppointmentStatus;
+  statusAt: string;
+  history: AppointmentHistoryItem[];
 }
 
 export interface AttendeeData extends Record<string, unknown> {
@@ -303,6 +322,7 @@ export interface HappeningEventData extends Record<string, unknown> {
     url?: string;
     title?: string;
     description?: string;
+    timezone?: string;
     options?: HappeningOptionData[];
 }
 

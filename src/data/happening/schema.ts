@@ -101,19 +101,12 @@ export const happeningOptionData = {
   additionalProperties: true
 }
 
-export const happeningData = {
+export const happeningEventData = {
   type: "object",
   properties: {
     options: {
       type: "array",
       items: happeningOptionData,
-      nullable: true,
-    },
-    attendees: {
-      type: "array",
-      items: {
-        type: "string"
-      },
       nullable: true,
     },
     startAt: {
@@ -156,6 +149,25 @@ export const happeningData = {
       type: "string",
       nullable: true,
     },
+    timezone: {
+      type: "string",
+      nullable: true,
+    },
+  },
+} as const;
+
+
+export const happeningData = {
+  type: "object",
+  properties: {
+    ...happeningEventData.properties,
+    attendees: {
+      type: "array",
+      items: {
+        type: "string"
+      },
+      nullable: true,
+    }
   },
 } as const;
 

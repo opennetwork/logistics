@@ -2,6 +2,34 @@ import {identifierSchema} from "../identifier";
 import {happeningSchema} from "../happening";
 import {attendeeSchema} from "../attendee";
 
+const statusEnum = [
+    "scheduled",
+    "confirmed",
+    "deferred",
+    "cancelled",
+    "completed"
+];
+
+export const appointmentHistoryItem = {
+  type: "object",
+  properties: {
+    ...happeningSchema.happeningEventData.properties,
+    status: {
+      type: "string",
+      nullable: true,
+      enum: statusEnum
+    },
+    statusAt: {
+      type: "string",
+      nullable: true
+    },
+    updatedAt: {
+      type: "string"
+    }
+  },
+  required: ["updatedAt"]
+}
+
 export const appointmentData = {
   type: "object",
   properties: {
@@ -26,6 +54,11 @@ export const appointmentData = {
       type: "array",
       items: identifierSchema.identifier,
       nullable: true
+    },
+    status: {
+      type: "string",
+      nullable: true,
+      enum: statusEnum
     }
   }
 } as const;
@@ -44,6 +77,14 @@ export const appointment = {
     updatedAt: {
       type: "string",
     },
+    status: {
+      type: "string",
+      enum: statusEnum
+    },
+    history: {
+      type: "array",
+      items: appointmentHistoryItem
+    }
   },
-  required: ["appointmentId", "createdAt", "updatedAt"],
+  required: ["appointmentId", "createdAt", "updatedAt", "status"],
 } as const;
