@@ -53,6 +53,7 @@ export type AppointmentStatus =
 export interface AppointmentHistoryItem extends HappeningEventData {
   status: AppointmentStatus;
   statusAt?: string;
+  updatedAt: string;
 }
 
 export interface AppointmentData extends HappeningData {
@@ -331,7 +332,6 @@ export interface HappeningData extends HappeningEventData {
     parent?: string
     children?: string[];
     attendees?: string[];
-    timezone?: string;
     partnerId?: string;
     organisationId?: string;
     userId?: string;

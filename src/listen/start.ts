@@ -23,7 +23,7 @@ import files from "@fastify/static";
 import { errorHandler } from "../view/error";
 import etag from "@fastify/etag";
 import { parseStringFields } from "./body-parser";
-import {getConfig} from "../config";
+import {Config, getConfig, setConfig, withConfig} from "../config";
 
 const { pathname } = new URL(import.meta.url);
 const directory = dirname(pathname);
@@ -100,7 +100,11 @@ export async function create() {
     return app;
 }
 
-export async function start() {
+export async function start(config?: Partial<Config>): Promise<() => Promise<void>> {
+    if (config) {
+        return withConfig(getConfig(config), () => start());
+    }
+
     const app = await create();
 
     // Before we start, we should seed
