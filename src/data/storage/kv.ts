@@ -1,9 +1,17 @@
 import {KeyValueStore, KeyValueStoreOptions} from "./types";
 import { getBaseKeyValueStore } from "./kv-base";
 import { ok } from "../../is";
+import {getConfig} from "../../config";
 
 export const GLOBAL_STORE_NAME = "global";
 export const GLOBAL_COUNT_NAME = "globalCount";
+
+export interface KeyValueStoreConfig {
+  getKeyValueStore?<T>(
+      name: string,
+      options?: KeyValueStoreOptions
+  ): KeyValueStoreWithCounter<T> | KeyValueStore<T>;
+}
 
 export interface KeyValueStoreWithCounter<T> extends KeyValueStore<T> {
   counters: {
@@ -25,6 +33,10 @@ export function getKeyValueStore<T>(
   name: string,
   options?: KeyValueStoreOptions
 ): KeyValueStore<T> & Partial<KeyValueStoreWithCounter<T>> {
+  const config = getConfig();
+  if (config.getKeyValueStore) {
+    return config.getKeyValueStore(name, options);
+  }
   const store = getBaseKeyValueStore<T>(name, options);
   const counters =
     options?.counter !== false
