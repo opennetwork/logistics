@@ -1,12 +1,12 @@
 import { FastifyRequest } from "fastify";
 import {useConfig, useData, useInput} from "../../data";
-import {Appointment, AppointmentTree, getAppointmentTree, HappeningTree} from "../../../../data";
+import {AppointmentTree, getAppointmentTree} from "../../../../data";
 import {UserCircleIcon, CalendarDaysIcon, ClockIcon} from "../../../client/components/icons";
 import {DateTime} from "luxon";
 import {FunctionComponent} from "react";
 
 export interface AppointmentActionProps {
-  appointment: HappeningTree;
+  appointment: AppointmentTree;
 }
 export type AppointmentActionsComponentFn = FunctionComponent<AppointmentActionProps>
 
