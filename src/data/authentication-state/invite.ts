@@ -1,13 +1,13 @@
 import {AuthenticationState, AuthenticationStateData, InviteeData, UntypedAuthenticationStateData} from "./types";
 import {v4} from "uuid";
-import {addAuthenticationState} from "./add-authentication-state";
+import {setAuthenticationState} from "./set-authentication-state";
 import {compare, hash} from "bcrypt";
-import {getConfig} from "../../config";
 import {isLike, isNumberString} from "../../is";
-import {getOrigin} from "../../listen/config";
+import {getOrigin} from "../../listen";
 import {getAuthenticationState} from "./get-authentication-state";
 import {getExpiresAt} from "../expiring-kv";
 import {DEFAULT_INVITEE_STATE_EXPIRES_MS} from "./store";
+import {nanoid} from "nanoid";
 
 const {
     INVITEE_BCRYPT_SALT,
@@ -53,7 +53,9 @@ export interface InviteeState extends AuthenticationState, InviteeStateData {
 }
 
 export async function addInviteeState(data: InviteeStateOptions): Promise<InviteeState> {
-    const inviteSecret = v4();
+    // Use a custom state id for human viewing
+    const stateId = nanoid();
+    const inviteSecret = nanoid(8);
     const inviteSecretHashed = await hash(inviteSecret, getSaltOrRounds());
     const intendedUrl = getInviteURL(data.inviteUrl);
     const inviteeState: InviteeStateData = {
@@ -64,8 +66,9 @@ export async function addInviteeState(data: InviteeStateOptions): Promise<Invite
         inviteRepeating: !!data.inviteRepeating,
         inviteRedirectUrl: data.inviteRedirectUrl
     }
-    const state = await addAuthenticationState({
+    const state = await setAuthenticationState({
         ...data,
+        stateId,
         type: "invitee",
         ...inviteeState,
         expiresAt: getExpiresAt(DEFAULT_INVITEE_STATE_EXPIRES_MS, data.expiresAt)
@@ -73,7 +76,7 @@ export async function addInviteeState(data: InviteeStateOptions): Promise<Invite
     const inviteUrl = new URL(intendedUrl);
     // Set the token AFTER storing the target url in the database
     inviteUrl.searchParams.set("token", inviteSecret);
-    inviteUrl.searchParams.set("state", state.stateKey);
+    inviteUrl.searchParams.set("state", stateId);
     return {
         ...state,
         ...inviteeState,
