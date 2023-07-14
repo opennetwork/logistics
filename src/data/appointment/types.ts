@@ -4,8 +4,8 @@ export type AppointmentType =
     | "appointment"
 
 export type AppointmentStatus =
-    | "scheduled"
     | "confirmed"
+    | "scheduled"
     | "deferred"
     | "cancelled"
     | "completed"

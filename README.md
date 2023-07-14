@@ -163,6 +163,8 @@ export interface AuthorisationNotification extends AuthorisationNotificationData
     stateId?: string;
 }
 
+export type ChangeStatus = "pending" | "applied" | "cancelled";
+
 export interface ChangeOptionData extends Record<string, unknown> {
   type?: string;
 }
@@ -189,9 +191,11 @@ export interface ChangeData extends ChangeTargetIdentifier, Expiring {
 }
 
 export interface Change extends ChangeData {
+  status: ChangeStatus;
   changeId: string;
   createdAt: string;
   updatedAt: string;
+  appliedAt?: string;
 }
 
 export interface ChangeIdentifier extends ChangeTargetIdentifier {
@@ -313,7 +317,7 @@ export interface HappeningOptionData extends Record<string, unknown> {
     type?: HappeningType | string;
 }
 
-export interface HappeningEventData extends Record<string, unknown> {
+export interface HappeningEventData extends Expiring, Record<string, unknown> {
     startAt?: string // Intended start time
     startedAt?: string // Actual start time
     endAt?: string // Intended end time

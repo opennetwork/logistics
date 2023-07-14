@@ -7,10 +7,12 @@ export async function setChange(
 ): Promise<Change> {
   const updatedAt = new Date().toISOString();
   const changeId = data.changeId || v4();
+  const status = data.status || "pending";
   const document: Change = {
     createdAt: data.createdAt || updatedAt,
     changeId,
     ...data,
+    status,
     updatedAt,
   };
   const store = await getChangeStore(document);

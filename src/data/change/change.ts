@@ -15,15 +15,20 @@ type TaskChange = Change & { data: TaskData };
 export async function change(identifier: ChangeIdentifier) {
     const change = await getChange(identifier);
 
-    const applied = await apply();
+    let applied = false;
+    
+    if ((change.status || "pending") === "pending") {
+        applied = await apply();
 
-    if (applied) {
-        await setChange({
-            ...change,
-            status: "applied",
-            appliedAt: new Date().toISOString()
-        });
+        if (applied) {
+            await setChange({
+                ...change,
+                status: "applied",
+                appliedAt: new Date().toISOString()
+            });
+        }
     }
+
 
     return applied;
 

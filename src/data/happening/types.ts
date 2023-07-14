@@ -2,6 +2,7 @@ import {Attendee, AttendeeData} from "../attendee";
 import {Partner} from "../partner";
 import {User} from "../user";
 import {Organisation} from "../organisation";
+import {Expiring} from "../expiring";
 
 export type HappeningType = (
     | "event"
@@ -27,7 +28,7 @@ export interface HappeningOptionData extends Record<string, unknown> {
     type?: HappeningType | string;
 }
 
-export interface HappeningEventData extends Record<string, unknown> {
+export interface HappeningEventData extends Expiring, Record<string, unknown> {
     startAt?: string // Intended start time
     startedAt?: string // Actual start time
     endAt?: string // Intended end time
