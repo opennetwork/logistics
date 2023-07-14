@@ -9,7 +9,7 @@ import { ok } from "../../is";
 import { getExpiresAt } from "../expiring-kv";
 import { addExternalUser } from "./add-user";
 import { User } from "./types";
-import {setExternalReference} from "./set-user";
+import {resetUserExpiryWithType, setExternalReference, setUser} from "./set-user";
 
 export function getUser(userId: string) {
   const store = getUserStore();
@@ -61,7 +61,10 @@ export async function getExternalUser(
   }
 
   let user = existingUser ?? await getUser(reference.userId);
-  if (!user) {
+
+  if (existingUser && user.externalType !== externalType && user.externalType === "anonymous") {
+    user = await resetUserExpiryWithType(user, externalType);
+  } else if (!user) {
     // User expired, reset
     return addExternalUser({
       externalId,
@@ -77,7 +80,6 @@ export async function getExternalUser(
     const defaultExpiresAt = getUserExpiresAt(user.externalType);
 
     // console.log(`Updating expires at of external user for ${externalType}, before ${reference.expiresAt}, after ${expiresAt}`);
-    const userStore = getUserStore();
 
     // This will give us the total time from when the user was created, till it will expire
     const defaultExpiresIn = new Date(defaultExpiresAt).getTime() - Date.now();
@@ -89,11 +91,10 @@ export async function getExternalUser(
     const resetExpiry = expiresIn < (defaultExpiresIn / 2);
 
     if (resetExpiry) {
-      user = {
+      user = await setUser({
         ...user,
         expiresAt: defaultExpiresAt,
-      };
-      await userStore.set(user.userId, user);
+      });
       await setExternalReference({
         ...reference,
         expiresAt: defaultExpiresAt,

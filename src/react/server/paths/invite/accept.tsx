@@ -8,6 +8,7 @@ import {
 } from "../../../../authentication";
 import {FastifyReply, FastifyRequest} from "fastify";
 import {
+    addAnonymousUser,
     addAuthenticationState, addCookieState, AuthenticationRole,
     AuthenticationState, DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS,
     deleteAuthenticationState,
@@ -25,6 +26,7 @@ import {
 import {ok} from "../../../../is";
 import {path as DEFAULT_LOGIN_URL} from "../login";
 import {getOrigin} from "../../../../listen/config";
+import {setAuthenticationStateCookie} from "../../../../listen";
 
 const {
     LOGIN_URL
@@ -104,31 +106,13 @@ export async function handler(request: FastifyRequest<InputSchema>, response: Fa
     if (state.inviteAutoAccept) {
         const existingUser = getMaybeUser()
         if (state.inviteAnonymous || existingUser) {
-            const { role, user } = await accept(input);
+            const result = await accept(input);
+            await addAcceptCookieState(state, response, result);
 
             const redirect = new URL(
                 state.inviteRedirectUrl || "/",
                 getOrigin()
             );
-
-            const { stateId, expiresAt } = await addCookieState({
-                userId: user.userId,
-                roles: role.roles,
-                from: {
-                    type: "invitee",
-                    createdAt: state.createdAt,
-                    data: state.data,
-                    from: state.from
-                },
-                data: state.data
-            });
-
-            response.setCookie("state", stateId, {
-                path: "/",
-                signed: true,
-                expires: new Date(expiresAt),
-            });
-
             response.header("Location", redirect.toString());
             response.status(302);
             response.send();
@@ -137,6 +121,21 @@ export async function handler(request: FastifyRequest<InputSchema>, response: Fa
     }
 
     return input;
+}
+
+async function addAcceptCookieState(from: InviteeState, response: FastifyReply, { user, role }: Result) {
+    const cookieState = await addCookieState({
+        userId: user.userId,
+        roles: role.roles,
+        from: {
+            type: "invitee",
+            createdAt: from.createdAt,
+            data: from.data,
+            from: from.from
+        },
+        data: from.data
+    });
+    setAuthenticationStateCookie(response, cookieState);
 }
 
 async function accept(input: Input): Promise<Result> {
@@ -187,7 +186,7 @@ async function accept(input: Input): Promise<Result> {
         }
         if (maybe) return maybe;
         ok(state.inviteAnonymous, "Expected authenticated user to accept invite");
-        return getExternalUser("invitee", state.stateId);
+        return addAnonymousUser();
     }
 }
 
@@ -227,7 +226,20 @@ export async function submit(request: FastifyRequest<InputSchema>, response: Fas
         return;
     }
 
-    return accept(input);
+    const result = await accept(input);
+    await addAcceptCookieState(state, response, result);
+
+    if (state.inviteRedirectUrl) {
+        const redirect = new URL(
+            state.inviteRedirectUrl,
+            getOrigin()
+        );
+        response.header("Location", redirect.toString());
+        response.status(302);
+        response.send();
+    }
+
+    return result;
 }
 
 export function AcceptInvite() {

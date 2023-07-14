@@ -3,7 +3,7 @@ import {
   User,
   UserData,
 } from "./types";
-import {setExternalReference, setUser} from "./set-user";
+import {resetUserExpiryWithType, setExternalReference, setUser} from "./set-user";
 import {getExternalUser} from "./get-user";
 
 export async function addUser(data: UserData) {
@@ -16,10 +16,14 @@ export async function addExternalUser(
 ) {
   const { externalId, externalType, ...rest } = data;
 
-  const user = existingUser ?? await addUser({
+  let user = existingUser ?? await addUser({
     ...rest,
     externalType,
   });
+
+  if (existingUser && user.externalType !== externalType && user.externalType === "anonymous") {
+    user = await resetUserExpiryWithType(user, externalType);
+  }
 
   await setExternalReference({
     externalType,

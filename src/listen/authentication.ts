@@ -152,6 +152,9 @@ export function getFastifyAuth(fastify: FastifyInstance) {
 
 export interface AuthInput extends FastifyAuthOptions {
     unauthenticated?: boolean;
+    /**
+     * @deprecated use unauthenticated: true
+     */
     anonymous?: boolean;
 }
 

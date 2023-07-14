@@ -7,6 +7,7 @@ import {
   getExternalUserReferenceStore,
   getUserStore
 } from "./store";
+import {AuthenticationStateType} from "../authentication-state";
 
 export async function setUser(data: UserData & Partial<User>) {
   const store = getUserStore();
@@ -33,4 +34,19 @@ export async function setExternalReference(data: ExternalUserReference & Externa
   const store = getExternalUserReferenceStore();
   await store.set(key, reference);
   return reference;
+}
+
+/**
+ * Used in the case where a user was anonymous, and is being converted to a specific user type
+ * @param user
+ * @param externalType
+ */
+export async function resetUserExpiryWithType(user: User, externalType: AuthenticationStateType) {
+  return await setUser({
+    ...user,
+    // No longer anonymous
+    externalType: externalType,
+    // Reset expiry to default
+    expiresAt: getExpiresAt(DEFAULT_USER_EXPIRES_IN_MS),
+  });
 }

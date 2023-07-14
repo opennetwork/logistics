@@ -148,3 +148,6 @@ export function isIndustry() {
   return isRole("industry");
 }
 
+export function isAnonymous() {
+  return isRole("anonymous") || isUnauthenticated();
+}
