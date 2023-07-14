@@ -6,3 +6,4 @@ export * from "./add-change";
 export * from "./set-change";
 export * from "./delete-change";
 export * as changeSchema from "./schema";
+export * from "./change";

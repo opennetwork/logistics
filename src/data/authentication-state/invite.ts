@@ -7,6 +7,7 @@ import {getAuthenticationState} from "./get-authentication-state";
 import {getExpiresAt} from "../expiring-kv";
 import {DEFAULT_INVITEE_STATE_EXPIRES_MS} from "./store";
 import {nanoid} from "nanoid";
+import {ChangeIdentifier} from "../change";
 
 const {
     INVITEE_BCRYPT_SALT,
@@ -36,6 +37,7 @@ export interface InviteeStateOptionsData {
     inviteRepeating?: boolean;
     inviteAutoAccept?: boolean;
     inviteRedirectUrl?: string;
+    inviteChange?: ChangeIdentifier;
 }
 
 export interface InviteeStateData extends InviteeStateOptionsData {
@@ -63,7 +65,8 @@ export async function addInviteeState(data: InviteeStateOptions): Promise<Invite
         inviteAnonymous: !!data.inviteAnonymous,
         inviteAutoAccept: !!data.inviteAutoAccept,
         inviteRepeating: !!data.inviteRepeating,
-        inviteRedirectUrl: data.inviteRedirectUrl
+        inviteRedirectUrl: data.inviteRedirectUrl,
+        inviteChange: data.inviteChange
     }
     const state = await setAuthenticationState({
         ...data,

@@ -10,7 +10,7 @@ import {FastifyReply, FastifyRequest} from "fastify";
 import {
     addAnonymousUser,
     addAuthenticationState, addCookieState, AuthenticationRole,
-    AuthenticationState, DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS,
+    AuthenticationState, change, DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS,
     deleteAuthenticationState,
     getAuthenticationState,
     getExpiresAt, getExternalUser,
@@ -48,6 +48,7 @@ type Schema = {
 type Result = {
     role: UserAuthenticationRole
     user: User
+    changed?: boolean
 }
 
 type InputSchema = {
@@ -174,9 +175,15 @@ async function accept(input: Input): Promise<Result> {
         setAuthenticatedAuthenticationState(updatedState);
     }
 
+    let changed;
+    if (state.inviteChange) {
+        changed = await change(state.inviteChange)
+    }
+
     return {
         role,
-        user
+        user,
+        changed
     };
 
     async function getInviteeUser() {

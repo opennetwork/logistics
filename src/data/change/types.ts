@@ -1,5 +1,7 @@
 import {Expiring} from "../expiring";
 
+export type ChangeStatus = "pending" | "applied" | "cancelled";
+
 export interface ChangeOptionData extends Record<string, unknown> {
   type?: string;
 }
@@ -26,9 +28,11 @@ export interface ChangeData extends ChangeTargetIdentifier, Expiring {
 }
 
 export interface Change extends ChangeData {
+  status: ChangeStatus;
   changeId: string;
   createdAt: string;
   updatedAt: string;
+  appliedAt?: string;
 }
 
 export interface ChangeIdentifier extends ChangeTargetIdentifier {
