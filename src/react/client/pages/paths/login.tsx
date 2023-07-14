@@ -23,7 +23,7 @@ export async function login() {
     const submit = form.querySelector("button[type=submit]");
     ok<HTMLButtonElement>(submit);
 
-    submit.textContent = "Login with Passkey";
+    submit.textContent = "Continue with Passkey";
 
     const register = submit.cloneNode(true);
     ok<HTMLButtonElement>(register);

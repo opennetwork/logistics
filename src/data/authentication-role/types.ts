@@ -18,6 +18,7 @@ export type AuthenticationRole =
   | "developer"
   | "coordinator"
   | "partner"
+  | "anonymous"
   | SystemRole
   // Allows typing of authentication roles from the global scope.
   // keys from multiple interface definitions in global will merge together

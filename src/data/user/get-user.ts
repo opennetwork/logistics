@@ -1,7 +1,7 @@
 import {
   DEFAULT_USER_EXPIRES_IN_MS,
   getExternalReferenceKey,
-  getExternalUserReferenceStore,
+  getExternalUserReferenceStore, getUserExpiresAt,
   getUserStore,
 } from "./store";
 import { AuthenticationStateType } from "../authentication-state";
@@ -60,7 +60,7 @@ export async function getExternalUser(
     });
   }
 
-  const user = existingUser ?? await getUser(reference.userId);
+  let user = existingUser ?? await getUser(reference.userId);
   if (!user) {
     // User expired, reset
     return addExternalUser({
@@ -71,21 +71,36 @@ export async function getExternalUser(
 
   // If user is not expiring, persist the external user reference
   // If user is expiring, reset both to default expiring time
-  const expiresAt = user.expiresAt
-    ? getExpiresAt(DEFAULT_USER_EXPIRES_IN_MS)
-    : undefined;
-  // console.log(`Updating expires at of external user for ${externalType}, before ${reference.expiresAt}, after ${expiresAt}`);
-  const userStore = getUserStore();
-  if (expiresAt) {
-    await userStore.set(user.userId, {
-      ...user,
-      expiresAt,
-    });
+  //
+  // This follows the same pattern as createCookieAuth
+  if (user.expiresAt) {
+    const defaultExpiresAt = getUserExpiresAt(user.externalType);
+
+    // console.log(`Updating expires at of external user for ${externalType}, before ${reference.expiresAt}, after ${expiresAt}`);
+    const userStore = getUserStore();
+
+    // This will give us the total time from when the user was created, till it will expire
+    const defaultExpiresIn = new Date(defaultExpiresAt).getTime() - Date.now();
+
+    // This is the time remaining until the user currently expires
+    const expiresIn = new Date(user.expiresAt).getTime() - Date.now();
+
+    // If there is less than half the time remaining, let's give the user more time
+    const resetExpiry = expiresIn < (defaultExpiresIn / 2);
+
+    if (resetExpiry) {
+      user = {
+        ...user,
+        expiresAt: defaultExpiresAt,
+      };
+      await userStore.set(user.userId, user);
+      await setExternalReference({
+        ...reference,
+        expiresAt: defaultExpiresAt,
+        externalId
+      });
+    }
   }
-  await setExternalReference({
-    ...reference,
-    expiresAt,
-    externalId
-  });
+
   return user;
 }

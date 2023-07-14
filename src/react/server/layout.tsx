@@ -34,10 +34,6 @@ const publicItems: MenuItem[] = [
     name: "Home",
   },
   {
-    path: "/products",
-    name: "Products",
-  },
-  {
     path: "/feedback",
     name: "Feedback",
   },

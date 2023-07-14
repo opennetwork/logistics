@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { getMaybeAuthenticationState, isAnonymous } from "../../authentication";
-import { setAuthenticationState } from "../../data";
+import {getMaybeAuthenticationState, getMaybeUser, isAnonymous} from "../../authentication";
+import {deleteAuthenticationState, deleteExternalUser, setAuthenticationState} from "../../data";
 import { authenticate } from "../authentication";
 import { ok } from "../../is";
 import "@fastify/cookie";
@@ -9,12 +9,16 @@ export async function logoutResponse(response: FastifyReply) {
   const state = getMaybeAuthenticationState();
 
   if (state && state.type !== "partner") {
-    await setAuthenticationState({
-      ...state,
-      // Expire in the background
-      expiresAt: new Date(Date.now() + 25).toISOString(),
-    });
+    await deleteAuthenticationState(state.stateId);
+    const user = getMaybeUser();
+    if (user.externalType === "anonymous") {
+      await deleteExternalUser({
+        externalId: user.userId,
+        externalType: user.externalType
+      });
+    }
   }
+
 
   response.clearCookie("state", {
     path: "/",

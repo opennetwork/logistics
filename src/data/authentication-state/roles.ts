@@ -21,6 +21,7 @@ export const DEFAULT_NAMED_ROLES: NamedRolesConfig = {
   developer: "Software Developer",
   coordinator: "Coordinator",
   partner: "Partner",
+  anonymous: "Anonymous",
 };
 
 export const DEFAULT_ALTERNATIVE_ROLE_NAMES: AlternativeRoleNamesConfig = {

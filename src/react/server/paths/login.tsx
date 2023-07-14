@@ -20,6 +20,10 @@ disabled:bg-slate-300 disabled:cursor-not-allowed
 
 const FORM_GROUP_CLASS = `block py-2`;
 
+const {
+  ALLOW_ANONYMOUS_USER
+} = process.env;
+
 export function Login() {
   const { isAnonymous, url } = useData();
   if (!isAnonymous) {
@@ -64,11 +68,11 @@ export function Login() {
             type="submit"
             className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white mr-2"
           >
-            Login with Email
+            Continue with Email
           </button>
         </div>
       </form>
-      {(DISCORD_CLIENT_ID || REDDIT_CLIENT_ID) ? <div>OR</div> : undefined}
+      {(DISCORD_CLIENT_ID || REDDIT_CLIENT_ID || ALLOW_ANONYMOUS_USER) ? <div><br/>OR<br/><br/></div> : undefined}
       {
         DISCORD_CLIENT_ID ? (
             <>
@@ -76,7 +80,7 @@ export function Login() {
                   href={`/api/authentication/discord/redirect${stateUrlSuffix}`}
                   className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
               >
-                Login with Discord
+                Continue with Discord
               </a>
               <br />
             </>
@@ -89,7 +93,20 @@ export function Login() {
                   href={`/api/authentication/reddit/redirect${stateUrlSuffix}`}
                   className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
               >
-                Login with Reddit
+                Continue with Reddit
+              </a>
+              <br />
+            </>
+        ) : undefined
+      }
+      {
+        ALLOW_ANONYMOUS_USER ? (
+            <>
+              <a
+                href="/api/authentication/anonymous?redirect=/"
+                  className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
+              >
+                Continue as Anonymous User
               </a>
               <br />
             </>
