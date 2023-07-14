@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { listAppointments, appointmentSchema } from "../../data";
 import { authenticate } from "../authentication";
-import {isAnonymous} from "../../authentication";
+import {isUnauthenticated} from "../../authentication";
 
 export async function listAppointmentRoutes(fastify: FastifyInstance) {
   const response = {
@@ -29,7 +29,7 @@ export async function listAppointmentRoutes(fastify: FastifyInstance) {
       preHandler: authenticate(fastify, { anonymous: true }),
       async handler(request: FastifyRequest, response) {
         response.send(await listAppointments({
-          public: isAnonymous()
+          public: isUnauthenticated()
         }));
       },
     });

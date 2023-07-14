@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import {getOrder, listOrderItems, orderItemSchema} from "../../data";
 import { authenticate } from "../authentication";
-import {getMaybePartner, getMaybeUser, isAnonymous} from "../../authentication";
+import {getMaybePartner, getMaybeUser, isUnauthenticated} from "../../authentication";
 
 export async function listOrderItemRoutes(fastify: FastifyInstance) {
   const params = {

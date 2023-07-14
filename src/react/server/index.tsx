@@ -1,6 +1,6 @@
 import { ReactData, DataProvider } from "./data";
 import { getOrigin } from "../../listen/config";
-import { AnonymousLayout, Layout, LayoutProps } from "./layout";
+import { UnauthenticatedLayout, Layout, LayoutProps } from "./layout";
 import {View} from "../../view";
 
 export * from "./data";
@@ -26,8 +26,8 @@ export default function OpenNetworkServer(options: OpenNetworkServerProps) {
     const layoutProps: LayoutProps = {
       url: options.url,
     };
-    if (options.isAnonymous) {
-      children = <AnonymousLayout {...layoutProps}>{children}</AnonymousLayout>;
+    if (options.isUnauthenticated) {
+      children = <UnauthenticatedLayout {...layoutProps}>{children}</UnauthenticatedLayout>;
     } else {
       children = <Layout {...layoutProps}>{children}</Layout>;
     }

@@ -1,7 +1,8 @@
 import {FastifyInstance} from "fastify";
 import {logoutResponse} from "./logout";
-import {addCookieState, addUser, getExternalUser} from "../../data";
-import {v4} from "uuid";
+import {addAnonymousCookieState, getAuthenticationState, getExchangeStateURL, getInviteURL} from "../../data";
+import {setAuthenticationStateCookie} from "../authentication";
+import {getOrigin} from "../config";
 
 export async function anonymousRoutes(fastify: FastifyInstance) {
 
@@ -13,6 +14,7 @@ export async function anonymousRoutes(fastify: FastifyInstance) {
 
     type Querystring = {
         redirect?: string;
+        state?: string;
     }
     type Schema = {
         Querystring: Querystring
@@ -22,39 +24,16 @@ export async function anonymousRoutes(fastify: FastifyInstance) {
         async handler(request, response) {
             await logoutResponse(response);
 
-            const user = await addUser({
-                externalType: "anonymous",
-            });
-            await getExternalUser(user.externalType, user.userId, user);
+            const state = await addAnonymousCookieState();
+            setAuthenticationStateCookie(response, state);
 
-            const state = await addCookieState({
-                userId: user.userId,
-                roles: [
-                    "anonymous"
-                ],
-                from: {
-                    type: "anonymous",
-                    createdAt: new Date().toISOString()
-                }
-            });
+            const { state: userState, redirect } = request.query;
 
-            const { stateId, expiresAt } = state;
+            const exchange = await getExchangeStateURL(userState);
+            const location = exchange || redirect || "/home";
 
-            response.setCookie("state", stateId, {
-                path: "/",
-                signed: true,
-                expires: new Date(expiresAt),
-            });
-
-            const { redirect } = request.query;
-            if (redirect) {
-                response.header("Location", redirect);
-                response.status(302);
-                response.send();
-                return;
-            }
-
-            response.status(201);
+            response.header("Location", location);
+            response.status(302);
             response.send();
 
         }

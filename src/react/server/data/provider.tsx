@@ -23,7 +23,7 @@ export interface ReactData {
   timezone: string;
   url: string;
   origin: string;
-  isAnonymous: boolean;
+  isUnauthenticated: boolean;
   isFragment: boolean;
   organisations: Organisation[];
   partners?: Partner[];

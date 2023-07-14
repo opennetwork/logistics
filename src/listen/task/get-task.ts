@@ -1,7 +1,7 @@
 import {FastifyInstance} from "fastify";
 import { getTask, taskSchema } from "../../data";
 import { authenticate } from "../authentication";
-import {isAnonymous} from "../../authentication";
+import {isUnauthenticated} from "../../authentication";
 
 export async function getTaskRoutes(fastify: FastifyInstance) {
   const params = {
@@ -46,7 +46,7 @@ export async function getTaskRoutes(fastify: FastifyInstance) {
       preHandler: authenticate(fastify),
       async handler(request, response) {
         const task = await getTask(request.params.taskId);
-        if (!task || (isAnonymous() || !task.public)) response.status(404);
+        if (!task || (isUnauthenticated() || !task.public)) response.status(404);
         response.send(task);
       },
     });

@@ -10,7 +10,7 @@ import {
   getExternalUser,
   getInviteURL,
   getUserAuthenticationRoleForUser,
-  AuthenticationRole, getExternalReference,
+  AuthenticationRole, getExternalReference, getExchangeStateURL,
 } from "../../data";
 import {
   authsignal,
@@ -25,7 +25,7 @@ import { getExpiresAt } from "../../data/expiring-kv";
 import "@fastify/cookie";
 import {setUserCredential} from "../../data/user-credential";
 import {getMaybeAuthenticationState, getMaybeUser} from "../../authentication";
-import {authenticate} from "../authentication";
+import {authenticate, setAuthenticationStateCookie} from "../authentication";
 
 ok(jsonwebtoken.decode);
 
@@ -150,7 +150,7 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
         if (!existingUser) {
           const userRoles = await getUserAuthenticationRoleForUser(user);
 
-          const { stateId, expiresAt } = await addCookieState({
+          const cookieState = await addCookieState({
             userId: user.userId,
             roles: [...new Set<AuthenticationRole>([
               // We have no additional roles with this authentication method
@@ -168,27 +168,11 @@ export async function authsignalAuthenticationRoutes(fastify: FastifyInstance) {
             data: state.data
           });
 
-          response.setCookie("state", stateId, {
-            path: "/",
-            signed: true,
-            expires: new Date(expiresAt),
-          });
+          setAuthenticationStateCookie(response, cookieState);
         }
 
-        const authState = userState ?
-            await getAuthenticationState(userState)
-            : undefined
-
-        let location = "/home";
-
-        if (authState && authState.type === "exchange") {
-          const exchangeState = await getAuthenticationState(authState.userState);
-          if (exchangeState?.type === "invitee") {
-            const url = getInviteURL();
-            url.searchParams.set("state", userState);
-            location = url.toString();
-          }
-        }
+        const exchange = await getExchangeStateURL(userState);
+        const location = exchange || "/home";
 
         response.header("Location", location);
         response.status(302);

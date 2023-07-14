@@ -1,7 +1,7 @@
 import {FastifyInstance} from "fastify";
 import { getOffer, offerSchema } from "../../data";
 import { authenticate } from "../authentication";
-import {isAnonymous} from "../../authentication";
+import {isUnauthenticated} from "../../authentication";
 
 export async function getOfferRoutes(fastify: FastifyInstance) {
   const params = {
@@ -46,7 +46,7 @@ export async function getOfferRoutes(fastify: FastifyInstance) {
       preHandler: authenticate(fastify),
       async handler(request, response) {
         const offer = await getOffer(request.params.offerId);
-        if (!offer || (isAnonymous() || !offer.public)) response.status(404);
+        if (!offer || (isUnauthenticated() || !offer.public)) response.status(404);
         response.send(offer);
       },
     });

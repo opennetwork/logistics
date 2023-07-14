@@ -16,8 +16,8 @@ import {
 } from "../../../package";
 import { CC0_URL, MIT_URL, NZCODE_URL } from "../../../static";
 import { Octokit } from "@octokit/rest";
-import { getOrigin } from "../../../listen/config";
-import { isAnonymous } from "../../../authentication";
+import { getOrigin } from "../../../listen";
+import { isUnauthenticated } from "../../../authentication";
 
 export const path = "/feedback";
 export const anonymous = true;
@@ -79,7 +79,7 @@ export async function submit(request: FastifyRequest) {
           `Form Meta: ${meta.formMetaId}`,
           `Package: ${packageIdentifier}`,
           `Commit: ${commit}`,
-          isAnonymous() ? "Anonymous" : "Authenticated",
+          isUnauthenticated() ? "Anonymous" : "Authenticated",
           data.name ? `Name: ${data.name}` : "No name given",
         ]
           .filter(Boolean)

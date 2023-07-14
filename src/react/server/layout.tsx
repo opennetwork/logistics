@@ -217,7 +217,7 @@ export function BaseLayout({
   );
 }
 
-export function AnonymousLayout(props: PropsWithChildren<LayoutProps>) {
+export function UnauthenticatedLayout(props: PropsWithChildren<LayoutProps>) {
   const { children } = props;
   const { url } = useData();
   const { pathname } = new URL(url, getOrigin());

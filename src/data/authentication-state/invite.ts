@@ -1,5 +1,4 @@
-import {AuthenticationState, AuthenticationStateData, InviteeData, UntypedAuthenticationStateData} from "./types";
-import {v4} from "uuid";
+import {AuthenticationState, UntypedAuthenticationStateData} from "./types";
 import {setAuthenticationState} from "./set-authentication-state";
 import {compare, hash} from "bcrypt";
 import {isLike, isNumberString} from "../../is";
@@ -105,4 +104,15 @@ export function isInviteeState(state: AuthenticationState): state is InviteeStat
         state.inviteUrl &&
         state.inviteSecretHashed
     );
+}
+
+export async function getExchangeStateURL(stateId?: string): Promise<string | undefined> {
+    if (!stateId) return undefined;
+    const authState = await getAuthenticationState(stateId);
+    if (authState?.type !== "exchange") return undefined;
+    const exchangeState = await getAuthenticationState(authState.userState);
+    if (exchangeState?.type !== "invitee") return undefined;
+    const url = getInviteURL();
+    url.searchParams.set("state", stateId);
+    return url.toString();
 }

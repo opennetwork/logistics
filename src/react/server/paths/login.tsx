@@ -25,12 +25,18 @@ const {
 } = process.env;
 
 export function Login() {
-  const { isAnonymous, url } = useData();
-  if (!isAnonymous) {
+  const { isUnauthenticated, url } = useData();
+  if (!isUnauthenticated) {
     return <p>You're already logged in!</p>;
   }
   const state = new URL(url).searchParams.get("state");
-  const stateUrlSuffix = state ? `?state=${encodeURIComponent(state)}` : ""
+  const params = new URLSearchParams();
+  if (state) {
+    params.set("state", state);
+  }
+  const stateUrlSuffix = state ? `?${state.toString()}` : ""
+  const anonymousParams = new URLSearchParams(params);
+  anonymousParams.set("redirect", "/home");
   return (
     <div>
       <form
@@ -103,7 +109,7 @@ export function Login() {
         ALLOW_ANONYMOUS_USER ? (
             <>
               <a
-                href="/api/authentication/anonymous?redirect=/"
+                href={`/api/authentication/anonymous?${anonymousParams.toString()}`}
                   className="text-blue-600 hover:bg-white underline hover:underline-offset-2"
               >
                 Continue as Anonymous User

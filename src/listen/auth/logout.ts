@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import {getMaybeAuthenticationState, getMaybeUser, isAnonymous} from "../../authentication";
+import {getMaybeAuthenticationState, getMaybeUser, isUnauthenticated} from "../../authentication";
 import {deleteAuthenticationState, deleteExternalUser, setAuthenticationState} from "../../data";
 import { authenticate } from "../authentication";
 import { ok } from "../../is";
@@ -30,7 +30,7 @@ export async function logoutRoutes(fastify: FastifyInstance) {
   fastify.get("/logout", {
     preHandler: authenticate(fastify),
     async handler(request, response) {
-      ok(!isAnonymous(), "Expected authentication");
+      ok(!isUnauthenticated(), "Expected authentication");
 
       await logoutResponse(response);
 

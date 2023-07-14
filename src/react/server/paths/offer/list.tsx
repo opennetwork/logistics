@@ -1,6 +1,6 @@
 import {useData, useOffers, useProduct, useQuery} from "../../data";
 import {listOffers} from "../../../../data";
-import {isAnonymous} from "../../../../authentication";
+import {isUnauthenticated} from "../../../../authentication";
 
 export const path = "/offers";
 export const anonymous = true;
@@ -11,7 +11,7 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 export async function handler() {
     return {
         offers: await listOffers({
-            public: isAnonymous()
+            public: isUnauthenticated()
         })
     }
 }
@@ -19,7 +19,7 @@ export async function handler() {
 export function ListOffers() {
     const query = useQuery<{ productId?: string }>();
     const offers = useOffers();
-    const { isAnonymous } = useData();
+    const { isUnauthenticated } = useData();
     const queryProduct = useProduct(query.productId);
     let createUrl = "/offer/create";
     if (queryProduct) {
@@ -27,13 +27,13 @@ export function ListOffers() {
     }
     return (
         <div className="flex flex-col">
-            {!isAnonymous ? <a href={createUrl} className={LINK_CLASS}>Create Offer{queryProduct?.productId ? ` for ${queryProduct.productName}` : ""}</a> : undefined}
+            {!isUnauthenticated ? <a href={createUrl} className={LINK_CLASS}>Create Offer{queryProduct?.productId ? ` for ${queryProduct.productName}` : ""}</a> : undefined}
             <div className="flex flex-col divide-y">
                 {offers.map(offer => (
                     <div key={offer.offerId} className="flex flex-row justify-between">
                         <div>{offer.offerName || offer.offerId}</div>
                         {
-                            !isAnonymous ? (
+                            !isUnauthenticated ? (
                                 <div>
                                     <a href={`/orders?offerId=${offer.offerId}`} className={LINK_CLASS}>
                                         Orders

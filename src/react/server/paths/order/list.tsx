@@ -1,6 +1,6 @@
 import {useData, useOffer, useOrders, useProduct, useQuery} from "../../data";
 import {listOffers, listOrders} from "../../../../data";
-import {getMaybePartner, getMaybeUser, isAnonymous} from "../../../../authentication";
+import {getMaybePartner, getMaybeUser, isUnauthenticated} from "../../../../authentication";
 import {useMemo} from "react";
 
 export const path = "/orders";
@@ -12,7 +12,7 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 export async function handler() {
     return {
         offers: await listOffers({
-           public: isAnonymous()
+           public: isUnauthenticated()
         }),
         orders: await listOrders({
             location: {

@@ -1,7 +1,7 @@
 import {FastifyInstance} from "fastify";
 import { getAppointment, appointmentSchema } from "../../data";
 import { authenticate } from "../authentication";
-import {isAnonymous} from "../../authentication";
+import {isUnauthenticated} from "../../authentication";
 
 export async function getAppointmentRoutes(fastify: FastifyInstance) {
   const params = {
@@ -46,7 +46,7 @@ export async function getAppointmentRoutes(fastify: FastifyInstance) {
       preHandler: authenticate(fastify),
       async handler(request, response) {
         const appointment = await getAppointment(request.params.appointmentId);
-        if (!appointment || (isAnonymous() || !appointment.public)) response.status(404);
+        if (!appointment || (isUnauthenticated() || !appointment.public)) response.status(404);
         response.send(appointment);
       },
     });

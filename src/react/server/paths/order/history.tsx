@@ -1,6 +1,6 @@
 import {useData, useInput, useOffer, useOrders, useProduct, useProducts, useQuery} from "../../data";
 import {listOffers, listOrders, listProductFiles, Offer, Order, File, getOrderInfo} from "../../../../data";
-import {getMaybePartner, getMaybeUser, isAnonymous} from "../../../../authentication";
+import {getMaybePartner, getMaybeUser, isUnauthenticated} from "../../../../authentication";
 import {useMemo} from "react";
 import {ok} from "../../../../is";
 import {CheckoutEmpty} from "../../../client/components/checkout";
@@ -20,7 +20,7 @@ export interface OrderHistoryInfo {
 export async function handler(): Promise<OrderHistoryInfo> {
     const images600 = (
         await listProductFiles({
-            public: isAnonymous(),
+            public: isUnauthenticated(),
             size: 600,
         })
     ).filter(file => file.pinned);
@@ -45,7 +45,7 @@ export async function handler(): Promise<OrderHistoryInfo> {
             .map(getOrderInfo)
     );
     const offers = await listOffers({
-        public: isAnonymous()
+        public: isUnauthenticated()
     })
     return {
         offers,

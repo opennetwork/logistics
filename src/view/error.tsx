@@ -1,9 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { renderToStaticMarkup } from "react-dom/server";
 import OpenNetworkServer from "../react/server";
-import { getOrigin } from "../listen/config";
-import {getMaybeAuthenticationState, getMaybeUser, isAnonymous} from "../authentication";
-import { isHTMLResponse } from "../listen/authentication";
+import { getOrigin } from "../listen";
+import {getMaybeAuthenticationState, getMaybeUser, isUnauthenticated} from "../authentication";
+import { isHTMLResponse } from "../listen";
 import {getConfig} from "../config";
 import {getView} from "./views";
 
@@ -18,7 +18,7 @@ export function errorHandler(
 
   const { pathname } = new URL(request.url, getOrigin());
   const isFragment = pathname.endsWith("/fragment");
-  const anonymous = isAnonymous();
+  const anonymous = isUnauthenticated();
   const user = getMaybeUser();
   const { DEFAULT_TIMEZONE = "Pacific/Auckland" } = process.env;
   const origin = getOrigin();
@@ -27,7 +27,7 @@ export function errorHandler(
     <OpenNetworkServer
       view={getView("/error")}
       isFragment={isFragment}
-      isAnonymous={anonymous}
+      isUnauthenticated={anonymous}
       url={new URL(request.url, origin).toString()}
       origin={origin}
       error={error}

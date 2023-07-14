@@ -1,5 +1,5 @@
 import {FastifyInstance, FastifyReply} from "fastify";
-import {authenticate} from "../authentication";
+import {authenticate, setAuthenticationStateCookie} from "../authentication";
 import {
     generateAuthenticationOptions,
     GenerateAuthenticationOptionsOpts,
@@ -22,7 +22,7 @@ import {
     addExternalUser, AuthenticationRole,
     AuthenticationState, AuthenticationStateData,
     deleteAuthenticationState,
-    getAuthenticationState, getExternalReference, getExternalUser,
+    getAuthenticationState, getExchangeStateURL, getExternalReference, getExternalUser,
     getUser, getUserAuthenticationRoleForUser,
     setAuthenticationState, setExternalReference, UntypedAuthenticationStateData
 } from "../../data";
@@ -42,6 +42,7 @@ export interface WebAuthnAuthenticationOptionsBody extends Pick<UserCredential, 
     email?: string
     redirectUrl?: string;
     register?: boolean;
+    state?: string;
     registration?: Partial<GenerateRegistrationOptionsOpts>
     authentication?: Partial<GenerateAuthenticationOptionsOpts>
     payment?: Partial<PaymentRequestOptionsJSON>
@@ -100,6 +101,10 @@ export async function webauthnRoutes(fastify: FastifyInstance) {
                     nullable: true
                 },
                 redirectUrl: {
+                    type: "string",
+                    nullable: true
+                },
+                state: {
                     type: "string",
                     nullable: true
                 }
@@ -187,7 +192,7 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
 
     const timeout = isNumberString(WEBAUTHN_TIMEOUT) ? +WEBAUTHN_TIMEOUT : 360000;
 
-    const { email, authenticatorType, registration, authentication, redirectUrl } = body;
+    const { email, authenticatorType, registration, authentication, redirectUrl, state: userState } = body;
 
     const existingUser = getMaybeUser();
     const existingUserCredentials = existingUser ? (
@@ -198,7 +203,7 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
     const externalId = createUserId();
     const reference = await getExternalReference("credential", externalId);
 
-    console.log({ externalId, reference });
+    // console.log({ externalId, reference });
 
     if (reference && existingUser && reference.userId !== existingUser.userId) {
         throw new Error("Expected user to be logged in");
@@ -212,10 +217,10 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
     const registrationGenerated = await createRegistration();
     const authenticationGenerated = await createAuthentication();
 
-    console.log({
-        registrationGenerated,
-        authenticationGenerated
-    });
+    // console.log({
+    //     registrationGenerated,
+    //     authenticationGenerated
+    // });
 
     let payment: WebAuthnAuthenticationPaymentOptions | undefined = undefined;
     if (authenticatorType === "payment" && body.payment?.details) {
@@ -254,7 +259,7 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
             data,
             details: body.payment.details
         };
-        console.log(options.data, options.details);
+        // console.log(options.data, options.details);
         ok<PaymentRequestOptionsJSON>(options);
         return {
             state: authentication.state,
@@ -286,7 +291,8 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
             challenge: options.challenge,
             externalId,
             authenticatorType,
-            redirectUrl
+            redirectUrl,
+            userState
         });
 
         return {
@@ -297,7 +303,7 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
     }
 
     async function createRegistration() {
-        console.log({ createRegistration: true, reference, existingUser })
+        // console.log({ createRegistration: true, reference, existingUser })
 
         if (reference && !existingUser) {
             return undefined;
@@ -359,7 +365,8 @@ export async function getWebAuthnAuthenticationOptions(body: WebAuthnAuthenticat
             challenge: options.challenge,
             externalId,
             authenticatorType,
-            redirectUrl
+            redirectUrl,
+            userState
         });
 
         return {
@@ -411,7 +418,8 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
     }
 
     const expectedChallenge = state.challenge;
-    const redirectUrl = state.redirectUrl || WEBAUTHN_REDIRECT_URL || "/";
+    const stateRedirectUrl = state.redirectUrl || await getExchangeStateURL(state.userState);
+    const redirectUrl = stateRedirectUrl || WEBAUTHN_REDIRECT_URL || "/";
 
     if (registration) {
         ok<RegistrationResponseJSON>(body);
@@ -477,14 +485,10 @@ export async function verifyWebAuthnAuthentication(body: VerifyWebAuthnAuthentic
                     data: userCredentialState.data,
                     userCredentialId: userCredential.userCredentialId
                 }
-                const { stateId, expiresAt } = await addCookieState(data);
-
-                response.setCookie("state", stateId, {
-                    path: "/",
-                    signed: true,
-                    expires: new Date(expiresAt),
-                });
+                const cookieState = await addCookieState(data);
+                setAuthenticationStateCookie(response, cookieState);
             }
+
         }
 
         return { verified, redirectUrl: verified ? redirectUrl : undefined, ...partial };

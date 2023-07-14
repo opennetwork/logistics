@@ -1,7 +1,7 @@
 import {FastifyInstance} from "fastify";
 import {getAppointment, attendeeSchema, getAttendee} from "../../data";
 import { authenticate } from "../authentication";
-import {isAnonymous} from "../../authentication";
+import {isUnauthenticated} from "../../authentication";
 
 export async function getAppointmentAttendeesRoutes(fastify: FastifyInstance) {
   const params = {

@@ -13,7 +13,7 @@ import {
   getMaybeAuthorizedForOrganisationId,
   getMaybeAuthorizedForPartnerId,
   getMaybeUser,
-  isAnonymous,
+  isUnauthenticated,
 } from "../authentication";
 import {isLike, ok} from "../is";
 import { join, dirname } from "node:path";
@@ -139,7 +139,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
           baseResult = await baseHandler(request, response);
         }
 
-        const anonymous = isAnonymous();
+        const anonymous = isUnauthenticated();
         const state = getMaybeAuthenticationState();
         const { pathname } = new URL(request.url, getOrigin());
         const isFragment = pathname.endsWith("/fragment");
@@ -158,7 +158,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
             input={baseResult}
             url={new URL(request.url, origin).toString()}
             origin={origin}
-            isAnonymous={anonymous}
+            isUnauthenticated={anonymous}
             isFragment={isFragment}
             partners={await listPartners({
               authorizedPartnerId: getMaybeAuthorizedForPartnerId(),

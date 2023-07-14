@@ -70,7 +70,7 @@ function getAuthorizationHeader(request: FastifyRequest) {
     return request.headers.authorization;
 }
 
-export const allowAnonymous: FastifyAuthFunction = (
+export const allowUnauthenticated: FastifyAuthFunction = (
     request,
     response,
     done
@@ -151,6 +151,7 @@ export function getFastifyAuth(fastify: FastifyInstance) {
 }
 
 export interface AuthInput extends FastifyAuthOptions {
+    unauthenticated?: boolean;
     anonymous?: boolean;
 }
 
@@ -173,8 +174,8 @@ export function authenticate(
         getFastifyVerifyBearerAuth(fastify),
     ];
 
-    if (options?.anonymous) {
-        methods.unshift(allowAnonymous);
+    if (options?.anonymous || options?.unauthenticated) {
+        methods.unshift(allowUnauthenticated);
     }
 
     const authHandler = getFastifyAuth(fastify)(methods, options);
@@ -208,103 +209,10 @@ export function authenticate(
     };
 }
 
-export function setCookies(response: FastifyReply, { stateId, expiresAt }: AuthenticationState) {
-
+export function setAuthenticationStateCookie(response: FastifyReply, { stateId, expiresAt }: AuthenticationState) {
     response.setCookie("state", stateId, {
         path: "/",
         signed: true,
         expires: new Date(expiresAt),
     });
 }
-//
-// export function isCookieReply(response: FastifyReply): response is FastifyReply & CoookieFastifyRequest {
-//     return !!(
-//         isLike<Partial<CoookieFastifyReply>>(response) &&
-//         response.setCookie
-//     )
-// }
-//
-//
-//
-// interface CookieFastifyInstance extends SignerMethods {
-//     /**
-//      * Manual cookie parsing method
-//      * @docs https://github.com/fastify/fastify-cookie#manual-cookie-parsing
-//      * @param cookieHeader Raw cookie header value
-//      */
-//     parseCookie(cookieHeader: string): {
-//         [key: string]: string;
-//     };
-// }
-//
-// interface CoookieFastifyRequest extends SignerMethods {
-//     /**
-//      * Request cookies
-//      */
-//     cookies: { [cookieName: string]: string | undefined };
-// }
-//
-// interface SignerMethods {
-//     /**
-//      * Signs the specified cookie using the secret/signer provided.
-//      * @param value cookie value
-//      */
-//     signCookie(value: string): string;
-//
-//     /**
-//      * Unsigns the specified cookie using the secret/signer provided.
-//      * @param value Cookie value
-//      */
-//     unsignCookie(value: string): UnsignResult;
-// }
-//
-// export type setCookieWrapper = (
-//     name: string,
-//     value: string,
-//     options?: CookieSerializeOptions
-// ) => FastifyReply;
-//
-// interface CoookieFastifyReply extends SignerMethods {
-//     /**
-//      * Request cookies
-//      */
-//     cookies: { [cookieName: string]: string | undefined };
-//
-//     /**
-//      * Set response cookie
-//      * @name setCookie
-//      * @param name Cookie name
-//      * @param value Cookie value
-//      * @param options Serialize options
-//      */
-//     setCookie(
-//         name: string,
-//         value: string,
-//         options?: CookieSerializeOptions
-//     ): this;
-//
-//     /**
-//      * @alias setCookie
-//      */
-//     cookie(
-//         name: string,
-//         value: string,
-//         options?: CookieSerializeOptions
-//     ): this;
-//
-//     /**
-//      * clear response cookie
-//      * @param name Cookie name
-//      * @param options Serialize options
-//      */
-//     clearCookie(
-//         name: string,
-//         options?: CookieSerializeOptions
-//     ): this;
-//
-//     /**
-//      * Unsigns the specified cookie using the secret provided.
-//      * @param value Cookie value
-//      */
-//     unsignCookie(value: string): UnsignResult;
-// }

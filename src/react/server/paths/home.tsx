@@ -19,7 +19,7 @@ export const path = "/home";
 export const anonymous = true;
 
 export function Home() {
-  const { isAnonymous } = useData();
+  const { isUnauthenticated } = useData();
   const roles = useRoles();
   const isTrusted = useIsTrusted();
   const user = useMaybeUser();
@@ -27,12 +27,12 @@ export function Home() {
   // console.log({
   //     home: {
   //         roles,
-  //         isAnonymous
+  //         isUnauthenticated
   //     }
   // })
   return (
     <>
-      {isAnonymous ? (
+      {isUnauthenticated ? (
         <>
           <p>Welcome!</p>
           <br />

@@ -11,10 +11,10 @@ import {
   getExternalUser,
   getUserAuthenticationRoleForUser,
   getAuthenticationState,
-  getInviteURL, getExternalReference,
+  getInviteURL, getExternalReference, getExchangeStateURL,
 } from "../../data";
 import "@fastify/cookie";
-import {authenticate} from "../authentication";
+import {authenticate, setAuthenticationStateCookie} from "../authentication";
 import {getMaybeAuthenticationState, getMaybeUser} from "../../authentication";
 
 interface DiscordRole extends Record<string, unknown> {
@@ -146,7 +146,7 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
         if (!existingUser) {
           const userRoles = await getUserAuthenticationRoleForUser(internalUser);
 
-          const { stateId, expiresAt } = await addCookieState({
+          const cookieState = await addCookieState({
             userId: internalUser.userId,
             roles: [...new Set<AuthenticationRole>([
               ...roles,
@@ -161,27 +161,12 @@ export async function discordAuthenticationRoutes(fastify: FastifyInstance) {
             data: state.data,
           });
 
-          response.setCookie("state", stateId, {
-            path: "/",
-            signed: true,
-            expires: new Date(expiresAt),
-          });
+          setAuthenticationStateCookie(response, cookieState);
         }
 
-        const authState = userState ?
-            await getAuthenticationState(userState)
-            : undefined
 
-        let location = "/home";
-
-        if (authState && authState.type === "exchange") {
-          const exchangeState = await getAuthenticationState(authState.userState);
-          if (exchangeState?.type === "invitee") {
-            const url = getInviteURL();
-            url.searchParams.set("state", userState);
-            location = url.toString();
-          }
-        }
+        const exchange = await getExchangeStateURL(userState);
+        const location = exchange || "/home";
 
         response.header("Location", location);
         response.status(302);

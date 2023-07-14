@@ -26,11 +26,11 @@ export function getMaybeAuthorizedForOrganisationId() {
   return partner?.organisationId;
 }
 
-export function isAnonymous() {
-  return !isAuthorized();
+export function isUnauthenticated() {
+  return !isAuthenticated();
 }
 
-export function isAuthorized() {
+export function isAuthenticated() {
   // Later add more here if more authentication methods or types are available
   return !!(getMaybeAuthorizedForPartnerId() || getMaybeAuthenticationState());
 }

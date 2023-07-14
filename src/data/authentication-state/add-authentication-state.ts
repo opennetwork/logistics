@@ -6,6 +6,7 @@ import {
 } from "./store";
 import { getExpiresAt } from "../expiring-kv";
 import { setAuthenticationState } from "./set-authentication-state";
+import {addAnonymousUser} from "../user";
 
 export async function addCookieState(data: Partial<AuthenticationStateData>) {
   return addAuthenticationState({
@@ -17,4 +18,18 @@ export async function addCookieState(data: Partial<AuthenticationStateData>) {
 
 export async function addAuthenticationState(data: AuthenticationStateData) {
   return setAuthenticationState(data);
+}
+
+export async function addAnonymousCookieState() {
+  const user = await addAnonymousUser();
+  return addCookieState({
+    userId: user.userId,
+    roles: [
+      "anonymous"
+    ],
+    from: {
+      type: "anonymous",
+      createdAt: new Date().toISOString()
+    }
+  });
 }

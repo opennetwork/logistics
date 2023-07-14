@@ -18,7 +18,7 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 
 export function ListCredentials() {
     const { userCredentials } = useInput<UserCredentialsListInfo>()
-    const { isAnonymous, url } = useData();
+    const { isUnauthenticated, url } = useData();
     const { pathname } = new URL(url);
     return (
         <div className="flex flex-col">

@@ -1,7 +1,7 @@
 import {useData, useError, useInput, useMaybeBody, useMaybeResult, useSubmitted, useTimezone} from "../../data";
 import {HappeningFormMetaData} from "../create-happening";
 import {
-    isAnonymous,
+    isUnauthenticated,
     getUser,
     getMaybeAuthenticationState,
     setAuthenticationState as setAuthenticatedAuthenticationState, getMaybeUser
@@ -197,7 +197,7 @@ export async function submit(request: FastifyRequest<InputSchema>, response: Fas
         state
     } = input;
 
-    if (isAnonymous() && (!input.state.inviteAnonymous || request.body.submit === "login")) {
+    if (isUnauthenticated() && (!input.state.inviteAnonymous || request.body.submit === "login")) {
         let expiresAt = getExpiresAt(DEFAULT_INVITEE_EXCHANGE_STATE_EXPIRES_MS);
         // Ensure it can't be used longer than the base invite
         if (new Date(expiresAt).getTime() > new Date(state.expiresAt).getTime()) {
@@ -235,7 +235,7 @@ export function AcceptInvite() {
     const { state } = useInput<Input>();
     const body = useMaybeBody<Body>();
     const error = useError();
-    const { url, isAnonymous } = useData();
+    const { url, isUnauthenticated } = useData();
     const { searchParams } = new URL(url);
     const result = useMaybeResult<Result>();
 
@@ -258,7 +258,7 @@ export function AcceptInvite() {
             const loginUrl = new URL(url);
             loginUrl.searchParams.set("login", "true");
             if (state.inviteAnonymous) {
-                if (isAnonymous) {
+                if (isUnauthenticated) {
                     submit = (
                         <>
                             {submit}
@@ -272,7 +272,7 @@ export function AcceptInvite() {
                         </>
                     )
                 }
-            } else if (isAnonymous) {
+            } else if (isUnauthenticated) {
                 submit = (
                     <button
                         type="submit"

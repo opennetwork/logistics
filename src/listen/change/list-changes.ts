@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { listChanges, changeSchema } from "../../data";
 import { authenticate } from "../authentication";
-import {isAnonymous} from "../../authentication";
+import {isUnauthenticated} from "../../authentication";
 import {ChangeTargetParams} from "./types";
 
 export async function listChangeRoutes(fastify: FastifyInstance) {

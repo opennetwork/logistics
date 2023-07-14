@@ -1,6 +1,6 @@
 import {useData, useInput, useProducts} from "../../data";
 import {listProductFiles, File, listOffers, Offer, Order, getUserPendingOrder} from "../../../../data";
-import {getUser, isAnonymous} from "../../../../authentication";
+import {getUser, isUnauthenticated} from "../../../../authentication";
 import {FastifyRequest} from "fastify";
 import {ok} from "../../../../is";
 import {useMemo} from "react";
@@ -27,7 +27,7 @@ type Schema = {
 export async function handler(): Promise<ProductListComponentInfo> {
     const images600 = (
         await listProductFiles({
-            public: isAnonymous(),
+            public: isUnauthenticated(),
             size: 600,
         })
     ).filter(file => file.pinned);
@@ -41,7 +41,7 @@ export async function handler(): Promise<ProductListComponentInfo> {
         )
     )
     const offers = await listOffers({
-        public: isAnonymous()
+        public: isUnauthenticated()
     })
     const order = await getUserPendingOrder(getUser().userId)
     return { images600, productImages, offers, order };
@@ -51,7 +51,7 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 
 export function ListProducts() {
     const products = useProducts();
-    const { isAnonymous, url } = useData();
+    const { isUnauthenticated, url } = useData();
     const { pathname } = new URL(url);
     const { images600, productImages, offers, order, order: { orderId } } = useInput<ProductListComponentInfo>();
     const sorted = useMemo(() => {
