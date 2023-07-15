@@ -30,7 +30,7 @@ export async function getNodemailerTransport(): Promise<Transporter<unknown>> {
         const nodemailer = await import("nodemailer");
 
         if (MAIL_MAILER === "mailgun") {
-            const mailgun = await import("nodemailer-mailgun-transport");
+            const { default: mailgun } = await import("nodemailer-mailgun-transport");
             return nodemailer.createTransport(mailgun({
                 auth: {
                     domain: MAIL_MAILGUN_DOMAIN || MAIL_USERNAME,

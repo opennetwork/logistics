@@ -44,8 +44,8 @@ export type AppointmentType =
     | "appointment"
 
 export type AppointmentStatus =
-    | "scheduled"
     | "confirmed"
+    | "scheduled"
     | "deferred"
     | "cancelled"
     | "completed"
@@ -163,7 +163,7 @@ export interface AuthorisationNotification extends AuthorisationNotificationData
     stateId?: string;
 }
 
-export type ChangeStatus = "pending" | "applied" | "cancelled";
+export type ChangeStatus = "pending" | "applied" | "cancelled" | string;
 
 export interface ChangeOptionData extends Record<string, unknown> {
   type?: string;
