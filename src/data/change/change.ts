@@ -14,10 +14,11 @@ type TaskChange = Change & { data: TaskData };
 
 export async function change(identifier: ChangeIdentifier) {
     const change = await getChange(identifier);
+    if (!change) return false;
 
     let applied = false;
     
-    if ((change.status || "pending") === "pending") {
+    if (change.status !== "applied") {
         applied = await apply();
 
         if (applied) {
@@ -67,7 +68,7 @@ export async function change(identifier: ChangeIdentifier) {
     }
 
     async function applyAppointmentChange(change: AppointmentChange) {
-        if (change.type === "request") {
+        if (change.status === "pending" && change.type === "request") {
             const appointment = await getAppointment(change.target.id);
             if (!appointment) return false;
             await setAppointment({
@@ -81,7 +82,7 @@ export async function change(identifier: ChangeIdentifier) {
     }
 
     async function applyTaskChange(change: TaskChange) {
-        if (change.type === "request") {
+        if (change.status === "pending" && change.type === "request") {
             const task = await getTask(change.target.id);
             if (!task) return false;
             await setTask({
