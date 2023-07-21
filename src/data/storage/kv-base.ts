@@ -3,7 +3,7 @@ import { KVS, StorageSchema } from "@kvs/types";
 import { kvsEnvStorage } from "@kvs/env";
 import { KeyValueStore, KeyValueStoreOptions, MetaKeyValueStore } from "./types";
 import { createRedisKeyValueStore } from "./redis-client";
-import { ok } from "../../is";
+import {isLike, ok} from "../../is";
 import {isRedis} from "./redis-client-helpers";
 import {getConfig} from "../../config";
 
@@ -18,7 +18,7 @@ interface GenericStorageFn {
 export const STORE_NAMES = new Set<string>();
 
 export interface StorageConfigFn {
-  <T>(store: KeyValueStore<T>): KeyValueStore<T> | undefined | void;
+  (store: KeyValueStore<unknown>): KeyValueStore<unknown> | undefined | void;
 }
 
 export interface StorageConfig {
@@ -33,8 +33,8 @@ export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOpt
   let store = create();
   const config = getConfig();
   if (config.store) {
-    const configured = config.store<T>(store);
-    if (configured) {
+    const configured = config.store(store);
+    if (isLike<KeyValueStore<T>>(configured)) {
       store = configured;
     }
   }
