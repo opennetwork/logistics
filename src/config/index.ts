@@ -6,6 +6,7 @@ export { Config } from "./types";
 const ConfigContext = createContext<Config>()
 
 export function getConfig(overrides?: Partial<Config>): Config {
+    if (!overrides) return ConfigContext.value;
     return {
         ...ConfigContext.value,
         ...overrides

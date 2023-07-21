@@ -24,6 +24,7 @@ try {
     console.log("after remote");
   }
   await import("./scenarios");
+  await import("./storage");
 
   // Ensure any data clients are closed
   await stopData();

@@ -1,9 +1,8 @@
 import {KeyValueStore, KeyValueStoreOptions} from "./types";
-import {isPromise, ok} from "../../is";
+import {isPromise, ok, isLike} from "../../is";
 import {getKeyValueStore} from "./kv";
 
 export type UnknownFn = (...args: unknown[]) => unknown;
-
 
 export const STORAGE_HOOK_ON_FUNCTION: StorageHookOnFunction[] = [
     "clear",
@@ -80,7 +79,7 @@ export interface Builder<T = unknown, ST extends KeyValueStore<T> = KeyValueStor
     <O extends StorageHookOnFunction>(on: O, fn: StorageHookFn<T, O>, options?: Omit<StorageHook<T, O>, "handler" | "on">): Builder<T, ST>;
     <O extends StorageHookOn>(hook: StorageHook<T, O>): Builder<T, ST>;
     hooks: StorageHooks<T>;
-    build(store: ST): ST;
+    build<SST extends ST>(store: SST): SST;
     build(name: string, options?: KeyValueStoreOptions): ST;
     use: Builder<T, ST>
 }
@@ -102,14 +101,6 @@ function createHooks<T>(): StorageHooks<T> {
     };
 }
 
-export function use<T = unknown, O extends StorageHookOn = StorageHookOn>(...hooks: StorageHook<T, O>[]) {
-    const hooked = builder<T>();
-    for (const hook of hooks) {
-        hooked.use(hook);
-    }
-    return hooked;
-}
-
 export function builder<T>(hooks = createHooks<T>()) {
     const fn: unknown = builderFn;
     ok<Partial<Builder>>(fn);
@@ -121,76 +112,91 @@ export function builder<T>(hooks = createHooks<T>()) {
     return fn;
 
     function build(...args: unknown[]): KeyValueStore<T> {
-        let store: KeyValueStore<T> = getStore();
+        const coreStore = getStore();
+        let store: KeyValueStore<T> = coreStore;
+        ok(store);
         for (const on of STORAGE_HOOK_ON_FUNCTION) {
-            store = buildOn(on);
+            store = buildOn(store, on);
+            ok(store);
         }
         return store;
 
         function getStore(): KeyValueStore<T> {
             if (args.length === 1) {
                 const [store] = args;
-                ok<KeyValueStore<T>>(store);
-                ok(store.get);
-                ok(store.set);
-                return store;
+                if (typeof store !== "string") {
+                    ok<KeyValueStore<T>>(store);
+                    ok(store.get);
+                    ok(store.set);
+                    return store;
+                }
             }
-            ok(args.length >= 2);
             const [name, options] = args;
             ok(typeof name === "string");
-            ok<KeyValueStoreOptions>(options);
-            return getKeyValueStore<T>(name, options);
+            return getKeyValueStore<T>(name, isLike<KeyValueStoreOptions>(options) ? options : undefined);
         }
         
-        function buildOn<O extends StorageHookOn>(on: O): KeyValueStore<T> {
+        function buildOn<O extends StorageHookOn>(store: KeyValueStore<T>, on: O): KeyValueStore<T> {
 
-            let returningStore = store;
-            if (isStorageHookOnFunction(on)) {
-                const onHooks: StorageHook<T, O>[] = hooks[on];
-                if (!onHooks.length) return;
-                const before = onHooks.filter(hook => isStage(hook, STORAGE_HOOK_BEFORE));
-                const after = onHooks.filter(hook => isStage(hook, STORAGE_HOOK_AFTER));
-
-                let fn: UnknownFn = store[on];
-                for (const { handler } of before) {
-                    ok<UnknownFn>(handler);
-                    fn = createBeforeFn(fn, handler);
-                }
-                for (const { handler } of after) {
-                    ok<UnknownFn>(handler);
-                    fn = createAfterFn(fn, handler);
-                }
-                Object.assign(store, { [on]: fn });
-
-                function createAfterFn(fn: UnknownFn, handler: UnknownFn): UnknownFn {
-                    const name = `after${on}Hook` as const;
-                    const namedFn = {
-                        // Maybe this will actually show up as the name for the call... idk
-                        async [name](...args: unknown[]) {
-                            const returnedValue = await fn.call(store, ...args);
-                            return handler.call(store, ...args, returnedValue) ?? returnedValue;
-                        }
-                    } as const;
-                    return namedFn[name];
-                }
-
-                function createBeforeFn(fn: UnknownFn, handler: UnknownFn): UnknownFn {
-                    const name = `before${on}Hook` as const;
-                    const namedFn = {
-                        async [name](...args: unknown[]) {
-                            const returnedValue = handler.call(store, ...args);
-                            if (isPromise(returnedValue)) {
-                                // Ignore the returned value
-                                // The handler can directly modify arguments if super needed
-                                await returnedValue;
-                            }
-                            return fn.call(store, ...args);
-                        }
-                    } as const;
-                    return namedFn[name];
-                }
+            if (!isStorageHookOnFunction(on)) {
+                return store;
             }
-            return returningStore;
+
+            const onHooks: StorageHook<T, O>[] = hooks[on];
+            if (!onHooks.length) {
+                return store;
+            }
+
+            const before = onHooks.filter(hook => isStage(hook, STORAGE_HOOK_BEFORE));
+            const after = onHooks.filter(hook => isStage(hook, STORAGE_HOOK_AFTER));
+
+            let fn: UnknownFn = store[on];
+            for (const { handler } of before) {
+                ok<UnknownFn>(handler);
+                fn = createBeforeFn(fn, handler);
+            }
+            for (const { handler } of after) {
+                ok<UnknownFn>(handler);
+                fn = createAfterFn(fn, handler);
+            }
+
+            let assigning = store;
+            if (assigning === coreStore) {
+                // Make a clone the first time we assign
+                assigning = {
+                    ...assigning
+                };
+            }
+
+            return Object.assign(assigning, { [on]: fn });
+
+            function createAfterFn(fn: UnknownFn, handler: UnknownFn): UnknownFn {
+                const name = `after${on}Hook` as const;
+                const namedFn = {
+                    // Maybe this will actually show up as the name for the call... idk
+                    async [name](...args: unknown[]) {
+                        const returnedValue = await fn.call(store, ...args);
+                        return handler.call(store, ...args, returnedValue) ?? returnedValue;
+                    }
+                } as const;
+                return namedFn[name];
+            }
+
+            function createBeforeFn(fn: UnknownFn, handler: UnknownFn): UnknownFn {
+                const name = `before${on}Hook` as const;
+                const namedFn = {
+                    async [name](...args: unknown[]) {
+                        const returnedValue = handler.call(store, ...args);
+                        if (isPromise(returnedValue)) {
+                            // Ignore the returned value
+                            // The handler can directly modify arguments if super needed
+                            await returnedValue;
+                        }
+                        return fn.call(store, ...args);
+                    }
+                } as const;
+                return namedFn[name];
+            }
 
             function isStage(hook: StorageHook, stage: StorageHookStage) {
                 if (!hook.stage) {

@@ -5,6 +5,7 @@ import { KeyValueStore, KeyValueStoreOptions, MetaKeyValueStore } from "./types"
 import { createRedisKeyValueStore } from "./redis-client";
 import { ok } from "../../is";
 import {isRedis} from "./redis-client-helpers";
+import {getConfig} from "../../config";
 
 const DATABASE_VERSION = 1;
 
@@ -16,12 +17,29 @@ interface GenericStorageFn {
 
 export const STORE_NAMES = new Set<string>();
 
+export interface StorageConfigFn {
+  <T>(store: KeyValueStore<T>): KeyValueStore<T> | undefined | void;
+}
+
+export interface StorageConfig {
+  store?: StorageConfigFn;
+}
+
 export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOptions): KeyValueStore<T> {
   STORE_NAMES.add(name);
   const key = `kvStore#${name}${options?.prefix || ""}`;
-  const store = get();
-  if (store) return store;
-  return create();
+  const existing = get();
+  if (existing) return existing;
+  let store = create();
+  const config = getConfig();
+  if (config.store) {
+    const configured = config.store<T>(store);
+    if (configured) {
+      store = configured;
+    }
+  }
+  requestContext.set(key, store);
+  return store;
 
   function get(): KeyValueStore<T> | undefined {
     return requestContext.get(key);
@@ -50,7 +68,6 @@ export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOpt
         }));
       });
     }
-    requestContext.set(key, kv);
     return kv;
 
     function meta<M>(key?: string): MetaKeyValueStore<M> {
