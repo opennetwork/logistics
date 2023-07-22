@@ -11,12 +11,20 @@ export const {
     MAIL_ENCRYPTION = "tls",
     MAIL_SENDMAIL_PATH,
     MAIL_MAILGUN_API_KEY,
-    MAIL_MAILGUN_DOMAIN
+    MAIL_MAILGUN_DOMAIN,
+    MAIL_FROM,
+    MAIL_SENDER,
+    MAIL_REPLY_TO
 } = process.env;
 
 export async function email(options: SendMailOptions) {
     const transport = await getNodemailerTransport();
-    return transport.sendMail(options);
+    return transport.sendMail({
+        from: MAIL_FROM,
+        sender: MAIL_SENDER,
+        replyTo: MAIL_REPLY_TO,
+        ...options
+    });
 }
 
 let transport: Transporter<unknown>;
