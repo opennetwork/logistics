@@ -1,7 +1,7 @@
-import {PropsWithChildren, ReactElement, useMemo} from "react";
+import {FunctionComponent, PropsWithChildren, ReactElement, useMemo} from "react";
 import { description, namespace, project } from "../../package";
-import { getOrigin } from "../../listen/config";
-import { useData, useIsTrusted, useQuery, useQuerySearch } from "./data";
+import { getOrigin } from "../../listen";
+import {useConfig, useData, useIsTrusted, useQuerySearch} from "./data";
 import { importmapPath, name } from "../../package";
 import { readFile } from "node:fs/promises";
 import {ShoppingBagIcon} from "../client/components/icons";
@@ -10,6 +10,11 @@ const {
   IS_LOCAL,
   DISABLE_ALPHA_WARNING_BANNER
 } = process.env;
+
+export interface LayoutConfig {
+  Head?: FunctionComponent
+  Foot?: FunctionComponent
+}
 
 export const importMapJSON = await readFile(importmapPath, "utf-8");
 
@@ -161,6 +166,7 @@ export function BaseLayout({
   children,
   title,
 }: PropsWithChildren<LayoutProps>) {
+  const { Head, Foot } = useConfig();
   const script = `
     const { client } = await import("/${name}/client/pages/index.js");
     try {
@@ -179,6 +185,7 @@ export function BaseLayout({
         <meta name="author" content={namespace} />
         <link href={`/${name}/server.css`} rel="stylesheet" />
         <script type="importmap" dangerouslySetInnerHTML={{ __html: importMapJSON }} />
+        {Head ? <Head /> : undefined}
       </head>
       <body className="h-full">
         {
@@ -212,6 +219,7 @@ export function BaseLayout({
 
         {children}
         <script type="module" dangerouslySetInnerHTML={{ __html: script }} />
+        {Foot ? <Foot /> : undefined}
       </body>
     </html>
   );

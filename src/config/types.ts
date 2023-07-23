@@ -5,6 +5,7 @@ import type {AuthenticationRoleConfig, KeyValueStoreConfig} from "../data";
 import type {ComponentConfig} from "../react/server/paths/config";
 import type {ProcessChangeConfig} from "../data";
 import type {StorageConfig} from "../data/storage/kv-base";
+import type {LayoutConfig} from "../react/server";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -18,6 +19,7 @@ export interface Config extends
     ComponentConfig,
     KeyValueStoreConfig,
     ProcessChangeConfig,
-    StorageConfig {
+    StorageConfig,
+    LayoutConfig {
 
 }
