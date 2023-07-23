@@ -30,6 +30,12 @@
       "react/client": [
         "./esnext/react/client/index.d.ts"
       ],
+      "react/views": [
+        "./esnext/react/server/paths/index.d.ts"
+      ],
+      "react/views/*": [
+        "./esnext/react/server/paths/*/index.d.ts"
+      ],
       "authentication": [
         "./esnext/authentication/index.d.ts"
       ]
@@ -45,7 +51,8 @@
     "./listen": "./esnext/listen/main.js",
     "./listen/routes": "./esnext/listen/routes.js",
     "./vercel/serverless": "./esnext/listen/serverless.js",
-    "./react/client": "./esnext/react/client/index.js",
+    "./react/views": "./esnext/react/server/paths/index.js",
+    "./react/views/*": "./esnext/react/server/paths/*/index.js",
     "./authentication": "./esnext/authentication/index.js"
   },
   "repository": {

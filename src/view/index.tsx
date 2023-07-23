@@ -2,11 +2,11 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import OpenNetworkServer, {OpenNetworkServerProps, ReactData} from "../react/server";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
-  listOffers,
   listOrganisations,
-  listPartners, listProducts,
+  listPartners,
+  listProducts,
 } from "../data";
-import { authenticate } from "../listen/authentication";
+import { authenticate } from "../listen";
 import ServerCSS from "../react/server/server-css";
 import {
   getMaybeAuthenticationState,
@@ -18,7 +18,7 @@ import {
 import {isLike, ok} from "../is";
 import { join, dirname } from "node:path";
 import { addCachedPage, getCachedPage } from "../data";
-import { getOrigin } from "../listen/config";
+import { getOrigin } from "../listen";
 import {View} from "./types";
 import {getConfig} from "../config";
 import {getViews} from "./views";
@@ -79,7 +79,6 @@ export async function viewRoutes(fastify: FastifyInstance) {
     baseResultGiven?: { value: unknown }
   ) {
     const baseHandler = view.handler;
-    const submitHandler = view.submit;
 
     return async function handler(
       request: FastifyRequest,
