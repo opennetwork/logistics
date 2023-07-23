@@ -25,6 +25,7 @@ import {getViews} from "./views";
 import {importmapPrefix, importmapRoot, importmapRootName, name, root} from "../package";
 import etag from "@fastify/etag";
 import files from "@fastify/static";
+import {FunctionComponent} from "react";
 
 export * from "./error";
 export * from "./types";
@@ -145,15 +146,23 @@ export async function viewRoutes(fastify: FastifyInstance) {
         const user = getMaybeUser();
         const origin = getOrigin();
 
+        let Component: FunctionComponent<OpenNetworkServerProps> = OpenNetworkServer;
+
+        const config = getConfig();
+
+        if (config.Component) {
+          Component = config.Component;
+        }
+
         // console.log({ anonymous, state, roles: state?.roles });
 
         // Can go right to static, should be no async loading within components
         let html = renderToStaticMarkup(
-          <OpenNetworkServer
+          <Component
             {...(isLike<Partial<ReactData>>(baseResult) ? baseResult : {})}
             {...options}
             view={view}
-            config={getConfig()}
+            config={config}
             input={baseResult}
             url={new URL(request.url, origin).toString()}
             origin={origin}

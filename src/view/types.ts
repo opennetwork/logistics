@@ -1,5 +1,6 @@
 import {FastifyPluginAsync, FastifyReply, FastifyRequest} from "fastify";
 import {FunctionComponent} from "react";
+import {OpenNetworkServerProps} from "../react/server";
 
 type UnknownResult = void | unknown | Promise<unknown | void>
 export interface HandlerFn {
@@ -22,6 +23,6 @@ export interface PartialView extends Partial<View> {
 
 export interface ViewConfig {
     views?: View[];
-    Component?: FunctionComponent
+    Component?: FunctionComponent<OpenNetworkServerProps>
     routes?: FastifyPluginAsync
 }
