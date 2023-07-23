@@ -25,4 +25,5 @@ export interface ViewConfig {
     views?: View[];
     Component?: FunctionComponent<OpenNetworkServerProps>
     routes?: FastifyPluginAsync
+    handler?: HandlerFn;
 }

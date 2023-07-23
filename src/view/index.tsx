@@ -79,6 +79,8 @@ export async function viewRoutes(fastify: FastifyInstance) {
     isPathCached?: boolean,
     baseResultGiven?: { value: unknown }
   ) {
+    const config = getConfig();
+    const configHandler = config.handler;
     const baseHandler = view.handler;
 
     return async function handler(
@@ -89,9 +91,18 @@ export async function viewRoutes(fastify: FastifyInstance) {
       if (baseResultGiven) {
         baseResult = baseResultGiven.value;
       } else {
-        if (!isPathCached && baseHandler) {
-          baseResult = await baseHandler(request, response);
-          if (response.sent) return;
+        if (!isPathCached) {
+          if (baseHandler) {
+            baseResult = await baseHandler(request, response);
+            if (response.sent) return;
+          }
+          if (configHandler) {
+            const configResult = await configHandler(request, response, baseResult);
+            if (response.sent) return;
+            if (configResult) {
+              baseResult = configResult;
+            }
+          }
         }
       }
 
@@ -135,8 +146,20 @@ export async function viewRoutes(fastify: FastifyInstance) {
 
       async function getRenderedHTML() {
 
-        if (isPathCached && baseHandler && !baseResultGiven) {
-          baseResult = await baseHandler(request, response);
+        if (isPathCached) {
+          if (!baseResultGiven) {
+            if (baseHandler) {
+              baseResult = await baseHandler(request, response);
+              if (response.sent) return "";
+            }
+            if (configHandler) {
+              const configResult = await configHandler(request, response, baseResult);
+              if (response.sent) return "";
+              if (configResult) {
+                baseResult = configResult;
+              }
+            }
+          }
         }
 
         const anonymous = isUnauthenticated();
@@ -197,6 +220,8 @@ export async function viewRoutes(fastify: FastifyInstance) {
     };
   }
   function createPathSubmitHandler(view: View) {
+    const config = getConfig();
+    const configHandler = config.handler;
     const { submit, handler: baseHandler, path, deferHandlerWhenSubmit } = view;
     ok(
       typeof submit === "function",
@@ -209,11 +234,22 @@ export async function viewRoutes(fastify: FastifyInstance) {
     ) {
       let baseResultGiven;
 
-      if (baseHandler && deferHandlerWhenSubmit !== false) {
-        baseResultGiven = {
-          value: await baseHandler(request, response)
-        };
-        if (response.sent) return;
+      if (deferHandlerWhenSubmit !== false) {
+        if (baseHandler) {
+          baseResultGiven = {
+            value: await baseHandler(request, response)
+          };
+          if (response.sent) return;
+        }
+        if (configHandler) {
+          const configResult = await configHandler(request, response, baseResultGiven?.value);
+          if (response.sent) return;
+          if (configResult) {
+            baseResultGiven = {
+              value: configResult
+            };
+          }
+        }
       }
 
       let result, error;
