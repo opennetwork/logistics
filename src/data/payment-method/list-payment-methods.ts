@@ -5,9 +5,7 @@ export interface ListPaymentMethodsInput extends PaymentMethodOwnerIdentifiers {
 
 }
 
-export async function listPaymentMethods(options: ListPaymentMethodsInput = {}): Promise<
-  PaymentMethod[]
-> {
+export async function listPaymentMethods(options: ListPaymentMethodsInput): Promise<PaymentMethod[]> {
   const store = getPaymentMethodStore(options);
   return store.values();
 }

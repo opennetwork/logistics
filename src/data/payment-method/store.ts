@@ -1,5 +1,5 @@
 import { getKeyValueStore } from "../kv";
-import {PaymentMethod, PaymentMethodData, PaymentMethodOwnerIdentifiers} from "./types";
+import {PaymentMethod, PaymentMethodOwnerIdentifiers} from "./types";
 
 const STORE_NAME = "paymentMethod" as const;
 

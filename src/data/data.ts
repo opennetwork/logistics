@@ -23,6 +23,7 @@ export * from "./inventory-item";
 export * from "./file";
 export * from "./payment";
 export * from "./payment-method";
+export * from "./payment-request";
 export * from "./offer";
 export * from "./user-credential";
 export * from "./task";
