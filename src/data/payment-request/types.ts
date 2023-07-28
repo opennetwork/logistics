@@ -16,13 +16,15 @@ export interface PaymentRequestIdentifier extends PaymentRequestOwnerIdentifiers
 }
 
 export interface PaymentRequestData extends Record<string, unknown>, PaymentRequestOwnerIdentifiers {
-  status: PaymentRequestStatus;
-  types: PaymentRequestType[];
+  status?: PaymentRequestStatus;
+  types?: PaymentRequestType[];
   paymentMethodId?: string;
   to?: ShipmentTo;
 }
 
 export interface PaymentRequest extends PaymentRequestData, PaymentRequestIdentifier {
+  status: PaymentRequestStatus;
+  types: PaymentRequestType[];
   createdAt: string;
   updatedAt: string;
 }

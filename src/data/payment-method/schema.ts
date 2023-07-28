@@ -28,6 +28,7 @@ export const paymentMethodData = {
 export const paymentMethod = {
   type: "object",
   properties: {
+    ...paymentMethodData.properties,
     paymentMethodId: {
       type: "string",
     },
@@ -37,7 +38,6 @@ export const paymentMethod = {
     updatedAt: {
       type: "string",
     },
-    ...paymentMethodData.properties,
   },
   required: ["paymentMethodId", "createdAt", "updatedAt", ...paymentMethodData.required],
 } as const;

@@ -24,18 +24,22 @@ export const paymentRequestData = {
       items: paymentRequestType,
       nullable: true
     },
-    status: paymentRequestStatus,
-  },
-  required: ["status"],
+    status: {
+      ...paymentRequestStatus,
+      nullable: true
+    },
+  }
 } as const;
 
 export const paymentRequest = {
   type: "object",
   properties: {
+    ...paymentRequestData.properties,
     type: {
       type: "array",
       items: paymentRequestType
     },
+    status: paymentRequestStatus,
     paymentRequestId: {
       type: "string",
     },
@@ -45,7 +49,6 @@ export const paymentRequest = {
     updatedAt: {
       type: "string",
     },
-    ...paymentRequestData.properties,
   },
-  required: ["type", "paymentRequestId", "createdAt", "updatedAt", ...paymentRequestData.required],
+  required: ["type", "paymentRequestId", "createdAt", "updatedAt", "status"],
 } as const;

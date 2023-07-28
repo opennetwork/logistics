@@ -1,6 +1,11 @@
-import { PaymentRequest, PaymentRequestData } from "./types";
+import {PaymentRequest, PaymentRequestData, PaymentRequestType} from "./types";
 import { getPaymentRequestStore } from "./store";
 import { v4 } from "uuid";
+
+const DEFAULT_PAYMENT_REQUEST_TYPES: PaymentRequestType[] = [
+    "invoice",
+    "realtime"
+];
 
 export async function setPaymentRequest(
   data: PaymentRequestData & Partial<PaymentRequest>
@@ -11,6 +16,8 @@ export async function setPaymentRequest(
   const document: PaymentRequest = {
     createdAt: data.createdAt || updatedAt,
     ...data,
+    status: data.status ?? "pending",
+    types: data.types ?? DEFAULT_PAYMENT_REQUEST_TYPES,
     paymentRequestId,
     updatedAt,
   };
