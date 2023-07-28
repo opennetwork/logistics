@@ -28,3 +28,4 @@ export * from "./user-credential";
 export * from "./task";
 export * from "./appointment";
 export * from "./change";
+export * from "./membership";

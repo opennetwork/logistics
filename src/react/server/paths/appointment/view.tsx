@@ -34,14 +34,8 @@ export async function handler(request: FastifyRequest<Schema>) {
   return getAppointmentTree(appointmentId);
 }
 
-export function AppointmentPage() {
-  const appointment = useInput<AppointmentTree>();
+export function getAppointmentDate(appointment: AppointmentTree) {
   const timezone = appointment.timezone || DEFAULT_TIMEZONE;
-
-  const { url } = useData();
-  const { pathname } = new URL(url);
-  const { AppointmentActions } = useConfig();
-
   let date,
       dateString,
       time,
@@ -90,6 +84,28 @@ export function AppointmentPage() {
     date = endAt;
     dateString = `Ends at ${endInstance.toFormat(TIME_FORMAT)}, ${endInstance.toFormat(DATE_FORMAT)}`;
   }
+
+  return {
+    date,
+    dateString,
+    time,
+    timeString
+  }
+}
+
+export function AppointmentPage() {
+  const appointment = useInput<AppointmentTree>();
+
+  const { url } = useData();
+  const { pathname } = new URL(url);
+  const { AppointmentActions } = useConfig();
+
+  const {
+    date,
+    dateString,
+    time,
+    timeString,
+  } = getAppointmentDate(appointment);
 
   const status = appointment.status || "scheduled";
   const isFinished = status === "completed";
