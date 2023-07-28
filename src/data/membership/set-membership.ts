@@ -84,3 +84,7 @@ export async function setMembership(data: PartialMembership) {
         return hash.digest().toString("hex");
     }
 }
+
+export async function addMembership(data: PartialMembership) {
+    return setMembership(data);
+}
