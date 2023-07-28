@@ -1,10 +1,12 @@
 import { getKeyValueStore } from "../kv";
 import { Payment } from "./types";
+import {PaymentMethodIdentifier} from "../payment-method";
 
 const STORE_NAME = "payment" as const;
 
-export function getPaymentStore() {
+export function getPaymentStore({ paymentMethodId }: PaymentMethodIdentifier) {
   return getKeyValueStore<Payment>(STORE_NAME, {
-    counter: true
+    counter: true,
+    prefix: `paymentMethod::${paymentMethodId}`
   });
 }

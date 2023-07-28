@@ -6,6 +6,10 @@ export type PaymentMethodType =
 
 export type PaymentMethodStatus = "pending" | "available" | "expired" | "void";
 
+export interface PaymentMethodIdentifier {
+  paymentMethodId: string;
+}
+
 export interface PaymentMethodOwnerIdentifiers {
   userId?: string;
   organisationId?: string;
@@ -21,8 +25,7 @@ export interface PaymentMethodData extends Record<string, unknown>, PaymentMetho
   to?: ShipmentTo;
 }
 
-export interface PaymentMethod extends PaymentMethodData {
-  paymentMethodId: string;
+export interface PaymentMethod extends PaymentMethodData, PaymentMethodIdentifier {
   createdAt: string;
   updatedAt: string;
 }
