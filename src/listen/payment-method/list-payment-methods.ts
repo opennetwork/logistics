@@ -1,19 +1,19 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
-import { listPaymentRequests, paymentRequestSchema } from "../../data";
+import { listPaymentMethods, paymentMethodSchema } from "../../data";
 import { authenticate } from "../authentication";
-import {getMaybePartner, getMaybeUser, isUnauthenticated} from "../../authentication";
+import {getMaybePartner, getMaybeUser} from "../../authentication";
 
-export async function listPaymentRequestRoutes(fastify: FastifyInstance) {
+export async function listPaymentMethodRoutes(fastify: FastifyInstance) {
   const response = {
     200: {
       type: "array",
-      items: paymentRequestSchema.paymentRequest,
+      items: paymentMethodSchema.paymentMethod,
     },
   };
 
   const schema = {
-    description: "List of payment requests",
-    tags: ["payment request"],
+    description: "List of payment methods",
+    tags: ["payment method"],
     summary: "",
     response,
     security: [
@@ -28,7 +28,7 @@ export async function listPaymentRequestRoutes(fastify: FastifyInstance) {
       schema,
       preHandler: authenticate(fastify),
       async handler(request: FastifyRequest, response) {
-        response.send(await listPaymentRequests({
+        response.send(await listPaymentMethods({
           userId: getMaybeUser()?.userId,
           organisationId: getMaybePartner()?.organisationId
         }));
