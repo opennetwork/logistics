@@ -1,3 +1,6 @@
+import {shipmentFrom, shipmentTo} from "../shipment/schema";
+import {paymentAmount} from "../payment/schema";
+
 export const paymentRequestType = {
   type: "string",
   enum: [
@@ -28,6 +31,18 @@ export const paymentRequestData = {
       ...paymentRequestStatus,
       nullable: true
     },
+    from: {
+      ...shipmentFrom,
+      nullable: true
+    },
+    to: {
+      ...shipmentTo,
+      nullable: true
+    },
+    totalAmount: {
+      ...paymentAmount,
+      nullable: true
+    }
   }
 } as const;
 

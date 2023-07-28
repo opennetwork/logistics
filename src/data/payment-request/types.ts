@@ -1,4 +1,5 @@
-import { ShipmentTo } from "../shipment";
+import {ShipmentFrom, ShipmentTo} from "../shipment";
+import {Amount} from "../payment";
 
 export type PaymentRequestType =
     | "invoice"
@@ -20,6 +21,8 @@ export interface PaymentRequestData extends Record<string, unknown>, PaymentRequ
   types?: PaymentRequestType[];
   paymentMethodId?: string;
   to?: ShipmentTo;
+  from?: ShipmentFrom;
+  totalAmount?: Amount;
 }
 
 export interface PaymentRequest extends PaymentRequestData, PaymentRequestIdentifier {

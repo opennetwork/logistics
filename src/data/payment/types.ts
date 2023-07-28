@@ -5,9 +5,15 @@ export type PaymentType =
     | "realtime";
 export type PaymentStatus = "pending" | "processing" | "paid" | "void";
 
+export interface Amount {
+  amount: string;
+  currency: string;
+}
+
 export interface PaymentData extends PaymentMethodIdentifier, Record<string, unknown> {
   type: PaymentType;
   status: PaymentStatus;
+  totalAmount?: Amount;
   reference?: string;
   userId?: string;
   organisationId?: string;

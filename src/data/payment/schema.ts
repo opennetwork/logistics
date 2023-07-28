@@ -1,3 +1,19 @@
+export const paymentAmount = {
+  type: "object",
+  properties: {
+    amount: {
+      type: "string"
+    },
+    currency: {
+      type: "string"
+    }
+  },
+  required: [
+      "amount",
+      "currency"
+  ]
+}
+
 export const paymentType = {
   type: "string",
   enum: [
@@ -21,6 +37,14 @@ export const paymentData = {
   properties: {
     type: paymentType,
     status: paymentStatus,
+    reference: {
+      type: "string",
+      nullable: true
+    },
+    totalAmount: {
+      ...paymentAmount,
+      nullable: true
+    }
   },
   required: ["type", "status"],
 } as const;

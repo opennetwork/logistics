@@ -1,4 +1,3 @@
-import { getKeyValueStore } from "../kv";
 import { Appointment } from "./types";
 import {getHappeningStore} from "../happening";
 import {DAY_MS} from "../expiring-kv";
