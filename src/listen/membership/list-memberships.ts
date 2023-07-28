@@ -26,7 +26,7 @@ export async function listMembershipRoutes(fastify: FastifyInstance) {
   try {
     fastify.get("/", {
       schema,
-      preHandler: authenticate(fastify, { anonymous: true }),
+      preHandler: authenticate(fastify),
       async handler(request: FastifyRequest, response) {
         response.send(await listMemberships({
           public: isUnauthenticated()
