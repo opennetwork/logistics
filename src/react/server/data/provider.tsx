@@ -13,7 +13,7 @@ import {Config} from "../../../config";
 const TRUSTED_ROLE: AuthenticationRole[] = ["moderator", "admin", "developer"];
 
 export interface ReactData {
-  config?: Config;
+  config: Config;
   body?: unknown;
   input?: unknown;
   result?: unknown;
@@ -209,7 +209,7 @@ export function usePaymentMethods() {
 
 export function useConfig(): Config {
   const { config } = useData();
-  return config || {}
+  return config
 }
 
 export function useOffers() {
