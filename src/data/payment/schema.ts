@@ -19,13 +19,7 @@ export const paymentType = {
 }
 
 export const paymentStatus = {
-  type: "string",
-  enum: [
-    "pending",
-    "processing",
-    "paid",
-    "void"
-  ]
+  type: "string"
 }
 
 export const paymentData = {
@@ -41,8 +35,23 @@ export const paymentData = {
       ...paymentAmount,
       nullable: true
     },
+    paymentRequestId: {
+      type: "string",
+      nullable: true
+    },
+    paymentMethodId: {
+      type: "string"
+    },
+    userId: {
+      type: "string",
+      nullable: true
+    },
+    organisationId: {
+      type: "string",
+      nullable: true
+    }
   },
-  required: ["type", "status"],
+  required: ["type", "status", "paymentMethodId"],
 } as const;
 
 export const payment = {
