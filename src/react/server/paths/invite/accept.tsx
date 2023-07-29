@@ -105,7 +105,10 @@ export async function handler(request: FastifyRequest<InputSchema>, response: Fa
     }
 
     if (state.inviteAutoAccept) {
-        const existingUser = getMaybeUser()
+        const existingUser = getMaybeUser();
+        if (existingUser) {
+            ok(existingUser.userId !== state.createdByUserId, "Creating user cannot accept invite");
+        }
         if (state.inviteAnonymous || existingUser) {
             const result = await accept(input);
             await addAcceptCookieState(state, response, result);

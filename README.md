@@ -637,7 +637,13 @@ export type PaymentType =
     | "realtime"
     | string;
 
-export type PaymentStatus = "pending" | "processing" | "paid" | "void";
+export type PaymentStatus =
+    | "pending"
+    | "processing"
+    | "processed"
+    | "paid"
+    | "void"
+    | string;
 
 export interface Amount {
   amount: string;
@@ -651,9 +657,10 @@ export interface PaymentData extends PaymentMethodIdentifier, Record<string, unk
   reference?: string;
   userId?: string;
   organisationId?: string;
+  paymentRequestId?: string;
 }
 
-export interface PaymentIdentifier extends PaymentMethodIdentifier {
+export interface PaymentIdentifier extends PaymentMethodOwnerIdentifiers {
   paymentId: string;
 }
 
@@ -682,6 +689,7 @@ export interface PaymentMethodIdentifier extends PaymentMethodOwnerIdentifiers {
 export interface PaymentMethodData extends Record<string, unknown>, PaymentMethodOwnerIdentifiers {
   status: PaymentMethodStatus;
   type: PaymentMethodType;
+  currency?: string;
   paymentMethodName?: string;
   issuerName?: string;
   issuerId?: string;

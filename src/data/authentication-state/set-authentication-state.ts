@@ -5,6 +5,7 @@ import {
 } from "./store";
 import { getExpiresAt } from "../expiring-kv";
 import {v4} from "uuid";
+import {getMaybePartner, getMaybeUser} from "../../authentication";
 
 export async function setAuthenticationState(
   data: AuthenticationStateData & Partial<AuthenticationState>
@@ -12,9 +13,17 @@ export async function setAuthenticationState(
   const stateId = data.stateId || v4();
   const stateKey = stateId;
   const createdAt = data.createdAt || new Date().toISOString();
+  let createdBy: Partial<AuthenticationState> = {};
+  if (!(data.createdAt || data.createdByUserId || data.createdByOrganisationId)) {
+    createdBy = {
+      createdByUserId: getMaybeUser()?.userId,
+      createdByOrganisationId: getMaybePartner()?.organisationId
+    }
+  }
   const state: AuthenticationState = {
     createdAt,
     ...data,
+    ...createdBy,
     stateId,
     stateKey,
     expiresAt: getExpiresAt(

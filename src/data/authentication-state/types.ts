@@ -58,4 +58,6 @@ export interface AuthenticationState
   stateKey: string;
   createdAt: string;
   expiresAt: string;
+  createdByUserId?: string;
+  createdByOrganisationId?: string;
 }

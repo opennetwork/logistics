@@ -120,7 +120,7 @@ export async function start(config?: Partial<Config>): Promise<() => Promise<voi
 
     const port = getPort();
 
-    await app.listen({ port });
+    await app.listen({ port, host: "127.0.0.1" });
 
     app.blipp();
 
