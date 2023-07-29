@@ -10,7 +10,7 @@ const DEFAULT_PAYMENT_REQUEST_TYPES: PaymentRequestType[] = [
 export async function setPaymentRequest(
   data: PaymentRequestData & Partial<PaymentRequest>
 ): Promise<PaymentRequest> {
-  const store = await getPaymentRequestStore(data);
+  const store = await getPaymentRequestStore();
   const updatedAt = new Date().toISOString();
   const paymentRequestId = data.paymentRequestId || v4()
   const document: PaymentRequest = {

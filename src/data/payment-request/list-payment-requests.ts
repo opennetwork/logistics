@@ -6,6 +6,6 @@ export interface ListPaymentRequestsInput extends PaymentRequestOwnerIdentifiers
 }
 
 export async function listPaymentRequests(options: ListPaymentRequestsInput): Promise<PaymentRequest[]> {
-  const store = getPaymentRequestStore(options);
+  const store = getPaymentRequestStore();
   return store.values();
 }
