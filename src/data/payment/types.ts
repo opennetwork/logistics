@@ -1,4 +1,4 @@
-import {PaymentMethodIdentifier} from "../payment-method";
+import {PaymentMethodIdentifier, PaymentMethodOwnerIdentifiers} from "../payment-method";
 
 export type PaymentType =
     | "invoice"
@@ -28,7 +28,7 @@ export interface PaymentData extends PaymentMethodIdentifier, Record<string, unk
   paymentRequestId?: string;
 }
 
-export interface PaymentIdentifier extends PaymentMethodIdentifier {
+export interface PaymentIdentifier extends PaymentMethodOwnerIdentifiers {
   paymentId: string;
 }
 

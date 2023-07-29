@@ -1,12 +1,29 @@
 import { getKeyValueStore } from "../kv";
 import { Payment } from "./types";
-import {PaymentMethodIdentifier} from "../payment-method";
+import { PaymentMethodOwnerIdentifiers } from "../payment-method";
 
 const STORE_NAME = "payment" as const;
 
-export function getPaymentStore({ paymentMethodId }: PaymentMethodIdentifier) {
+export function getUserPaymentStore(userId: string) {
   return getKeyValueStore<Payment>(STORE_NAME, {
     counter: true,
-    prefix: `paymentMethod::${paymentMethodId}`
+    prefix: `userId::${userId}`
   });
+}
+
+export function getOrganisationPaymentStore(organisationId: string) {
+  return getKeyValueStore<Payment>(STORE_NAME, {
+    counter: true,
+    prefix: `organisationId::${organisationId}`
+  });
+}
+
+export function getPaymentStore(data: PaymentMethodOwnerIdentifiers) {
+  if (data.organisationId) {
+    return getOrganisationPaymentStore(data.organisationId);
+  }
+  if (data.userId) {
+    return getUserPaymentStore(data.userId);
+  }
+  throw new Error("Expected organisationId or userId for payment");
 }

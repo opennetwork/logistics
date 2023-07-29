@@ -1,8 +1,8 @@
 import { Payment } from "./types";
 import { getPaymentStore } from "./store";
-import {PaymentMethodIdentifier} from "../payment-method";
+import {PaymentMethodOwnerIdentifiers} from "../payment-method";
 
-export interface ListPaymentsInput extends PaymentMethodIdentifier {
+export interface ListPaymentsInput extends PaymentMethodOwnerIdentifiers {
 
 }
 
