@@ -1,4 +1,4 @@
-import fastify from "fastify";
+import fastify, {FastifyInstance} from "fastify";
 import { routes } from "./routes";
 import { setupSwagger } from "./swagger";
 import blippPlugin from "fastify-blipp";
@@ -28,7 +28,7 @@ import {Config, getConfig, setConfig, withConfig} from "../config";
 const { pathname } = new URL(import.meta.url);
 const directory = dirname(pathname);
 
-export async function create() {
+export async function createFastifyApplication() {
     const { COOKIE_SECRET, PUBLIC_PATH } = process.env;
 
     ok(COOKIE_SECRET, "Expected COOKIE_SECRET");
@@ -100,12 +100,20 @@ export async function create() {
     return app;
 }
 
+export async function create(config?: Partial<Config>): ReturnType<typeof createFastifyApplication> {
+    if (config) {
+        return withConfig(getConfig(config), () => create());
+    }
+
+    return createFastifyApplication();
+}
+
 export async function start(config?: Partial<Config>): Promise<() => Promise<void>> {
     if (config) {
         return withConfig(getConfig(config), () => start());
     }
 
-    const app = await create();
+    const app = await create(config);
 
     // Before we start, we should seed
     await autoSeed();
