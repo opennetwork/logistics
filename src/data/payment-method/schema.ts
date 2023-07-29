@@ -1,9 +1,5 @@
 export const paymentMethodType = {
-  type: "string",
-  enum: [
-    "invoice",
-    "realtime"
-  ]
+  type: "string"
 }
 
 export const paymentMethodStatus = {

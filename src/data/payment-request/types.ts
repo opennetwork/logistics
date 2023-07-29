@@ -3,7 +3,8 @@ import {Amount} from "../payment";
 
 export type PaymentRequestType =
     | "invoice"
-    | "realtime";
+    | "realtime"
+    | string;
 
 export type PaymentRequestStatus = "pending" | "accepted" | "expired" | "void";
 

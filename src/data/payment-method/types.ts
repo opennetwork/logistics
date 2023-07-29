@@ -2,7 +2,8 @@ import {ShipmentTo} from "../shipment";
 
 export type PaymentMethodType =
     | "invoice"
-    | "realtime";
+    | "realtime"
+    | string;
 
 export type PaymentMethodStatus = "pending" | "available" | "expired" | "void";
 

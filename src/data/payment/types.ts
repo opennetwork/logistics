@@ -2,7 +2,9 @@ import {PaymentMethodIdentifier} from "../payment-method";
 
 export type PaymentType =
     | "invoice"
-    | "realtime";
+    | "realtime"
+    | string;
+
 export type PaymentStatus = "pending" | "processing" | "paid" | "void";
 
 export interface Amount {

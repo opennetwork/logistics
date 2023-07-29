@@ -2,11 +2,7 @@ import {shipmentFrom, shipmentTo} from "../shipment/schema";
 import {paymentAmount} from "../payment/schema";
 
 export const paymentRequestType = {
-  type: "string",
-  enum: [
-    "invoice",
-    "realtime"
-  ]
+  type: "string"
 }
 
 export const paymentRequestStatus = {
