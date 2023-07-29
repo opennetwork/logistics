@@ -474,6 +474,7 @@ export interface Membership extends MembershipData {
     createdAt: string;
     createdByPartnerId?: string;
     createdByUserId?: string;
+    updatedAt: string;
 }
 
 export type PartialMembership = MembershipData & Partial<Membership>;
@@ -633,7 +634,9 @@ export interface Partner extends PartnerData {
 
 export type PaymentType =
     | "invoice"
-    | "realtime";
+    | "realtime"
+    | string;
+
 export type PaymentStatus = "pending" | "processing" | "paid" | "void";
 
 export interface Amount {
@@ -661,7 +664,8 @@ export interface Payment extends PaymentIdentifier, PaymentData {
 
 export type PaymentMethodType =
     | "invoice"
-    | "realtime";
+    | "realtime"
+    | string;
 
 export type PaymentMethodStatus = "pending" | "available" | "expired" | "void";
 
@@ -692,7 +696,8 @@ export interface PaymentMethod extends PaymentMethodData, PaymentMethodIdentifie
 
 export type PaymentRequestType =
     | "invoice"
-    | "realtime";
+    | "realtime"
+    | string;
 
 export type PaymentRequestStatus = "pending" | "accepted" | "expired" | "void";
 
