@@ -20,6 +20,7 @@ export interface PaymentMethodIdentifier extends PaymentMethodOwnerIdentifiers {
 export interface PaymentMethodData extends Record<string, unknown>, PaymentMethodOwnerIdentifiers {
   status: PaymentMethodStatus;
   type: PaymentMethodType;
+  currency?: string;
   paymentMethodName?: string;
   issuerName?: string;
   issuerId?: string;

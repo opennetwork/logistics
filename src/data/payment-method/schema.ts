@@ -17,6 +17,10 @@ export const paymentMethodData = {
   properties: {
     type: paymentMethodType,
     status: paymentMethodStatus,
+    currency: {
+      type: "string",
+      nullable: true
+    }
   },
   required: ["type", "status"],
 } as const;
