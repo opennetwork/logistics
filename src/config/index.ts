@@ -1,9 +1,13 @@
+import {name, version} from "../package";
 import {createContext} from "../hooks/context";
 import {Config} from "./types";
 
 export { Config } from "./types";
 
-const ConfigContext = createContext<Config>()
+const ConfigContext = createContext<Config>({
+    name,
+    version
+});
 
 export function getConfig(overrides?: Partial<Config>): Config {
     if (!overrides) return ConfigContext.value;

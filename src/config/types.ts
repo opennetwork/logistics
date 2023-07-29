@@ -27,5 +27,6 @@ export interface Config extends
     SetMembershipConfig,
     MembershipViewComponentConfig,
     MembershipStatusConfig {
-
+    name: string;
+    version: string;
 }

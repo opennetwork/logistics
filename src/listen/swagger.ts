@@ -2,17 +2,20 @@ import {FastifyInstance} from "fastify";
 import basePlugin from "@fastify/swagger";
 import uiPlugin from "@fastify/swagger-ui";
 import {getOrigin} from "./config";
-import {version, homepage} from "../package";
+import {homepage} from "../package";
+import {getConfig} from "../config";
 
 export async function setupSwagger(fastify: FastifyInstance) {
     const url = getOrigin()
 
     const { host, protocol } = new URL(url);
 
+    const { name, version } = getConfig();
+
     await fastify.register(basePlugin, {
         swagger: {
             info: {
-                title: 'PharmaKarma API',
+                title: name,
                 description: '',
                 version
             },
