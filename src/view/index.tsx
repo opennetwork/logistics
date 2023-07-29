@@ -234,7 +234,7 @@ export async function viewRoutes(fastify: FastifyInstance) {
     ) {
       let baseResultGiven;
 
-      if (deferHandlerWhenSubmit !== false) {
+      if (deferHandlerWhenSubmit !== true) {
         if (baseHandler) {
           baseResultGiven = {
             value: await baseHandler(request, response)
