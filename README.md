@@ -450,6 +450,34 @@ export interface Location extends LocationData {
   updatedAt: string;
 }
 
+export type MembershipStatus = "active" | "inactive";
+
+export interface MembershipHistoryItem {
+    status: MembershipStatus;
+    statusAt?: string;
+    updatedAt: string;
+}
+
+export interface MembershipData extends Record<string, unknown> {
+    status?: MembershipStatus;
+    reference?: string;
+    name?: string;
+    email?: string;
+    timezone?: string;
+    history?: MembershipHistoryItem[];
+}
+
+export interface Membership extends MembershipData {
+    status: MembershipStatus;
+    reference: string;
+    membershipId: string;
+    createdAt: string;
+    createdByPartnerId?: string;
+    createdByUserId?: string;
+}
+
+export type PartialMembership = MembershipData & Partial<Membership>;
+
 export type MaybeNumberString = `${number}` | string;
 
 export interface OfferPrice {
@@ -608,17 +636,25 @@ export type PaymentType =
     | "realtime";
 export type PaymentStatus = "pending" | "processing" | "paid" | "void";
 
-export interface PaymentData extends Record<string, unknown> {
+export interface Amount {
+  amount: string;
+  currency: string;
+}
+
+export interface PaymentData extends PaymentMethodIdentifier, Record<string, unknown> {
   type: PaymentType;
   status: PaymentStatus;
-  paymentMethodId: string;
+  totalAmount?: Amount;
   reference?: string;
   userId?: string;
   organisationId?: string;
 }
 
-export interface Payment extends PaymentData {
+export interface PaymentIdentifier extends PaymentMethodIdentifier {
   paymentId: string;
+}
+
+export interface Payment extends PaymentIdentifier, PaymentData {
   createdAt: string;
   updatedAt: string;
 }
@@ -629,9 +665,14 @@ export type PaymentMethodType =
 
 export type PaymentMethodStatus = "pending" | "available" | "expired" | "void";
 
+
 export interface PaymentMethodOwnerIdentifiers {
   userId?: string;
   organisationId?: string;
+}
+
+export interface PaymentMethodIdentifier extends PaymentMethodOwnerIdentifiers {
+  paymentMethodId: string;
 }
 
 export interface PaymentMethodData extends Record<string, unknown>, PaymentMethodOwnerIdentifiers {
@@ -644,8 +685,38 @@ export interface PaymentMethodData extends Record<string, unknown>, PaymentMetho
   to?: ShipmentTo;
 }
 
-export interface PaymentMethod extends PaymentMethodData {
-  paymentMethodId: string;
+export interface PaymentMethod extends PaymentMethodData, PaymentMethodIdentifier {
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaymentRequestType =
+    | "invoice"
+    | "realtime";
+
+export type PaymentRequestStatus = "pending" | "accepted" | "expired" | "void";
+
+export interface PaymentRequestOwnerIdentifiers {
+  userId?: string;
+  organisationId?: string;
+}
+
+export interface PaymentRequestIdentifier extends PaymentRequestOwnerIdentifiers {
+  paymentRequestId: string;
+}
+
+export interface PaymentRequestData extends Record<string, unknown>, PaymentRequestOwnerIdentifiers {
+  status?: PaymentRequestStatus;
+  types?: PaymentRequestType[];
+  paymentMethodId?: string;
+  to?: ShipmentTo;
+  from?: ShipmentFrom;
+  totalAmount?: Amount;
+}
+
+export interface PaymentRequest extends PaymentRequestData, PaymentRequestIdentifier {
+  status: PaymentRequestStatus;
+  types: PaymentRequestType[];
   createdAt: string;
   updatedAt: string;
 }

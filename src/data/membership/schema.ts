@@ -1,3 +1,28 @@
+
+const statusEnum = [
+    "active",
+    "inactive"
+];
+
+export const membershipHistoryItem = {
+    type: "object",
+    properties: {
+        status: {
+            type: "string",
+            nullable: true,
+            enum: statusEnum
+        },
+        statusAt: {
+            type: "string",
+            nullable: true
+        },
+        updatedAt: {
+            type: "string"
+        }
+    },
+    required: ["updatedAt"]
+}
+
 export const membershipData = {
     type: "object",
     properties: {
@@ -20,6 +45,16 @@ export const membershipData = {
             type: "string",
             nullable: true
         },
+        status: {
+          type: "string",
+          enum: statusEnum,
+          nullable: true
+        },
+        history: {
+            type: "array",
+            items: membershipHistoryItem,
+            nullable: true
+        }
     },
     additionalProperties: true,
     required: [
@@ -37,11 +72,16 @@ export const membership = {
         createdAt: {
             type: "string",
         },
+        status: {
+            type: "string",
+            enum: statusEnum
+        },
     },
     additionalProperties: true,
     required: [
         ...membershipData.required,
         "membershipId",
-        "createdAt"
+        "createdAt",
+        "status"
     ]
 }

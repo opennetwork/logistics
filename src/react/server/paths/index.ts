@@ -19,7 +19,8 @@ import {
   order,
   paymentMethod,
   userCredential,
-  appointment
+  appointment,
+  membership
 } from "./views";
 
 export * as namedViews from "./views";
@@ -55,7 +56,10 @@ export const views: View[] = [
   userCredential.list,
   appointment.create,
   appointment.list,
-  appointment.view
+  appointment.view,
+  membership.create,
+  membership.list,
+  membership.view,
 ];
 
 export * from "./types";

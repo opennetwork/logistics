@@ -4,7 +4,8 @@ export * as offer from "./offer"
 export * as order from "./order"
 export * as paymentMethod from "./payment-method"
 export * as userCredential from "./user-credential"
-export * as appointment from "./appointment"
+export * as appointment from "./appointment";
+export * as membership from "./membership";
 
 export * as PartnersView from "./partners";
 export * as SettingsView from "./settings";
