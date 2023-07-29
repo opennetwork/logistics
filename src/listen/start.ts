@@ -120,7 +120,11 @@ export async function start(config?: Partial<Config>): Promise<() => Promise<voi
 
     const port = getPort();
 
-    await app.listen({ port, host: "127.0.0.1" });
+    const {
+        LISTEN_HOST
+    } = process.env;
+
+    await app.listen({ port, host: LISTEN_HOST });
 
     app.blipp();
 
