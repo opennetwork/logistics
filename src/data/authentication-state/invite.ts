@@ -12,7 +12,8 @@ import {ChangeIdentifier} from "../change";
 const {
     INVITEE_BCRYPT_SALT,
     INVITEE_BCRYPT_ROUNDS,
-    INVITEE_URL
+    INVITEE_URL,
+    INVITEE_ORIGIN
 } = process.env;
 
 const DEFAULT_INVITEE_URL = "/invite/accept"
@@ -28,7 +29,7 @@ function getSaltOrRounds() {
 }
 
 export function getInviteURL(url?: string) {
-    return new URL(url || INVITEE_URL || DEFAULT_INVITEE_URL, getOrigin());
+    return new URL(url || INVITEE_URL || DEFAULT_INVITEE_URL, INVITEE_ORIGIN || getOrigin());
 }
 
 export interface InviteeStateOptionsData {
