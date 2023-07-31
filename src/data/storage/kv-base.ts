@@ -1,6 +1,7 @@
 import { requestContext } from "@fastify/request-context";
 import { KVS, StorageSchema } from "@kvs/types";
 import { kvsEnvStorage } from "@kvs/env";
+import { kvsMemoryStorage } from "@kvs/memorystorage";
 import { KeyValueStore, KeyValueStoreOptions, MetaKeyValueStore } from "./types";
 import { createRedisKeyValueStore } from "./redis-client";
 import {isLike, ok} from "../../is";
@@ -10,6 +11,10 @@ import {getConfig} from "../../config";
 const DATABASE_VERSION = 1;
 
 const META_STORE_PREFIX = "meta";
+
+const {
+  STORAGE_IN_MEMORY
+} = process.env;
 
 interface GenericStorageFn {
   (): Promise<KVS<StorageSchema>>;
@@ -59,13 +64,17 @@ export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOpt
         if (store) {
           return store;
         }
-        return (store = kvsEnvStorage({
+        const options = {
           // prefix === storage partition
           // for the kvs env, we can get the same effect with a separate name
           // which is mapped to a prefix for a file name anyway...
           name: `${name}${nextOptions?.prefix ? `:${nextOptions.prefix}` : ""}`,
           version: DATABASE_VERSION,
-        }));
+        }
+        if (STORAGE_IN_MEMORY) {
+          return (store = kvsMemoryStorage(options))
+        }
+        return (store = kvsEnvStorage(options));
       });
     }
     return kv;
