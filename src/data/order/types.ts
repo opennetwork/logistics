@@ -2,6 +2,7 @@ import type {OrderItemIdentifierData, OrderItem, OrderProductItem} from "../orde
 import type {ShipmentFrom, ShipmentTo} from "../shipment";
 import type {PaymentMethodData} from "../payment-method";
 import {OfferPrice, TotalOfferPrice} from "../offer";
+import {PaymentRequestData} from "../payment-request";
 
 export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
 
@@ -13,7 +14,10 @@ export interface OrderData {
   from?: ShipmentFrom;
   // Partial in progress payment data, before the payment method is created or matched
   paymentMethod?: Partial<PaymentMethodData>
+  // Partial in progress payment data, before the payment request is created or matched
+  paymentRequest?: Partial<PaymentRequestData>
   paymentId?: string;
+  paymentRequestId?: string;
   paymentMethodId?: string;
 }
 

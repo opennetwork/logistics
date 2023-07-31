@@ -12,6 +12,18 @@ export const orderData = {
     to: {
       ...shipmentSchema.shipmentTo,
       nullable: true
+    },
+    paymentId: {
+      type: "string",
+      nullable: true
+    },
+    paymentMethodId: {
+      type: "string",
+      nullable: true
+    },
+    paymentRequestMpwId: {
+      type: "string",
+      nullable: true
     }
   },
 };
