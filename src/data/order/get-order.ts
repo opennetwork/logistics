@@ -1,5 +1,5 @@
 import { getOrderStore } from "./store";
-import {listOrderItems, listOrderProducts, OrderItem} from "../order-item";
+import {listOrderItems, listOrderProducts, listOrderServices, OrderItem} from "../order-item";
 import {v4, v5} from "uuid";
 import {createHash} from "crypto";
 import {ok} from "../../is";
@@ -30,12 +30,14 @@ async function getBaseOrder(id: string, location?: ShipmentLocation): Promise<Or
 export async function getOrderInfo(order: Order): Promise<Order> {
   const items = order.items ?? await listOrderItems(order.orderId);
   const products = order.products ?? await listOrderProducts(order.orderId, true, items)
+  const services = order.services ?? await listOrderServices(order.orderId, true, items)
   const price = order.total ? order : await getOrderPrice(order.orderId, items);
   return {
     ...price,
     ...order,
     items,
-    products
+    products,
+    services
   }
 }
 
