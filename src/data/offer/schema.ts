@@ -1,4 +1,5 @@
 import { identifierSchema } from "../identifier";
+import { shipmentSchema } from "../shipment";
 
 export const productOfferItem = {
   type: "object",
@@ -6,7 +7,7 @@ export const productOfferItem = {
     type: {
       type: "string",
       enum: [
-          "product"
+        "product"
       ]
     },
     productId: {
@@ -24,8 +25,8 @@ export const productOfferItem = {
   },
   additionalProperties: false,
   required: [
-      "type",
-      "productId"
+    "type",
+    "productId"
   ]
 }
 
@@ -89,7 +90,15 @@ export const offerData = {
     countryCode: {
       type: "string",
       nullable: true
-    }
+    },
+    from: {
+      ...shipmentSchema.shipmentFrom,
+      nullable: true
+    },
+    to: {
+      ...shipmentSchema.shipmentTo,
+      nullable: true
+    },
   },
   required: ["status", "items"],
 } as const;

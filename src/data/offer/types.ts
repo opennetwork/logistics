@@ -1,4 +1,5 @@
 import {Identifier} from "../identifier";
+import {ShipmentFrom, ShipmentTo} from "../shipment";
 
 
 export type MaybeNumberString = `${number}` | string;
@@ -51,6 +52,9 @@ export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> 
   // Is the offer publicly visible
   public?: boolean;
   countryCode?: string;
+  // Offer can be from one party to another
+  from?: ShipmentFrom;
+  to?: ShipmentTo;
 }
 
 export interface Offer extends OfferData {

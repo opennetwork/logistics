@@ -9,6 +9,10 @@ export const orderData = {
       items: orderItemData,
       nullable: true
     },
+    from: {
+      ...shipmentSchema.shipmentFrom,
+      nullable: true
+    },
     to: {
       ...shipmentSchema.shipmentTo,
       nullable: true
