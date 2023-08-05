@@ -4,7 +4,7 @@ import type {PaymentMethodData} from "../payment-method";
 import {TotalOfferPrice} from "../offer";
 import {PaymentRequestData} from "../payment-request";
 
-export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
+export type OrderStatus = "pending" | "submitted" | "processing" | "complete" | string;
 
 export interface OrderData {
   status: OrderStatus;

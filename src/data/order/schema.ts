@@ -4,6 +4,14 @@ import {orderItem, orderItemData, orderProductItem} from "../order-item/schema";
 export const orderData = {
   type: "object",
   properties: {
+    status: {
+      type: "string",
+      nullable: true
+    },
+    reference: {
+      type: "string",
+      nullable: true
+    },
     items: {
       type: "array",
       items: orderItemData,

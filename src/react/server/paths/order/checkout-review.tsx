@@ -1,5 +1,5 @@
 import {ProductListComponentInfo, handler as baseHandler} from "../product/list";
-import {useData, useInput, useProducts} from "../../data";
+import {useData, useInput, useProducts, useService, useServices} from "../../data";
 import {TrashIcon} from "../../../client/components/icons";
 import {getOrderPrice} from "../../../../data/order-item/get-order-item-info";
 import {CheckoutEmpty} from "../../../client/components/checkout";
@@ -37,6 +37,7 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
         currencySymbol
     } = useInput<OrderCheckoutReviewComponentInfo>();
     const products = useProducts();
+    const services = useServices();
     const { url } = useData();
     const { pathname } = new URL(url);
 
@@ -104,6 +105,81 @@ export function CheckoutItems({ className, remove = true }: CheckoutItemsProps) 
                                                 href={`/api/version/1/orders/${orderId}/items/${offer ? "offers" : "products"}/${offer ? offer.offerId : product.productId}/delete?redirect=${pathname}`}
                                                 className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex flex-row"
                                                 title={`Remove ${item.quantity} ${product.productName} from bag`}
+                                            >
+                                                <TrashIcon className="w-5 h-5" />&nbsp;
+                                                Remove {item.quantity} from bag
+                                            </a>
+                                        </div>
+                                    ) : undefined
+                                }
+                            </div>
+                        </div>
+                    </li>
+                )
+            })}
+
+            {order.services.map((item) => {
+
+                const offer = item.offerId ? offers.find(offer => offer.offerId === item.offerId) : undefined;
+                const service = services.find(service => service.serviceId === item.serviceId);
+                const images = images600.filter(file => file.serviceId === service.serviceId);
+
+                const total = offer ?
+                    (Math.round((+offer.price) * (item.quantity ?? 1) * 100) / 100).toFixed(2) :
+                    undefined;
+
+                return (
+                    <li key={item.orderItemId} className="flex py-6">
+                        <div className="flex-shrink-0">
+                            {
+                                images.map(
+                                    (image, index, array) => (
+                                        <img
+                                            data-index={index}
+                                            data-length={array.length}
+                                            loading={index === 0 ? "eager" : "lazy"}
+                                            hidden={index !== 0}
+                                            key={index}
+                                            src={image.url}
+                                            alt={String(image.description || service.serviceName)}
+                                            className="h-24 w-24 rounded-md object-cover object-center sm:h-32 sm:w-32"
+                                        />
+                                    )
+                                )
+                            }
+                        </div>
+
+                        <div className="ml-4 flex flex-1 flex-col sm:ml-6">
+                            <div>
+                                <div className="flex justify-between">
+                                    <h4 className="text-sm">
+                                        <a href="/services" className="font-medium text-gray-700 hover:text-gray-800">
+                                            {service.serviceName}
+                                        </a>
+                                    </h4>
+                                    <p className="ml-4 text-sm font-medium text-gray-900">{offer ? `${currencySymbol}${total}` : ""}</p>
+                                </div>
+                                {/*<p className="mt-1 text-sm text-gray-500">{service.color}</p>*/}
+                                {/*<p className="mt-1 text-sm text-gray-500">{service.size}</p>*/}
+                            </div>
+
+                            <div className="mt-4 flex flex-1 items-end justify-between">
+                                <div className="flex items-center space-x-2 text-sm text-gray-700">
+                                    {/*{service.inStock ? (*/}
+                                    {/*    <CheckIcon className="h-5 w-5 flex-shrink-0 text-green-500" aria-hidden="true" />*/}
+                                    {/*) : (*/}
+                                    {/*    <ClockIcon className="h-5 w-5 flex-shrink-0 text-gray-300" aria-hidden="true" />*/}
+                                    {/*)}*/}
+
+                                    {/*<span>{service.inStock ? 'In stock' : `Will ship in ${service.leadTime}`}</span>*/}
+                                </div>
+                                {
+                                    remove ? (
+                                        <div className="ml-4">
+                                            <a
+                                                href={`/api/version/1/orders/${orderId}/items/${offer ? "offers" : "services"}/${offer ? offer.offerId : service.serviceId}/delete?redirect=${pathname}`}
+                                                className="text-sm font-medium text-indigo-600 hover:text-indigo-500 flex flex-row"
+                                                title={`Remove ${item.quantity} ${service.serviceName} from bag`}
                                             >
                                                 <TrashIcon className="w-5 h-5" />&nbsp;
                                                 Remove {item.quantity} from bag

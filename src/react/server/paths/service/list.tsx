@@ -73,6 +73,7 @@ export function ListServices() {
                 return services.indexOf(a) < services.indexOf(b) ? -1 : 1;
             })
     }, [services, serviceImages]);
+    const isImages = !!images600.length;
     if (!sorted.length) {
         return <ServicesEmpty isTrusted={isTrusted} />
     }
@@ -95,37 +96,48 @@ export function ListServices() {
                         const redirect = encodeURIComponent(`${pathname}#service-${service.serviceId}`);
                         return (
                             <div key={service.serviceId} id={`service-${service.serviceId}`} className="flex justify-between flex-col">
-                                <div className="relative">
-                                    <div className="relative h-72 w-full overflow-hidden rounded-lg">
-                                        {
-                                            images.map(
-                                                (image, index, array) => (
-                                                    <img
-                                                        data-index={index}
-                                                        data-length={array.length}
-                                                        loading={index === 0 ? "eager" : "lazy"}
-                                                        hidden={index !== 0}
-                                                        key={index}
-                                                        src={image.url}
-                                                        alt={String(image.description || service.serviceName)}
-                                                        className="h-full w-full object-cover object-center"
-                                                    />
-                                                )
-                                            )
-                                        }
-                                    </div>
-                                    <div className="relative mt-4">
-                                        <h3 className="text-sm font-medium text-gray-900">{service.serviceName}</h3>
-                                        <p className="mt-1 text-sm text-gray-500"></p>
-                                    </div>
-                                    <div className="absolute inset-x-0 top-0 flex h-72 items-end justify-end overflow-hidden rounded-lg p-4">
-                                        <div
-                                            aria-hidden="true"
-                                            className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black opacity-50"
-                                        />
-                                        <p className="relative text-lg font-semibold text-white">{serviceOffer ? `${serviceOffer.currencyCode ?? "$"}${serviceOffer.price}` : ""}</p>
-                                    </div>
-                                </div>
+                                {
+                                    isImages ? (
+                                        <div className="relative">
+                                            <div className="relative h-72 w-full overflow-hidden rounded-lg">
+                                                {
+                                                    images.map(
+                                                        (image, index, array) => (
+                                                            <img
+                                                                data-index={index}
+                                                                data-length={array.length}
+                                                                loading={index === 0 ? "eager" : "lazy"}
+                                                                hidden={index !== 0}
+                                                                key={index}
+                                                                src={image.url}
+                                                                alt={String(image.description || service.serviceName)}
+                                                                className="h-full w-full object-cover object-center"
+                                                            />
+                                                        )
+                                                    )
+                                                }
+                                            </div>
+                                            <div className="relative mt-4">
+                                                <h3 className="text-sm font-medium text-gray-900">{service.serviceName}</h3>
+                                                {/*<p className="mt-1 text-sm text-gray-500"></p>*/}
+                                            </div>
+                                            <div className="absolute inset-x-0 top-0 flex h-72 items-end justify-end overflow-hidden rounded-lg p-4">
+                                                <div
+                                                    aria-hidden="true"
+                                                    className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black opacity-50"
+                                                />
+                                                <p className="relative text-lg font-semibold text-white">{serviceOffer ? `${serviceOffer.currencyCode ?? "$"}${serviceOffer.price}` : ""}</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="relative mt-4">
+                                            <h3 className="text-sm font-medium text-gray-900 flex flex-row justify-between">
+                                                <span>{service.serviceName}</span>
+                                                <span>{serviceOffer ? `${serviceOffer.currencyCode ?? "$"}${serviceOffer.price}` : ""}</span>
+                                            </h3>
+                                        </div>
+                                    )
+                                }
                                 <div className="mt-6 flex flex-row" id={`service-${service.serviceId}-order`}>
                                     <a
                                         href={`/api/version/1/orders/${orderId}/items/${serviceOffer ? "offers" : "services"}/${serviceOffer ? serviceOffer.offerId : service.serviceId}/add?redirect=${redirect}`}

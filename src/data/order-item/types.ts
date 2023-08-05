@@ -8,7 +8,7 @@ export interface OrderItemIdentifierData {
   identifiers?: Identifier[]; // Default []
 }
 
-export interface OrderItemData extends OrderItemIdentifierData {
+export interface OrderItemData extends OrderItemIdentifierData, Record<string, unknown> {
   orderId: string;
 }
 

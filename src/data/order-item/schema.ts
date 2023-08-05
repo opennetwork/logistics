@@ -20,7 +20,8 @@ export const orderItemData = {
       items: identifierSchema.identifier,
       nullable: true
     }
-  }
+  },
+  additionalProperties: true
 }
 
 export const orderItem = {
@@ -40,7 +41,8 @@ export const orderItem = {
     },
     ...orderItemData.properties,
   },
-  required: ["orderItemId", "createdAt", "updatedAt", "orderId"]
+  required: ["orderItemId", "createdAt", "updatedAt", "orderId"],
+  additionalProperties: true
 }
 
 export const orderProductItem = {
@@ -51,5 +53,6 @@ export const orderProductItem = {
       type: "string"
     }
   },
-  required: [...orderItem.required, "productId"]
+  required: [...orderItem.required, "productId"],
+  additionalProperties: true
 }
