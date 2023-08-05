@@ -9,7 +9,10 @@ const NAMED_STORE_SUFFIX = "File";
 
 export const NAMED_FILE_TYPE: FileType[] = [
     "product",
-    "inventory"
+    "inventory",
+    "service",
+    "order",
+    "offer"
 ];
 const FILE_NAMES: string[] = NAMED_FILE_TYPE;
 
