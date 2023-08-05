@@ -1,4 +1,4 @@
-import {useData, useInput, useServices} from "../../data";
+import {useData, useInput, useIsTrusted, useServices} from "../../data";
 import {listServiceFiles, File, listOffers, Offer, Order, getUserPendingOrder} from "../../../../data";
 import {getUser, isUnauthenticated} from "../../../../authentication";
 import {ok} from "../../../../is";
@@ -57,10 +57,11 @@ export function ListServices() {
     const services = useServices();
     const { isUnauthenticated, url } = useData();
     const { pathname } = new URL(url);
+    const isTrusted = useIsTrusted();
     const { images600, serviceImages, offers, order, order: { orderId } } = useInput<ServiceListComponentInfo>();
     const sorted = useMemo(() => {
         return [...services]
-            .filter(service => GENERIC_SERVICES || !service.generic)
+            .filter(service => GENERIC_SERVICES || isTrusted || !service.generic)
             .sort((a, b) => {
                 if (serviceImages[a.serviceId] && !serviceImages[b.serviceId]) {
                     return -1;

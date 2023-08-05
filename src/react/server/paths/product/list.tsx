@@ -1,4 +1,4 @@
-import {useData, useInput, useProducts} from "../../data";
+import {useData, useInput, useIsTrusted, useProducts} from "../../data";
 import {listProductFiles, File, listOffers, Offer, Order, getUserPendingOrder} from "../../../../data";
 import {getUser, isUnauthenticated} from "../../../../authentication";
 import {FastifyRequest} from "fastify";
@@ -57,12 +57,13 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 
 export function ListProducts() {
     const products = useProducts();
+    const isTrusted = useIsTrusted();
     const { isUnauthenticated, url } = useData();
     const { pathname } = new URL(url);
     const { images600, productImages, offers, order, order: { orderId } } = useInput<ProductListComponentInfo>();
     const sorted = useMemo(() => {
         return [...products]
-            .filter(product => GENERIC_PRODUCTS || !product.generic)
+            .filter(product => GENERIC_PRODUCTS || isTrusted || !product.generic)
             .sort((a, b) => {
                 if (productImages[a.productId] && !productImages[b.productId]) {
                     return -1;
