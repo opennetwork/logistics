@@ -1,6 +1,6 @@
 import {Expiring} from "../expiring";
 
-export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile" | "inventoryItem" | "order" | "orderItem"
+export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile" | "inventoryItem" | "order" | "orderItem" | "service"
 export type BaseFileRemoteSourceName = "discord" | BaseFileStoreType;
 export type RemoteFileSourceName = BaseFileRemoteSourceName | `${BaseFileRemoteSourceName}_${number}`;
 
