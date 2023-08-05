@@ -5,7 +5,7 @@ import {
     useMaybeResult,
     useProduct,
     useQuery,
-    useQuerySearch,
+    useQuerySearch, useService,
     useSubmitted,
     useTimezone
 } from "../../data";
@@ -52,7 +52,11 @@ const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offse
 export function CreateOffer() {
     const query = useQuery<{ productId?: string }>();
     const body = useMaybeBody<OfferData>();
-    const queryProduct = useProduct(query.productId ?? body?.items[0]?.productId);
+    const firstItem = body?.items[0];
+    const productId = query.productId ?? (firstItem?.type === "product" ? firstItem.productId : undefined);
+    const serviceId = query.productId ?? (firstItem?.type === "service" ? firstItem.serviceId : undefined);
+    const queryProduct = useProduct(productId);
+    const queryService = useService(serviceId);
     const timezone = useTimezone();
     const submitted = useSubmitted();
     const result = useMaybeResult<{ success: boolean; offer: Offer }>();
@@ -89,6 +93,38 @@ export function CreateOffer() {
                                         className={FORM_CLASS}
                                         type="text"
                                         placeholder="Product Quantity"
+                                        name="items[0].quantity"
+                                        defaultValue={(body?.items[0]?.quantity ?? "1").toString()}
+                                    />
+                                </label>
+                            </div>
+                        </>
+                    ) : undefined
+                }
+                {
+                    queryService ? (
+                        <>
+                            <input type="hidden" name="items[0].type" value="service" />
+                            <input type="hidden" name="items[0].serviceId" value={queryService.serviceId} />
+                            <div className="flex flex-col">
+                                <label className={FORM_GROUP_CLASS}>
+                                    <span className="text-gray-700">Service Name</span>
+                                    <input
+                                        className={FORM_CLASS}
+                                        disabled
+                                        type="text"
+                                        placeholder="Service Name"
+                                        defaultValue={queryService.serviceName || ""}
+                                    />
+                                </label>
+                            </div>
+                            <div className="flex flex-col">
+                                <label className={FORM_GROUP_CLASS}>
+                                    <span className="text-gray-700">Service Quantity</span>
+                                    <input
+                                        className={FORM_CLASS}
+                                        type="text"
+                                        placeholder="Service Quantity"
                                         name="items[0].quantity"
                                         defaultValue={(body?.items[0]?.quantity ?? "1").toString()}
                                     />

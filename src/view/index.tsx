@@ -5,6 +5,7 @@ import {
   listOrganisations,
   listPartners,
   listProducts,
+  listServices,
 } from "../data";
 import { authenticate } from "../listen";
 import ServerCSS from "../react/server/server-css";
@@ -200,6 +201,11 @@ export async function viewRoutes(fastify: FastifyInstance) {
             products={await listProducts({
               // Making it obvious that if you are anonymous
               // only public products will be visible
+              public: anonymous
+            })}
+            services={await listServices({
+              // Making it obvious that if you are anonymous
+              // only public services will be visible
               public: anonymous
             })}
             authenticationState={getMaybeAuthenticationState()}

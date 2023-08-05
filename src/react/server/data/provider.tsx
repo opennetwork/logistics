@@ -236,6 +236,15 @@ export function useProduct(productId?: string): Product | undefined {
   }, [products, productId]);
 }
 
+
+export function useService(serviceId?: string): Service | undefined {
+  const services = useServices();
+  return useMemo(() => {
+    if (!serviceId) return undefined;
+    return services.find((service) => service.serviceId === serviceId);
+  }, [services, serviceId]);
+}
+
 export function useOffer(offerId?: string): Offer | undefined {
   const offers = useOffers();
   return useMemo(() => {

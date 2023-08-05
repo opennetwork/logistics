@@ -206,7 +206,7 @@ export interface Expiring {
     expiresAt?: string;
 }
 
-export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile" | "inventoryItem" | "order" | "orderItem"
+export type BaseFileStoreType = "product" | "inventory" | "productFile" | "inventoryFile" | "offer" | "offerFile" | "inventoryItem" | "order" | "orderItem" | "service"
 export type BaseFileRemoteSourceName = "discord" | BaseFileStoreType;
 export type RemoteFileSourceName = BaseFileRemoteSourceName | `${BaseFileRemoteSourceName}_${number}`;
 
@@ -501,8 +501,16 @@ export interface ProductOfferItem {
   identifiers?: Identifier[];
 }
 
+export interface ServiceOfferItem {
+  type: "service";
+  serviceId: string;
+  quantity?: number;
+  identifiers?: Identifier[];
+}
+
 export type OfferItem =
     | ProductOfferItem
+    | ServiceOfferItem
 
 export type OfferItemType = OfferItem["type"];
 
@@ -529,6 +537,9 @@ export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> 
   // Is the offer publicly visible
   public?: boolean;
   countryCode?: string;
+  // Offer can be from one party to another
+  from?: ShipmentFrom;
+  to?: ShipmentTo;
 }
 
 export interface Offer extends OfferData {
@@ -547,7 +558,10 @@ export interface OrderData {
   from?: ShipmentFrom;
   // Partial in progress payment data, before the payment method is created or matched
   paymentMethod?: Partial<PaymentMethodData>
+  // Partial in progress payment data, before the payment request is created or matched
+  paymentRequest?: Partial<PaymentRequestData>
   paymentId?: string;
+  paymentRequestId?: string;
   paymentMethodId?: string;
 }
 
@@ -557,10 +571,12 @@ export interface Order extends OrderData, Partial<TotalOfferPrice> {
   updatedAt: string;
   items?: OrderItem[];
   products?: OrderProductItem[];
+  services?: OrderServiceItem[];
 }
 
 export interface OrderItemIdentifierData {
   productId?: string;
+  serviceId?: string;
   offerId?: string;
   quantity?: number; // Default 1
   identifiers?: Identifier[]; // Default []
@@ -578,6 +594,10 @@ export interface OrderItem extends OrderItemData {
 
 export interface OrderProductItem extends OrderItem {
   productId: string;
+}
+
+export interface OrderServiceItem extends OrderItem {
+  serviceId: string;
 }
 
 export interface OrderOfferItem extends OrderItem {
@@ -754,6 +774,30 @@ export interface ProductData extends Record<string, unknown> {
 
 export interface Product extends ProductData {
   productId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ServiceData extends Record<string, unknown> {
+  serviceName: string;
+
+  description?: string;
+
+  // Is the service publicly visible
+  public?: boolean;
+  // Is the related not to a specific brand
+  generic?: boolean;
+
+  // User provided organisation name associated with this service
+  organisationText?: string;
+  // System resolved organisation name associated with this service
+  organisationName?: string;
+  // System associated organisation name associated with this service
+  organisationId?: string;
+}
+
+export interface Service extends ServiceData {
+  serviceId: string;
   createdAt: string;
   updatedAt: string;
 }

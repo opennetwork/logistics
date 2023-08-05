@@ -1,7 +1,7 @@
-import type {OrderItemIdentifierData, OrderItem, OrderProductItem} from "../order-item";
+import type {OrderItem, OrderProductItem, OrderServiceItem} from "../order-item";
 import type {ShipmentFrom, ShipmentTo} from "../shipment";
 import type {PaymentMethodData} from "../payment-method";
-import {OfferPrice, TotalOfferPrice} from "../offer";
+import {TotalOfferPrice} from "../offer";
 import {PaymentRequestData} from "../payment-request";
 
 export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
@@ -27,4 +27,5 @@ export interface Order extends OrderData, Partial<TotalOfferPrice> {
   updatedAt: string;
   items?: OrderItem[];
   products?: OrderProductItem[];
+  services?: OrderServiceItem[];
 }
