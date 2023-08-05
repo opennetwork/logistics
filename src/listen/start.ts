@@ -12,7 +12,15 @@ import { bearerAuthentication } from "./authentication";
 import bearerAuthPlugin from "@fastify/bearer-auth";
 import authPlugin from "@fastify/auth";
 import { autoSeed, seed, stopData } from "../data";
-import {commitAt, commitShort, importmapRoot, importmapRootName, packageIdentifier} from "../package";
+import {
+    commitAt, commitAuthor,
+    commitMessage,
+    commitShort,
+    importmapRoot,
+    importmapRootName,
+    name,
+    packageIdentifier
+} from "../package";
 import cookie from "@fastify/cookie";
 import { isLike, ok } from "../is";
 import multipart from "@fastify/multipart";
@@ -29,9 +37,11 @@ const { pathname } = new URL(import.meta.url);
 const directory = dirname(pathname);
 
 export async function createFastifyApplication() {
-    const { COOKIE_SECRET, PUBLIC_PATH } = process.env;
+    const { COOKIE_SECRET } = process.env;
 
-    ok(COOKIE_SECRET, "Expected COOKIE_SECRET");
+    if (!COOKIE_SECRET) {
+        console.warn("Warning, COOKIE_SECRET not set in environment variables or .env");
+    }
 
     const app = fastify({
         logger: true,
@@ -40,7 +50,7 @@ export async function createFastifyApplication() {
     const register: (...args: unknown[]) => void = app.register.bind(fastify);
 
     register(cookie, {
-        secret: COOKIE_SECRET,
+        secret: COOKIE_SECRET || name,
         hook: "onRequest",
         parseOptions: {},
     });
