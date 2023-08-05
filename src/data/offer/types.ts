@@ -47,7 +47,8 @@ export type OfferStatus =
     | "backOrder"
     | "limitedAvailability"
     | "soldOut"
-    | "void";
+    | "void"
+    | string;
 
 export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> {
   status: OfferStatus;

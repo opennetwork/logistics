@@ -40,19 +40,7 @@ export const offerItem = {
 }
 
 export const offerStatus = {
-  type: "string",
-  enum: [
-    "speculative",
-    "preSale",
-    "preOrder",
-    "onlineOnly",
-    "storeOnly",
-    "available",
-    "backOrder",
-    "limitedAvailability",
-    "soldOut",
-    "void"
-  ]
+  type: "string"
 }
 
 export const offerData = {
