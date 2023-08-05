@@ -9,7 +9,6 @@ import type {LayoutConfig} from "../react/server";
 import type {SetMembershipConfig} from "../data";
 import type {MembershipViewComponentConfig} from "../react/server/paths/membership/view";
 import type {MembershipStatusConfig} from "../data/membership/membership-status";
-import {FetchStoreConfig} from "../data/storage/fetch";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -27,8 +26,7 @@ export interface Config extends
     LayoutConfig,
     SetMembershipConfig,
     MembershipViewComponentConfig,
-    MembershipStatusConfig,
-    FetchStoreConfig {
+    MembershipStatusConfig {
     name: string;
     version: string;
 }
