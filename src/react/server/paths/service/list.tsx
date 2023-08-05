@@ -5,8 +5,13 @@ import {ok} from "../../../../is";
 import {useMemo} from "react";
 import {TrashIcon} from "../../../client/components/icons";
 
+const {
+    PUBLIC_SERVICES,
+    GENERIC_SERVICES
+} = process.env;
+
 export const path = "/services";
-export const anonymous = !!process.env.PUBLIC_SERVICES;
+export const anonymous = !!PUBLIC_SERVICES;
 
 export interface ServiceListComponentInfo {
     images600: File[]
@@ -55,7 +60,7 @@ export function ListServices() {
     const { images600, serviceImages, offers, order, order: { orderId } } = useInput<ServiceListComponentInfo>();
     const sorted = useMemo(() => {
         return [...services]
-            .filter(service => !service.generic)
+            .filter(service => GENERIC_SERVICES || !service.generic)
             .sort((a, b) => {
                 if (serviceImages[a.serviceId] && !serviceImages[b.serviceId]) {
                     return -1;

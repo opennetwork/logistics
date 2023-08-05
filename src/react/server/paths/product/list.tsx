@@ -6,8 +6,14 @@ import {ok} from "../../../../is";
 import {useMemo} from "react";
 import {TrashIcon} from "../../../client/components/icons";
 
+
+const {
+    PUBLIC_PRODUCTS,
+    GENERIC_PRODUCTS
+} = process.env;
+
 export const path = "/products";
-export const anonymous = !!process.env.PUBLIC_PRODUCTS;
+export const anonymous = !!PUBLIC_PRODUCTS;
 
 export interface ProductListComponentInfo {
     images600: File[]
@@ -56,7 +62,7 @@ export function ListProducts() {
     const { images600, productImages, offers, order, order: { orderId } } = useInput<ProductListComponentInfo>();
     const sorted = useMemo(() => {
         return [...products]
-            .filter(product => !product.generic)
+            .filter(product => GENERIC_PRODUCTS || !product.generic)
             .sort((a, b) => {
                 if (productImages[a.productId] && !productImages[b.productId]) {
                     return -1;
