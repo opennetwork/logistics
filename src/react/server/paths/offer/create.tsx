@@ -50,11 +50,11 @@ export async function submit(request: FastifyRequest) {
 const LINK_CLASS = "text-blue-600 hover:bg-white underline hover:underline-offset-2";
 
 export function CreateOffer() {
-    const query = useQuery<{ productId?: string }>();
+    const query = useQuery<{ productId?: string, serviceId?: string }>();
     const body = useMaybeBody<OfferData>();
     const firstItem = body?.items[0];
     const productId = query.productId ?? (firstItem?.type === "product" ? firstItem.productId : undefined);
-    const serviceId = query.productId ?? (firstItem?.type === "service" ? firstItem.serviceId : undefined);
+    const serviceId = query.serviceId ?? (firstItem?.type === "service" ? firstItem.serviceId : undefined);
     const queryProduct = useProduct(productId);
     const queryService = useService(serviceId);
     const timezone = useTimezone();
