@@ -1,22 +1,22 @@
 import { FastifyInstance, FastifyRequest } from "fastify";
-import { listProducts, productSchema } from "../../data";
+import { listServices, serviceSchema } from "../../data";
 import { authenticate } from "../authentication";
 import {isUnauthenticated} from "../../authentication";
 
-export async function listProductRoutes(fastify: FastifyInstance) {
+export async function listServiceRoutes(fastify: FastifyInstance) {
   const {
-    PUBLIC_PRODUCTS
+    PUBLIC_SERVICES
   } = process.env;
   const response = {
     200: {
       type: "array",
-      items: productSchema.product,
+      items: serviceSchema.service,
     },
   };
 
   const schema = {
-    description: "List of products",
-    tags: ["product"],
+    description: "List of services",
+    tags: ["service"],
     summary: "",
     response,
     security: [
@@ -29,9 +29,9 @@ export async function listProductRoutes(fastify: FastifyInstance) {
   try {
     fastify.get("/", {
       schema,
-      preHandler: authenticate(fastify, { anonymous: !!PUBLIC_PRODUCTS }),
+      preHandler: authenticate(fastify, { anonymous: !!PUBLIC_SERVICES }),
       async handler(request: FastifyRequest, response) {
-        response.send(await listProducts({
+        response.send(await listServices({
           public: isUnauthenticated()
         }));
       },

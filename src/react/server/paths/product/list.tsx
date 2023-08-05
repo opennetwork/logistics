@@ -7,7 +7,7 @@ import {useMemo} from "react";
 import {TrashIcon} from "../../../client/components/icons";
 
 export const path = "/products";
-export const anonymous = true;
+export const anonymous = !!process.env.PUBLIC_PRODUCTS;
 
 export interface ProductListComponentInfo {
     images600: File[]

@@ -6,7 +6,7 @@ import {useMemo} from "react";
 import {TrashIcon} from "../../../client/components/icons";
 
 export const path = "/services";
-export const anonymous = true;
+export const anonymous = !!process.env.PUBLIC_SERVICES;
 
 export interface ServiceListComponentInfo {
     images600: File[]
