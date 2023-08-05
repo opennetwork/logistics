@@ -1,5 +1,5 @@
 import {FastifyInstance, FastifyReply, FastifyRequest} from "fastify";
-import {addOrderItem, getOffer, getOrder, getProduct, OrderItemData, orderItemSchema} from "../../data";
+import {addOrderItem, getOffer, getOrder, getProduct, getService, OrderItemData, orderItemSchema} from "../../data";
 import { authenticate } from "../authentication";
 import {getMaybePartner, getMaybeUser} from "../../authentication";
 
@@ -255,6 +255,97 @@ export async function addOrderItemRoutes(fastify: FastifyInstance) {
       handler
     });
     fastify.get<Schema>("/products/:productId/add", {
+      schema: base,
+      preHandler: authenticate(fastify),
+      handler
+    });
+  } catch {
+  }
+
+
+
+  try {
+    type Params = OrderParams & {
+      serviceId: string;
+    }
+
+    type Schema = {
+      Querystring: Querystring;
+      Params: Params;
+      Body: OrderItemData;
+    };
+
+    const params = {
+      type: "object",
+      properties: {
+        orderId: {
+          type: "string"
+        },
+        serviceId: {
+          type: "string"
+        }
+      },
+      required: ["orderId", "serviceId"]
+    };
+
+    const base = {
+      description: "Add a new order item",
+      tags: ["order item"],
+      summary: "",
+      response,
+      params,
+      security: [
+        {
+          apiKey: [] as string[],
+        },
+      ],
+    };
+
+    const schema = {
+      ...base,
+      body: orderItemSchema.orderItemData,
+    };
+
+    async function handler(request: FastifyRequest<Schema>, response: FastifyReply) {
+      const order = await getOrder(request.params.orderId, {
+        userId: getMaybeUser()?.userId,
+        organisationId: getMaybePartner()?.organisationId
+      });
+      if (!order) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const service = await getService(request.params.serviceId)
+      if (!service) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const orderItem = await addOrderItem({
+        ...request.body,
+        offerId: undefined,
+        serviceId: service.serviceId,
+        orderId: request.params.orderId
+      });
+      const { redirect } = request.query;
+      if (redirect) {
+        const url = redirect.replace(":orderItemId", orderItem.orderItemId);
+        response.header("Location", url);
+        response.status(302);
+        response.send();
+        return;
+      }
+      response.status(201);
+      response.send(orderItem);
+    }
+
+    fastify.post<Schema>("/services/:serviceId", {
+      schema,
+      preHandler: authenticate(fastify),
+      handler
+    });
+    fastify.get<Schema>("/services/:serviceId/add", {
       schema: base,
       preHandler: authenticate(fastify),
       handler

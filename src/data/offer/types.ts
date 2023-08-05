@@ -24,8 +24,16 @@ export interface ProductOfferItem {
   identifiers?: Identifier[];
 }
 
+export interface ServiceOfferItem {
+  type: "service";
+  serviceId: string;
+  quantity?: number;
+  identifiers?: Identifier[];
+}
+
 export type OfferItem =
     | ProductOfferItem
+    | ServiceOfferItem
 
 export type OfferItemType = OfferItem["type"];
 

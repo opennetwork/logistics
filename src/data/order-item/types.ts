@@ -2,6 +2,7 @@ import {Identifier} from "../identifier";
 
 export interface OrderItemIdentifierData {
   productId?: string;
+  serviceId?: string;
   offerId?: string;
   quantity?: number; // Default 1
   identifiers?: Identifier[]; // Default []
@@ -19,6 +20,10 @@ export interface OrderItem extends OrderItemData {
 
 export interface OrderProductItem extends OrderItem {
   productId: string;
+}
+
+export interface OrderServiceItem extends OrderItem {
+  serviceId: string;
 }
 
 export interface OrderOfferItem extends OrderItem {

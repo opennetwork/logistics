@@ -8,7 +8,7 @@ import {
   deleteOrderItem,
   OrderItemData,
   orderItemSchema,
-  listOrderItems, listOrderProducts
+  listOrderItems, listOrderProducts, getService, listOrderServices, deleteOrderItems
 } from "../../data";
 import { authenticate } from "../authentication";
 import {getMaybePartner, getMaybeUser} from "../../authentication";
@@ -143,12 +143,7 @@ export async function deleteOrderItemRoutes(fastify: FastifyInstance) {
 
       const items = await listOrderItems(order.orderId);
       const matching = items.filter(item => item.offerId === request.params.offerId);
-
-      if (matching.length) {
-        await Promise.all(
-            matching.map(match => deleteOrderItem(order.orderId, match.orderItemId))
-        )
-      }
+      await deleteOrderItems(matching);
 
       const { redirect } = request.query;
       if (redirect) {
@@ -229,13 +224,7 @@ export async function deleteOrderItemRoutes(fastify: FastifyInstance) {
 
       const products = await listOrderProducts(order.orderId, true);
       const matching = products.filter(item => item.productId === request.params.productId);
-      const ids = [...new Set(matching.map(item => item.orderItemId))];
-
-      if (ids.length) {
-        await Promise.all(
-            ids.map(id => deleteOrderItem(order.orderId, id))
-        )
-      }
+      await deleteOrderItems(matching);
 
       const { redirect } = request.query;
       if (redirect) {
@@ -255,6 +244,88 @@ export async function deleteOrderItemRoutes(fastify: FastifyInstance) {
       handler
     });
     fastify.get<Schema>("/products/:productId/delete", {
+      schema,
+      preHandler: authenticate(fastify),
+      handler
+    });
+  } catch {
+  }
+
+
+  try {
+    type Params = OrderParams & {
+      serviceId: string;
+    }
+
+    type Schema = {
+      Querystring: Querystring;
+      Params: Params;
+    };
+
+    const params = {
+      type: "object",
+      properties: {
+        orderId: {
+          type: "string"
+        },
+        serviceId: {
+          type: "string"
+        }
+      },
+      required: ["orderId", "serviceId"]
+    };
+
+    const schema = {
+      description: "Deletes an order item",
+      tags: ["order item"],
+      summary: "",
+      params,
+      security: [
+        {
+          apiKey: [] as string[],
+        },
+      ],
+    };
+
+    async function handler(request: FastifyRequest<Schema>, response: FastifyReply) {
+      const order = await getOrder(request.params.orderId, {
+        userId: getMaybeUser()?.userId,
+        organisationId: getMaybePartner()?.organisationId
+      });
+      if (!order) {
+        response.status(404);
+        response.send();
+        return;
+      }
+      const service = await getService(request.params.serviceId)
+      if (!service) {
+        response.status(404);
+        response.send();
+        return;
+      }
+
+      const services = await listOrderServices(order.orderId, true);
+      const matching = services.filter(item => item.serviceId === request.params.serviceId);
+      await deleteOrderItems(matching);
+
+      const { redirect } = request.query;
+      if (redirect) {
+        const url = redirect.replace(":orderId", order.orderId);
+        response.header("Location", url);
+        response.status(302);
+        response.send();
+        return;
+      }
+      response.status(204);
+      response.send();
+    }
+
+    fastify.delete<Schema>("/services/:serviceId", {
+      schema,
+      preHandler: authenticate(fastify),
+      handler
+    });
+    fastify.get<Schema>("/services/:serviceId/delete", {
       schema,
       preHandler: authenticate(fastify),
       handler

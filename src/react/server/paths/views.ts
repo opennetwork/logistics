@@ -6,6 +6,7 @@ export * as paymentMethod from "./payment-method"
 export * as userCredential from "./user-credential"
 export * as appointment from "./appointment";
 export * as membership from "./membership";
+export * as service from "./service";
 
 export * as PartnersView from "./partners";
 export * as SettingsView from "./settings";

@@ -30,3 +30,4 @@ export * from "./task";
 export * from "./appointment";
 export * from "./change";
 export * from "./membership";
+export * from "./service";

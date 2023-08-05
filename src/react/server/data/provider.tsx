@@ -3,7 +3,7 @@ import {
   Partner,
   Organisation,
   User,
-  Product, Offer, Order, PaymentMethod, AuthenticationState,
+  Product, Offer, Order, PaymentMethod, AuthenticationState, Service,
 } from "../../../data";
 import {createContext, ProviderProps, useContext, useMemo} from "react";
 import { ok } from "../../../is";
@@ -31,6 +31,7 @@ export interface ReactData {
   authenticationState?: AuthenticationState;
   roles?: AuthenticationRole[];
   products?: Product[];
+  services?: Service[];
   offers?: Offer[];
   orders?: Order[];
   order?: Order;
@@ -200,6 +201,11 @@ export function useTimezone() {
 export function useProducts() {
   const { products } = useData();
   return useMemo(() => products || [], [products]);
+}
+
+export function useServices() {
+  const { services } = useData();
+  return useMemo(() => services || [], [services]);
 }
 
 export function usePaymentMethods() {
