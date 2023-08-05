@@ -4,6 +4,7 @@ import {getUser, isUnauthenticated} from "../../../../authentication";
 import {ok} from "../../../../is";
 import {useMemo} from "react";
 import {TrashIcon} from "../../../client/components/icons";
+import {ServicesEmpty} from "../../../client/components/services";
 
 const {
     PUBLIC_SERVICES,
@@ -71,7 +72,10 @@ export function ListServices() {
                 }
                 return services.indexOf(a) < services.indexOf(b) ? -1 : 1;
             })
-    }, [services, serviceImages])
+    }, [services, serviceImages]);
+    if (!sorted.length) {
+        return <ServicesEmpty isTrusted={isTrusted} />
+    }
     return (
         <div className="bg-white" id="service-list">
             <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
@@ -138,6 +142,17 @@ export function ListServices() {
                                             >
                                                 <TrashIcon className="w-5 h-5" />&nbsp;{inOrder}
                                                 <span className="sr-only">Remove {inOrder} {service.serviceName} from bag</span>
+                                            </a>
+                                        ) : undefined
+                                    }
+                                    {
+                                        isTrusted && !serviceOffer ? (
+                                            <a
+                                                href={`/offer/create?serviceId=${service.serviceId}&redirect=${redirect}`}
+                                                className="relative flex items-center justify-center rounded-md border border-transparent bg-gray-100 px-2 py-2 ml-2 text-sm font-medium text-gray-900 hover:bg-gray-200"
+                                                title={`Create offer for ${service.serviceName}`}
+                                            >
+                                                Create offer<span className="sr-only"> for {service.serviceName}</span>
                                             </a>
                                         ) : undefined
                                     }

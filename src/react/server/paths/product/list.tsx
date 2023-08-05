@@ -5,6 +5,7 @@ import {FastifyRequest} from "fastify";
 import {ok} from "../../../../is";
 import {useMemo} from "react";
 import {TrashIcon} from "../../../client/components/icons";
+import {ProductsEmpty} from "../../../client/components/products";
 
 
 const {
@@ -73,7 +74,10 @@ export function ListProducts() {
                 }
                 return products.indexOf(a) < products.indexOf(b) ? -1 : 1;
             })
-    }, [products, productImages])
+    }, [products, productImages]);
+    if (!sorted.length) {
+        return <ProductsEmpty isTrusted={isTrusted} />
+    }
     return (
         <div className="bg-white" id="product-list">
             <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
