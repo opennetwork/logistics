@@ -1,32 +1,32 @@
-import {ScheduleEvent} from "./event";
+import {ScheduledEvent} from "./event";
 
-export interface ScheduleFn {
-    (event: ScheduleEvent): Promise<void> | void;
+export interface ScheduledFn {
+    (event: ScheduledEvent): Promise<void> | void;
 }
 
-export interface ScheduleOptions {
+export interface ScheduledOptions {
     cron?: string;
     on?: string;
-    handler: ScheduleFn;
+    handler: ScheduledFn;
 }
 
-export function cron(cron: string, handler: ScheduleFn) {
+export function cron(cron: string, handler: ScheduledFn) {
     return createScheduledFunction({
         cron,
         handler
     });
 }
 
-export function on(on: string, handler: ScheduleFn) {
+export function on(on: string, handler: ScheduledFn) {
     return createScheduledFunction({
         on,
         handler
     });
 }
 
-export const SCHEDULED_FUNCTIONS: ScheduleOptions[] = [];
+export const SCHEDULED_FUNCTIONS: ScheduledOptions[] = [];
 
-export function createScheduledFunction(options: ScheduleOptions | ScheduleFn) {
+export function createScheduledFunction(options: ScheduledOptions | ScheduledFn) {
     if (isScheduleFn(options)) {
         options = {
             handler: options
@@ -34,7 +34,7 @@ export function createScheduledFunction(options: ScheduleOptions | ScheduleFn) {
     }
     SCHEDULED_FUNCTIONS.push(options);
 
-    function isScheduleFn(options:  ScheduleOptions | ScheduleFn): options is ScheduleFn {
+    function isScheduleFn(options:  ScheduledOptions | ScheduledFn): options is ScheduledFn {
         return typeof options === "function";
     }
 }
