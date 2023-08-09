@@ -1,8 +1,10 @@
 import {
-    getBackground,
+    BACKGROUND_STATIC,
+    getBackground, getIdentifiedBackground,
     seed,
 } from "../data";
-import {isLike} from "../is";
+import {isLike, isNumberString} from "../is";
+import {backgroundSchedule, BackgroundScheduleOptions} from "../schedule";
 
 export interface BackgroundInput extends Record<string, unknown> {
 
@@ -18,20 +20,57 @@ function isQueryInput(input: BackgroundInput): input is QueryInput {
 
 export async function background(input: BackgroundInput = {}) {
 
-    console.log(`Running background tasks`, input);
+    const backgroundId = getBackgroundIdentifier();
+    console.log(`Running background tasks for ${backgroundId}`, input);
 
-    const complete = await getBackground({
-        // someInitialData: "start"
-    });
+    const complete = await getIdentifiedBackground(backgroundId);
 
     if (isQueryInput(input) && input.query.seed) {
         await seed();
     }
 
-    // TODO add background tasks here
+    await backgroundScheduleWithOptions(input);
 
-    await complete({
-        // someCompletedData: "complete"
-    });
+    await complete();
 
+    function getBackgroundIdentifier() {
+        if (isQueryInput(input)) {
+            if (input.query.cron) {
+                return `background:cron:${input.query.cron}`;
+            }
+            if (input.query.event) {
+                if (input.query.eventKey) {
+                    return `background:event:${input.query.event}:${input.query.eventKey}`;
+                }
+                // Note this is locking per event type
+                // This is expected here
+                return `background:event:${input.query.event}`;
+            }
+        }
+        return BACKGROUND_STATIC;
+    }
+}
+
+async function backgroundScheduleWithOptions(input: BackgroundInput) {
+    const options: BackgroundScheduleOptions = {};
+    if (isQueryInput(input)) {
+        const {
+            cron,
+            event
+        } = input.query;
+        if (cron) {
+            options.cron = cron;
+        } else if (event) {
+            const {
+                eventKey: key,
+                eventTimeStamp: timeStamp
+            } = input.query;
+            options.event = {
+                type: event,
+                timeStamp: isNumberString(timeStamp) ? +timeStamp : undefined,
+                key
+            }
+        }
+    }
+    return backgroundSchedule(options);
 }

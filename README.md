@@ -524,7 +524,8 @@ export type OfferStatus =
     | "backOrder"
     | "limitedAvailability"
     | "soldOut"
-    | "void";
+    | "void"
+    | string;
 
 export interface OfferData extends Record<string, unknown>, Partial<OfferPrice> {
   status: OfferStatus;
@@ -548,7 +549,7 @@ export interface Offer extends OfferData {
   updatedAt: string;
 }
 
-export type OrderStatus = "pending" | "submitted" | "processing" | "complete";
+export type OrderStatus = "pending" | "submitted" | "processing" | "complete" | string;
 
 export interface OrderData {
   status: OrderStatus;
@@ -582,7 +583,7 @@ export interface OrderItemIdentifierData {
   identifiers?: Identifier[]; // Default []
 }
 
-export interface OrderItemData extends OrderItemIdentifierData {
+export interface OrderItemData extends OrderItemIdentifierData, Record<string, unknown> {
   orderId: string;
 }
 
