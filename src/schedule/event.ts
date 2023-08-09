@@ -3,7 +3,10 @@ import {getHappeningStore, Happening} from "../data";
 import {ok} from "../is";
 
 export interface ScheduledEventSchedule {
-
+    // For cases where we want an event triggered after a specific time
+    after?: string | number;
+    // For cases where we want an event triggered before a specific time
+    before?: string | number;
 }
 
 export interface ScheduledEvent extends Record<string, unknown> {

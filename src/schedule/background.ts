@@ -40,6 +40,21 @@ export async function backgroundSchedule(options: BackgroundScheduleOptions) {
 
     function isMatchingSchedule(event: ScheduledEvent) {
         if (!event.schedule) return true;
+        const { before, after } = event.schedule;
+        if (before) {
+            const date = new Date(before);
+            // If the current date is larger, we are no longer before
+            if (Date.now() > date.getTime()) {
+                return false;
+            }
+        }
+        if (after) {
+            const date = new Date(after);
+            // If the current date is smaller, we are not yet after
+            if (Date.now() < date.getTime()) {
+                return false;
+            }
+        }
         return true;
     }
 
