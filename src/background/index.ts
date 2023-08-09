@@ -1,10 +1,10 @@
 import {
     BACKGROUND_STATIC,
-    getBackground, getIdentifiedBackground,
+    getIdentifiedBackground,
     seed,
 } from "../data";
 import {isLike, isNumberString} from "../is";
-import {backgroundSchedule, BackgroundScheduleOptions} from "../schedule";
+import type {BackgroundScheduleOptions} from "../schedule/background";
 
 export interface BackgroundInput extends Record<string, unknown> {
 
@@ -72,5 +72,6 @@ async function backgroundScheduleWithOptions(input: BackgroundInput) {
             }
         }
     }
+    const { backgroundSchedule } = await import("../schedule/background");
     return backgroundSchedule(options);
 }

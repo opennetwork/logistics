@@ -11,28 +11,28 @@ export interface ScheduleOptions {
 }
 
 export function cron(cron: string, handler: ScheduleFn) {
-    return schedule({
+    return createScheduledFunction({
         cron,
         handler
-    })
+    });
 }
 
 export function on(on: string, handler: ScheduleFn) {
-    return schedule({
+    return createScheduledFunction({
         on,
         handler
     });
 }
 
-export const scheduled: ScheduleOptions[] = [];
+export const SCHEDULED_FUNCTIONS: ScheduleOptions[] = [];
 
-export function schedule(options: ScheduleOptions | ScheduleFn) {
+export function createScheduledFunction(options: ScheduleOptions | ScheduleFn) {
     if (isScheduleFn(options)) {
         options = {
             handler: options
         };
     }
-    scheduled.push(options);
+    SCHEDULED_FUNCTIONS.push(options);
 
     function isScheduleFn(options:  ScheduleOptions | ScheduleFn): options is ScheduleFn {
         return typeof options === "function";

@@ -1,33 +1,65 @@
-import { scheduled } from "./schedule";
+import { SCHEDULED_FUNCTIONS } from "./schedule";
 import {ScheduleEvent} from "./event";
-
+import {isNumberString} from "../is";
+import Bottleneck from "bottleneck";
 
 export interface BackgroundScheduleOptions {
     cron?: string;
     event?: ScheduleEvent;
-    serial?: boolean;
-    prior?: Record<string, unknown>
 }
 
+
 export async function backgroundSchedule(options: BackgroundScheduleOptions) {
+    const {
+        SCHEDULE_SERIAL,
+        SCHEDULE_BOTTLENECK,
+        SCHEDULE_BOTTLENECK_MAX_CONCURRENT,
+        SCHEDULE_BOTTLENECK_MIN_TIME,
+        SCHEDULE_BOTTLENECK_RESERVOIR,
+        SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_AMOUNT,
+        SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_INTERVAL,
+        SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_MAXIMUM,
+    } = process.env;
+
     const matching = getMatchingScheduled();
     const event = getEvent();
 
-    const meta = {
-        ...options.prior
-    };
-
-    if (options.serial) {
+    if (SCHEDULE_SERIAL) {
         for (const { handler } of matching) {
             await handler(event);
         }
     } else if (matching.length) {
-        await Promise.all(
-            matching.map(async ({ handler }) => handler(event))
-        );
-    }
+        if (SCHEDULE_BOTTLENECK) {
+            const maxConcurrent = isNumberString(SCHEDULE_BOTTLENECK_MAX_CONCURRENT) ?
+                +SCHEDULE_BOTTLENECK_MAX_CONCURRENT : 1;
+            const minTime = isNumberString(SCHEDULE_BOTTLENECK_MIN_TIME) ?
+                +SCHEDULE_BOTTLENECK_MIN_TIME : 1000;
+            const reservoir = isNumberString(SCHEDULE_BOTTLENECK_RESERVOIR) ?
+                +SCHEDULE_BOTTLENECK_RESERVOIR : undefined;
+            const reservoirIncreaseAmount = isNumberString(SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_AMOUNT) ?
+                +SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_AMOUNT : undefined;
+            const reservoirIncreaseInterval = isNumberString(SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_INTERVAL) ?
+                +SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_INTERVAL : undefined;
+            const reservoirIncreaseMaximum = isNumberString(SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_MAXIMUM) ?
+                +SCHEDULE_BOTTLENECK_RESERVOIR_INCREASE_MAXIMUM : undefined;
 
-    return meta;
+            const bottleneck = new Bottleneck({
+                maxConcurrent,
+                minTime,
+                reservoir,
+                reservoirIncreaseAmount,
+                reservoirIncreaseInterval,
+                reservoirIncreaseMaximum
+            });
+            await Promise.all(
+                matching.map(({ handler }) => bottleneck.schedule(async () => handler(event)))
+            );
+        } else {
+            await Promise.all(
+                matching.map(async ({ handler }) => handler(event))
+            );
+        }
+    }
 
     function getEvent() {
         if (options.event) {
@@ -51,15 +83,15 @@ export async function backgroundSchedule(options: BackgroundScheduleOptions) {
     }
 
     function getEventScheduled(event: string) {
-        return scheduled.filter(value => value.on === event);
+        return SCHEDULED_FUNCTIONS.filter(value => value.on === event);
     }
 
     function getCronScheduled(cron: string) {
-        return scheduled.filter(value => value.cron === cron);
+        return SCHEDULED_FUNCTIONS.filter(value => value.cron === cron);
     }
 
     function getDefaultScheduled() {
-        return scheduled.filter(value => !(value.on || value.cron))
+        return SCHEDULED_FUNCTIONS.filter(value => !(value.on || value.cron))
     }
 
 }
