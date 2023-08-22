@@ -56,6 +56,11 @@ export function getKeyValueStore<T>(
     async delete(key: string) {
       await counters?.store.delete(key);
       return store.delete(key);
+    },
+    async clear() {
+      await counters?.global.clear();
+      await counters?.store.clear();
+      return store.clear();
     }
   };
 }
