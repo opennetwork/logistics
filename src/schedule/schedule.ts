@@ -1,7 +1,7 @@
-import {ScheduledEvent} from "./event";
+import {ScheduledEventData} from "../data";
 
 export interface ScheduledFn {
-    (event: ScheduledEvent): Promise<void> | void;
+    (event: ScheduledEventData): Promise<void> | void;
 }
 
 export interface ScheduledOptions {
@@ -26,13 +26,22 @@ export function on(on: string, handler: ScheduledFn) {
 
 export const SCHEDULED_FUNCTIONS: ScheduledOptions[] = [];
 
-export function createScheduledFunction(options: ScheduledOptions | ScheduledFn) {
-    if (isScheduleFn(options)) {
+export function createScheduledFunction(optionsOrFn: ScheduledOptions | ScheduledFn) {
+    let options: ScheduledOptions;
+    if (isScheduleFn(optionsOrFn)) {
         options = {
-            handler: options
+            handler: optionsOrFn
         };
+    } else {
+        options = optionsOrFn;
     }
     SCHEDULED_FUNCTIONS.push(options);
+    return () => {
+        const index = SCHEDULED_FUNCTIONS.indexOf(options);
+        if (index > -1) {
+            SCHEDULED_FUNCTIONS.splice(index, 1);
+        }
+    }
 
     function isScheduleFn(options:  ScheduledOptions | ScheduledFn): options is ScheduledFn {
         return typeof options === "function";

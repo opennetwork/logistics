@@ -39,9 +39,6 @@ export async function background(input: BackgroundInput = {}) {
                 return `background:cron:${input.query.cron}`;
             }
             if (input.query.event) {
-                if (input.query.eventKey) {
-                    return `background:event:${input.query.event}:${input.query.eventKey}`;
-                }
                 // Note this is locking per event type
                 // This is expected here
                 return `background:event:${input.query.event}`;
@@ -62,13 +59,13 @@ async function backgroundScheduleWithOptions(input: BackgroundInput) {
             options.cron = cron;
         } else if (event) {
             const {
-                eventKey: key,
+                eventId,
                 eventTimeStamp: timeStamp
             } = input.query;
             options.event = {
                 type: event,
                 timeStamp: isNumberString(timeStamp) ? +timeStamp : undefined,
-                key
+                eventId
             }
         }
     }

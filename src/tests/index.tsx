@@ -25,6 +25,7 @@ try {
   }
   await import("./scenarios");
   await import("./storage");
+  await import("./schedule");
 
   // Ensure any data clients are closed
   await stopData();

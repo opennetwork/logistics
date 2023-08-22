@@ -53,6 +53,10 @@ export function getKeyValueStore<T>(
       await counters?.store.increment(key);
       return store.set(key, value);
     },
+    async delete(key: string) {
+      await counters?.store.delete(key);
+      return store.delete(key);
+    }
   };
 }
 

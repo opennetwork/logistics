@@ -1,44 +1,53 @@
 import {SCHEDULED_FUNCTIONS, ScheduledOptions} from "./schedule";
-import {deleteEventSchedule, getEventSchedule, listEventSchedule, ScheduledEvent} from "./event";
+
 import {isNumberString} from "../is";
 import Bottleneck from "bottleneck";
+import {ScheduledEvent, ScheduledEventData, getEvent, listEvents, deleteEvent} from "../data";
 
 export interface BackgroundScheduleOptions {
     cron?: string;
-    event?: ScheduledEvent;
+    event?: ScheduledEventData;
 }
 
 export async function backgroundSchedule(options: BackgroundScheduleOptions) {
     const matching = getMatchingScheduled();
-    const event = getEvent();
+
+    const event = getEventOption();
 
     await limitedHandlers(
         matching.map(options => () => dispatchEvent(event, options))
     );
 
-    async function dispatchEvent(event: ScheduledEvent, { handler }: ScheduledOptions) {
-        if (event.key) {
-            const schedule = await getEventSchedule(event);
+    async function dispatchEvent(event: ScheduledEventData, { handler }: ScheduledOptions) {
+        if (event.eventId) {
+            const schedule = await getEvent(event);
             if (!isMatchingSchedule(schedule)) {
                 return;
             }
             await dispatchScheduledEvent(schedule);
-        } else {
-            const schedules = await listEventSchedule(event);
+        } else if (event.type !== "background") {
+            const schedules = await listEvents(event);
             await limitedHandlers(
                 schedules
                     .filter(isMatchingSchedule)
                     .map(schedule => () => dispatchScheduledEvent(schedule))
             );
+        } else {
+            await dispatchEventToHandler(event);
         }
 
         async function dispatchScheduledEvent(event: ScheduledEvent) {
+            await dispatchEventToHandler(event);
+            await deleteEvent(event);
+        }
+
+        async function dispatchEventToHandler(event: ScheduledEventData) {
             await handler(event);
-            await deleteEventSchedule(event);
         }
     }
 
-    function isMatchingSchedule(event: ScheduledEvent) {
+    function isMatchingSchedule(event?: ScheduledEventData) {
+        if (!event) return false;
         if (!event.schedule) return true;
         const { before, after } = event.schedule;
         if (before) {
@@ -58,7 +67,7 @@ export async function backgroundSchedule(options: BackgroundScheduleOptions) {
         return true;
     }
 
-    function getEvent(): ScheduledEvent {
+    function getEventOption(): ScheduledEventData {
         if (options.event) {
             return options.event;
         }
