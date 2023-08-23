@@ -5,8 +5,10 @@ export interface ScheduledFn {
     (event: DurableEventData): Promise<void> | void;
 }
 
+export type ScheduledFunctionsRecord = Record<string, ScheduledFn>;
+
 export interface ScheduledConfig {
-    functions?: ScheduledOptions[];
+    functions?: ScheduledOptions[] | ScheduledFunctionsRecord;
 }
 
 export interface ScheduledOptions {
@@ -80,12 +82,29 @@ function getCronScheduled(cron: string) {
 }
 
 function getDefaultScheduled() {
-    return getFilteredScheduledFunctions(value => !(value.on || value.cron))
+    return getFilteredScheduledFunctions(value => !(value.on || value.cron), true)
 }
 
-function getFilteredScheduledFunctions(filter: (options: ScheduledOptions) => boolean) {
+function getFilteredScheduledFunctions(filter: (options: ScheduledOptions) => boolean, isDefault?: boolean) {
     const { functions } = getConfig();
     const internal = SCHEDULED_FUNCTIONS.filter(filter);
     if (!functions) return internal;
-    return internal.concat(functions.filter(filter));
+    if (Array.isArray(functions)) {
+        return internal.concat(functions.filter(filter));
+    }
+    if (isDefault) {
+        return internal;
+    }
+    const results = internal;
+    for (const [on, handler] of Object.entries(functions)) {
+        const options: ScheduledOptions = {
+            on,
+            cron: on,
+            handler,
+        };
+        if (filter(options)) {
+            results.push(options);
+        }
+    }
+    return results;
 }
