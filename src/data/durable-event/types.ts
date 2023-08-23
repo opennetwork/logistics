@@ -4,6 +4,7 @@ export interface DurableEventSchedule {
     after?: string | number;
     // For cases where we want an event triggered before a specific time
     before?: string | number;
+    immediate?: boolean;
 }
 
 export interface DurableEventTypeData {

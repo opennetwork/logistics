@@ -4,34 +4,52 @@ import {
     seed,
 } from "../data";
 import {isLike, isNumberString} from "../is";
-import type {BackgroundScheduleOptions} from "../schedule/background";
+import type {BackgroundScheduleOptions} from "../schedule/dispatch-scheduled";
 
 export interface BackgroundInput extends Record<string, unknown> {
+    quiet?: boolean;
+}
 
+export interface BackgroundQuery extends Record<string, string> {
+    event?: string;
+    eventId?: string;
+    eventTimeStamp?: string | `${number}`;
+    cron?: string;
+    seed?: string;
 }
 
 export interface QueryInput extends BackgroundInput {
-    query: Record<string, string>
+    query: BackgroundQuery;
 }
 
 function isQueryInput(input: BackgroundInput): input is QueryInput {
     return isLike<QueryInput>(input) && !!input.query;
 }
 
-export async function background(input: BackgroundInput = {}) {
+export async function background(input: BackgroundInput | QueryInput = {}) {
 
     const backgroundId = getBackgroundIdentifier();
-    console.log(`Running background tasks for ${backgroundId}`, input);
+
+    if (!input.quiet) {
+        console.log(`Running background tasks for ${backgroundId}`, input);
+    }
 
     const complete = await getIdentifiedBackground(backgroundId);
 
-    if (isQueryInput(input) && input.query.seed) {
-        await seed();
+    try {
+        if (isQueryInput(input) && input.query.seed) {
+            await seed();
+        } else {
+            await backgroundScheduleWithOptions(input);
+        }
+
+        if (!input.quiet) {
+            console.log(`Completed background tasks for ${backgroundId}`, input);
+        }
+    } finally {
+        // Complete no matter what, but allow above to throw
+        await complete();
     }
-
-    await backgroundScheduleWithOptions(input);
-
-    await complete();
 
     function getBackgroundIdentifier() {
         if (isQueryInput(input)) {
@@ -62,13 +80,21 @@ async function backgroundScheduleWithOptions(input: BackgroundInput) {
                 eventId,
                 eventTimeStamp: timeStamp
             } = input.query;
-            options.event = {
-                type: event,
-                timeStamp: isNumberString(timeStamp) ? +timeStamp : undefined,
-                eventId
+            if (eventId) {
+                options.event = {
+                    type: event,
+                    eventId
+                }
+                if (isNumberString(timeStamp)) {
+                    options.event.timeStamp = +timeStamp;
+                }
+            } else {
+                options.event = {
+                    type: event
+                }
             }
         }
     }
-    const { backgroundSchedule } = await import("../schedule/background");
-    return backgroundSchedule(options);
+    const { dispatchScheduledDurableEvents } = await import("../schedule/dispatch-scheduled");
+    return dispatchScheduledDurableEvents(options);
 }

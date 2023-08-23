@@ -9,6 +9,8 @@ import type {LayoutConfig} from "../react/server";
 import type {SetMembershipConfig} from "../data";
 import type {MembershipViewComponentConfig} from "../react/server/paths/membership/view";
 import type {MembershipStatusConfig} from "../data/membership/membership-status";
+import {SeedConfig} from "../data";
+import {ScheduledConfig} from "../schedule/schedule";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -26,7 +28,9 @@ export interface Config extends
     LayoutConfig,
     SetMembershipConfig,
     MembershipViewComponentConfig,
-    MembershipStatusConfig {
+    MembershipStatusConfig,
+    SeedConfig,
+    ScheduledConfig {
     name: string;
     version: string;
 }

@@ -36,7 +36,7 @@ export async function getIdentifiedBackground(backgroundId: string, data?: Backg
             backgroundId,
             backgroundKey,
             createdAt: new Date().toISOString(),
-            expiresAt: data.expiresAt || getExpiresAt(DEFAULT_BACKGROUND_EXPIRES_IN)
+            expiresAt: data?.expiresAt || getExpiresAt(DEFAULT_BACKGROUND_EXPIRES_IN)
         };
 
         await store.set(backgroundId, background);

@@ -17,8 +17,8 @@ export function getConfig(overrides?: Partial<Config>): Config {
     };
 }
 
-export function withConfig<R>(config: Config, fn: () => R): R {
-    return ConfigContext.run(config, fn);
+export function withConfig<R>(config: Partial<Config>, fn: () => R): R {
+    return ConfigContext.run({ ...getConfig(), ...config }, fn);
 }
 
 export function setConfig(config: Config) {

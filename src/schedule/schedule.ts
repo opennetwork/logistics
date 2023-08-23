@@ -1,7 +1,12 @@
 import {DurableEventData} from "../data";
+import {getConfig} from "../config";
 
 export interface ScheduledFn {
     (event: DurableEventData): Promise<void> | void;
+}
+
+export interface ScheduledConfig {
+    functions?: ScheduledOptions[];
 }
 
 export interface ScheduledOptions {
@@ -46,4 +51,41 @@ export function createScheduledFunction(optionsOrFn: ScheduledOptions | Schedule
     function isScheduleFn(options:  ScheduledOptions | ScheduledFn): options is ScheduledFn {
         return typeof options === "function";
     }
+}
+
+export interface ScheduledFunctionOptions {
+    cron?: string;
+    event?: DurableEventData;
+}
+
+export function getScheduledFunctions(options: ScheduledFunctionOptions): ScheduledOptions[] {
+    if (options.event) {
+        return getEventScheduled(options.event.type)
+    }
+    let matching = getDefaultScheduled();
+    if (options.cron) {
+        matching = matching.concat(
+            getCronScheduled(options.cron)
+        );
+    }
+    return matching;
+}
+
+function getEventScheduled(event: string) {
+    return getFilteredScheduledFunctions(value => value.on === event);
+}
+
+function getCronScheduled(cron: string) {
+    return getFilteredScheduledFunctions(value => value.cron === cron);
+}
+
+function getDefaultScheduled() {
+    return getFilteredScheduledFunctions(value => !(value.on || value.cron))
+}
+
+function getFilteredScheduledFunctions(filter: (options: ScheduledOptions) => boolean) {
+    const { functions } = getConfig();
+    const internal = SCHEDULED_FUNCTIONS.filter(filter);
+    if (!functions) return internal;
+    return internal.concat(functions.filter(filter));
 }
