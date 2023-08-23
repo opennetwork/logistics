@@ -1,7 +1,7 @@
-import {ScheduledEventData} from "../data";
+import {DurableEventData} from "../data";
 
 export interface ScheduledFn {
-    (event: ScheduledEventData): Promise<void> | void;
+    (event: DurableEventData): Promise<void> | void;
 }
 
 export interface ScheduledOptions {

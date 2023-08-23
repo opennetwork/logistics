@@ -2,11 +2,11 @@ import {SCHEDULED_FUNCTIONS, ScheduledOptions} from "./schedule";
 
 import {isNumberString} from "../is";
 import Bottleneck from "bottleneck";
-import {ScheduledEvent, ScheduledEventData, getEvent, listEvents, deleteEvent} from "../data";
+import {DurableEvent, DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent} from "../data";
 
 export interface BackgroundScheduleOptions {
     cron?: string;
-    event?: ScheduledEventData;
+    event?: DurableEventData;
 }
 
 export async function backgroundSchedule(options: BackgroundScheduleOptions) {
@@ -18,15 +18,15 @@ export async function backgroundSchedule(options: BackgroundScheduleOptions) {
         matching.map(options => () => dispatchEvent(event, options))
     );
 
-    async function dispatchEvent(event: ScheduledEventData, { handler }: ScheduledOptions) {
+    async function dispatchEvent(event: DurableEventData, { handler }: ScheduledOptions) {
         if (event.eventId) {
-            const schedule = await getEvent(event);
+            const schedule = await getDurableEvent(event);
             if (!isMatchingSchedule(schedule)) {
                 return;
             }
             await dispatchScheduledEvent(schedule);
         } else if (event.type !== "background") {
-            const schedules = await listEvents(event);
+            const schedules = await listDurableEvents(event);
             await limitedHandlers(
                 schedules
                     .filter(isMatchingSchedule)
@@ -36,17 +36,17 @@ export async function backgroundSchedule(options: BackgroundScheduleOptions) {
             await dispatchEventToHandler(event);
         }
 
-        async function dispatchScheduledEvent(event: ScheduledEvent) {
+        async function dispatchScheduledEvent(event: DurableEvent) {
             await dispatchEventToHandler(event);
-            await deleteEvent(event);
+            await deleteDurableEvent(event);
         }
 
-        async function dispatchEventToHandler(event: ScheduledEventData) {
+        async function dispatchEventToHandler(event: DurableEventData) {
             await handler(event);
         }
     }
 
-    function isMatchingSchedule(event?: ScheduledEventData) {
+    function isMatchingSchedule(event?: DurableEventData) {
         if (!event) return false;
         if (!event.schedule) return true;
         const { before, after } = event.schedule;
@@ -67,7 +67,7 @@ export async function backgroundSchedule(options: BackgroundScheduleOptions) {
         return true;
     }
 
-    function getEventOption(): ScheduledEventData {
+    function getEventOption(): DurableEventData {
         if (options.event) {
             return options.event;
         }

@@ -1,5 +1,5 @@
-import {addEvent, ScheduledEventData} from "../data";
+import {addDurableEvent, DurableEventData} from "../data";
 
-export async function dispatchEvent(event: ScheduledEventData) {
-    return addEvent(event);
+export async function dispatchEvent(event: DurableEventData) {
+    return addDurableEvent(event);
 }

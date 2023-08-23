@@ -1,23 +1,21 @@
 
-export interface ScheduledEventSchedule {
+export interface DurableEventSchedule {
     // For cases where we want an event triggered after a specific time
     after?: string | number;
     // For cases where we want an event triggered before a specific time
     before?: string | number;
 }
 
-export interface ScheduledEventTypeData {
+export interface DurableEventTypeData {
     type: string;
 }
 
-export interface ScheduledEventData extends Record<string, unknown>, ScheduledEventTypeData {
+export interface DurableEventData extends Record<string, unknown>, DurableEventTypeData {
     timeStamp?: number;
     eventId?: string;
-    schedule?: ScheduledEventSchedule
+    schedule?: DurableEventSchedule
 }
 
-
-
-export interface ScheduledEvent extends ScheduledEventData {
+export interface DurableEvent extends DurableEventData {
     eventId: string;
 }

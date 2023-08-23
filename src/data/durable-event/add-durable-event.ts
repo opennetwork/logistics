@@ -1,17 +1,17 @@
 import {v4} from "uuid";
-import {ScheduledEvent, ScheduledEventData} from "./types";
-import {getEventStore} from "./store";
+import {DurableEvent, DurableEventData} from "./types";
+import {getDurableEventStore} from "./store";
 
-export async function addEvent(event: ScheduledEventData) {
+export async function addDurableEvent(event: DurableEventData) {
     const createdAt = new Date().toISOString();
     const eventId = event.eventId || v4();
-    const scheduled: ScheduledEvent = {
+    const scheduled: DurableEvent = {
         timeStamp: Date.now(),
         createdAt,
         updatedAt: createdAt,
         eventId,
         ...event
     };
-    const store = getEventStore(scheduled);
+    const store = getDurableEventStore(scheduled);
     await store.set(eventId, scheduled);
 }

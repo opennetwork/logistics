@@ -3,7 +3,7 @@ import {v4} from "uuid";
 import {spy} from "sinon";
 import {backgroundSchedule} from "../../schedule/background";
 import {ok} from "../../is";
-import {getEvent} from "../../data";
+import {getDurableEvent} from "../../data";
 
 {
     const cronKey = v4();
@@ -81,11 +81,11 @@ import {getEvent} from "../../data";
         eventId,
         value
     };
-    ok(!await getEvent(initial));
+    ok(!await getDurableEvent(initial));
 
     await dispatchEvent(initial);
 
-    ok(await getEvent(initial));
+    ok(await getDurableEvent(initial));
 
     const remove = on(type, fn);
 
@@ -105,6 +105,6 @@ import {getEvent} from "../../data";
     ok(event.eventId === eventId);
     ok(event.value === value);
 
-    const schedule = await getEvent(event);
+    const schedule = await getDurableEvent(event);
     ok(!schedule);
 }
