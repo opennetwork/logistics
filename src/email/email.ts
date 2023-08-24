@@ -1,5 +1,7 @@
 import {ok} from "../is";
 import {Transporter, SendMailOptions} from "nodemailer";
+import {DurableEventData, DurableEventSchedule} from "../data";
+import {on, dispatchEvent} from "../schedule";
 
 export const {
     MAIL_MAILER,
@@ -17,13 +19,26 @@ export const {
     MAIL_REPLY_TO
 } = process.env;
 
-export async function email(options: SendMailOptions) {
+export interface EmailOptions extends SendMailOptions {
+    schedule?: DurableEventSchedule;
+}
+
+export async function email(options: EmailOptions) {
+    const { ...emailOptions, schedule } = options;
+    if (schedule) {
+        const event: ScheduledEmailEvent = {
+            type: SCHEDULED_EMAIL,
+            email: emailOptions,
+            schedule
+        };
+        return dispatchEvent(event);
+    }
     const transport = await getNodemailerTransport();
     return transport.sendMail({
         from: MAIL_FROM,
         sender: MAIL_SENDER,
         replyTo: MAIL_REPLY_TO,
-        ...options
+        ...emailOptions
     });
 }
 
@@ -69,3 +84,15 @@ export async function getNodemailerTransport(): Promise<Transporter<unknown>> {
         });
     }
 }
+
+const SCHEDULED_EMAIL = "email:scheduled" as const;
+type ScheduleEmailType = typeof SCHEDULED_EMAIL;
+
+export interface ScheduledEmailEvent extends DurableEventData {
+    type: ScheduleEmailType;
+    email: SendMailOptions;
+}
+
+export const removeEmailScheduledFunction = on(SCHEDULED_EMAIL, (event: ScheduledEmailEvent) => {
+    return email(event.email);
+});
