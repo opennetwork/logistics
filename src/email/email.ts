@@ -24,7 +24,7 @@ export interface EmailOptions extends SendMailOptions {
 }
 
 export async function email(options: EmailOptions) {
-    const { ...emailOptions, schedule } = options;
+    const { schedule, ...emailOptions } = options;
     if (schedule) {
         const event: ScheduledEmailEvent = {
             type: SCHEDULED_EMAIL,
@@ -86,13 +86,13 @@ export async function getNodemailerTransport(): Promise<Transporter<unknown>> {
 }
 
 const SCHEDULED_EMAIL = "email:scheduled" as const;
-type ScheduleEmailType = typeof SCHEDULED_EMAIL;
+type ScheduleEmailEventType = typeof SCHEDULED_EMAIL;
 
 export interface ScheduledEmailEvent extends DurableEventData {
-    type: ScheduleEmailType;
+    type: ScheduleEmailEventType;
     email: SendMailOptions;
 }
 
-export const removeEmailScheduledFunction = on(SCHEDULED_EMAIL, (event: ScheduledEmailEvent) => {
-    return email(event.email);
+export const removeEmailScheduledFunction = on(SCHEDULED_EMAIL, async (event: ScheduledEmailEvent) => {
+    await email(event.email);
 });

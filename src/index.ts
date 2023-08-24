@@ -11,3 +11,4 @@ export * from "./remote";
 export * from "./is";
 export * from "./email";
 export * from "./schedule";
+export * from "./virtual-events";

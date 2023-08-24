@@ -11,6 +11,7 @@ import type {MembershipViewComponentConfig} from "../react/server/paths/membersh
 import type {MembershipStatusConfig} from "../data/membership/membership-status";
 import {SeedConfig} from "../data";
 import {ScheduledConfig} from "../schedule/schedule";
+import {VirtualEventConfig} from "../virtual-events/virtual";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -30,7 +31,8 @@ export interface Config extends
     MembershipViewComponentConfig,
     MembershipStatusConfig,
     SeedConfig,
-    ScheduledConfig {
+    ScheduledConfig,
+    VirtualEventConfig {
     name: string;
     version: string;
 }
