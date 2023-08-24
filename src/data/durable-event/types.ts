@@ -7,14 +7,19 @@ export interface DurableEventSchedule {
     immediate?: boolean;
 }
 
-export interface DurableEventTypeData {
+export interface UnknownEvent {
+    type: unknown;
+}
+
+export interface DurableEventTypeData extends UnknownEvent {
     type: string;
 }
 
 export interface DurableEventData extends Record<string, unknown>, DurableEventTypeData {
     timeStamp?: number;
     eventId?: string;
-    schedule?: DurableEventSchedule
+    schedule?: DurableEventSchedule;
+    retain?: boolean;
 }
 
 export interface DurableEvent extends DurableEventData {

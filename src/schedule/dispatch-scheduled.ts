@@ -37,7 +37,9 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
 
         async function dispatchScheduledEvent(event: DurableEvent) {
             await dispatchEventToHandler(event);
-            await deleteDurableEvent(event);
+            if (!event.retain) {
+                await deleteDurableEvent(event);
+            }
         }
 
         async function dispatchEventToHandler(event: DurableEventData) {
