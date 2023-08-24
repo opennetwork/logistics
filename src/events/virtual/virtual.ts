@@ -1,7 +1,7 @@
-import {DurableEventData} from "../data";
-import {getConfig} from "../config";
+import {DurableEventData} from "../../data";
+import {getConfig} from "../../config";
 import {union} from "@virtualstate/union";
-import {isAsyncIterable, isIterable, isPromise, ok} from "../is";
+import {isAsyncIterable, isIterable, isPromise, ok} from "../../is";
 import {v4} from "uuid";
 
 type EventLike = DurableEventData | Iterable<DurableEventData>;

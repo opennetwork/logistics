@@ -1,7 +1,7 @@
 import {on} from "../schedule";
 import {dispatchScheduledDurableEvents} from "../schedule/dispatch-scheduled";
-import {DurableEventData, UnknownEvent} from "../data";
-import {isLike} from "../is";
+import {DurableEventData, UnknownEvent} from "../../data";
+import {isLike} from "../../is";
 
 const DISPATCH = "dispatch" as const;
 type DispatchEventType = typeof DISPATCH;

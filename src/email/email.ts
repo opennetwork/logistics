@@ -1,7 +1,7 @@
 import {ok} from "../is";
 import {Transporter, SendMailOptions} from "nodemailer";
 import {DurableEventData, DurableEventSchedule} from "../data";
-import {on, dispatchEvent} from "../schedule";
+import {on, dispatchEvent} from "../events";
 
 export const {
     MAIL_MAILER,

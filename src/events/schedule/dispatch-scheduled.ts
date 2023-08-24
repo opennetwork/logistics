@@ -1,7 +1,7 @@
 import {getScheduledFunctions, ScheduledFunctionOptions, ScheduledOptions} from "./schedule";
 
-import {DurableEvent, DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent} from "../data";
-import {limited} from "../limited";
+import {DurableEvent, DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent} from "../../data";
+import {limited} from "../../limited";
 
 export interface BackgroundScheduleOptions extends ScheduledFunctionOptions {
 

@@ -4,7 +4,7 @@ import {
     seed,
 } from "../data";
 import {isLike, isNumberString} from "../is";
-import type {BackgroundScheduleOptions} from "../schedule/dispatch-scheduled";
+import type {BackgroundScheduleOptions} from "../events/schedule/dispatch-scheduled";
 
 export interface BackgroundInput extends Record<string, unknown> {
     quiet?: boolean;
@@ -95,6 +95,6 @@ async function backgroundScheduleWithOptions(input: BackgroundInput) {
             }
         }
     }
-    const { dispatchScheduledDurableEvents } = await import("../schedule/dispatch-scheduled");
+    const { dispatchScheduledDurableEvents } = await import("../events/schedule/dispatch-scheduled");
     return dispatchScheduledDurableEvents(options);
 }

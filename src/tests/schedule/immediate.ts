@@ -1,6 +1,6 @@
 import {v4} from "uuid";
 import {spy} from "sinon";
-import {dispatchEvent, on} from "../../schedule";
+import {dispatchEvent, on} from "../../events/schedule";
 import {ok} from "../../is";
 import {getDurableEvent} from "../../data";
 import {withConfig} from "../../config";

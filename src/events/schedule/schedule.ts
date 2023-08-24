@@ -1,5 +1,5 @@
-import {DurableEventData} from "../data";
-import {getConfig} from "../config";
+import {DurableEventData} from "../../data";
+import {getConfig} from "../../config";
 
 export interface ScheduledFn {
     (event: DurableEventData): Promise<void> | void;

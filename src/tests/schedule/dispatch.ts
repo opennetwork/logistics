@@ -1,7 +1,7 @@
-import {cron, dispatchEvent, on} from "../../schedule";
+import {cron, dispatchEvent, on} from "../../events/schedule";
 import {v4} from "uuid";
 import {spy} from "sinon";
-import {dispatchScheduledDurableEvents} from "../../schedule/dispatch-scheduled";
+import {dispatchScheduledDurableEvents} from "../../events/schedule/dispatch-scheduled";
 import {ok} from "../../is";
 import {getDurableEvent} from "../../data";
 

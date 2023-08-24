@@ -1,6 +1,6 @@
 import { generateVirtualEvents } from "./virtual";
 import {on} from "../schedule";
-import {limited} from "../limited";
+import {limited} from "../../limited";
 import {dispatchScheduledDurableEvents} from "../schedule/dispatch-scheduled";
 
 const VIRTUAL = "virtual" as const;
