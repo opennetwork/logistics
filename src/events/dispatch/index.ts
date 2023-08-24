@@ -6,7 +6,7 @@ import {isLike} from "../../is";
 const DISPATCH = "dispatch" as const;
 type DispatchEventType = typeof DISPATCH;
 
-export interface DispatchEvent {
+export interface DispatchEvent extends DurableEventData {
     type: DispatchEventType;
     dispatch: DurableEventData;
 }
