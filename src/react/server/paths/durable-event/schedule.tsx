@@ -52,14 +52,10 @@ export async function submit(request: FastifyRequest) {
         ...data.dispatch
     }
     if (data.data) {
-        try {
-            const parsed = JSON.parse(data.data);
-            dispatching = {
-                ...parsed,
-                ...dispatching
-            }
-        } catch {
-
+        const parsed = JSON.parse(data.data);
+        dispatching = {
+            ...parsed,
+            ...dispatching
         }
     }
     let schedule: DurableEventSchedule;
@@ -81,7 +77,8 @@ export async function submit(request: FastifyRequest) {
     const event = await dispatchEvent({
         type: "dispatch",
         dispatch: dispatching,
-        schedule
+        schedule,
+        retain: !!data.retain
     });
     console.log({ event });
     return { success: true, event };

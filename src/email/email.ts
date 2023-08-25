@@ -94,5 +94,7 @@ export interface ScheduledEmailEvent extends DurableEventData {
 }
 
 export const removeEmailScheduledFunction = on(EMAIL, async (event: ScheduledEmailEvent) => {
-    await email(event.email);
+    if (event.email) {
+        await email(event.email);
+    }
 });

@@ -13,10 +13,10 @@ export interface DispatchEvent extends DurableEventData {
 }
 
 export function isDispatchEvent(event?: UnknownEvent): event is DispatchEvent {
-    return (
+    return !!(
         isLike<Partial<DispatchEvent>>(event) &&
         event.type === "dispatch" &&
-        !!event.dispatch
+        event.dispatch?.type
     );
 }
 

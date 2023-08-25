@@ -1,7 +1,9 @@
 import {useData, useInput} from "../../data";
-import {listDurableEvents} from "../../../../data";
+import {getDurableEvent, listDurableEvents} from "../../../../data";
 import {DispatchEvent} from "../../../../events";
 import {path as createPath} from "./schedule";
+import {FastifyRequest} from "fastify";
+import {dispatchScheduledDurableEvents} from "../../../../events/schedule/dispatch-scheduled";
 
 export const path = "/durable-events";
 export const anonymous = true;
@@ -17,6 +19,28 @@ export async function handler() {
     }
 }
 
+interface Body {
+    dispatch?: string
+}
+
+interface Schema {
+    Body: Body
+}
+
+export async function submit(request: FastifyRequest<Schema>) {
+    if (request.body?.dispatch) {
+        const event = await getDurableEvent({
+            type: "dispatch",
+            eventId: request.body.dispatch
+        });
+        if (event) {
+            await dispatchScheduledDurableEvents({
+                event
+            });
+        }
+    }
+}
+
 export function ListDurableEvents() {
     const { events } = useInput<{ events: DispatchEvent[] }>();
     const { isUnauthenticated } = useData();
@@ -29,11 +53,12 @@ export function ListDurableEvents() {
                         <div>{event.dispatch.type}</div>
                         {
                             !isUnauthenticated ? (
-                                <div>
-                                    <a href={`${path}?dispatch=${event.eventId}`} className={LINK_CLASS}>
+                                <form action={path} method="POST">
+                                    <input type="hidden" name="dispatch" value={event.eventId} />
+                                    <button type="submit" className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white">
                                         Dispatch
-                                    </a>
-                                </div>
+                                    </button>
+                                </form>
                             ) : undefined
                         }
                     </div>
