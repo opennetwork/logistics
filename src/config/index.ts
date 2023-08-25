@@ -2,6 +2,8 @@ import {name, version} from "../package";
 import {createContext} from "../hooks/context";
 import {Config} from "./types";
 
+export * from "./env";
+
 export { Config } from "./types";
 
 const ConfigContext = createContext<Config>({

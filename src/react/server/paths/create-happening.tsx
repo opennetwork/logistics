@@ -10,6 +10,7 @@ import {
 } from "../../../data";
 import {ok} from "../../../is";
 import {DateTime} from "luxon";
+import {fromWebDate} from "./appointment/create";
 
 export const path = "/happening/create";
 
@@ -56,34 +57,22 @@ export async function submit(request: FastifyRequest) {
   };
 
   if (startAt) {
-    happeningData.startAt = fromWebDate(startAt);
+    happeningData.startAt = fromWebDate(startAt, timezone);
   }
   if (startedAt) {
-    happeningData.startedAt = fromWebDate(startedAt);
+    happeningData.startedAt = fromWebDate(startedAt, timezone);
   }
   if (endAt) {
-    happeningData.endAt = fromWebDate(endAt);
+    happeningData.endAt = fromWebDate(endAt, timezone);
   }
   if (endedAt) {
-    happeningData.endedAt = fromWebDate(endedAt);
+    happeningData.endedAt = fromWebDate(endedAt, timezone);
   }
 
   const happening = await addHappeningTree(happeningData);
   console.log({ happening });
 
   return { success: true, meta, happening };
-
-  function fromWebDate(value?: string) {
-    if (!value) return undefined;
-    let date;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      date = DateTime.fromFormat(value, "yyyy-MM-dd", { zone: timezone }).toJSDate();
-    } else {
-      date = DateTime.fromJSDate(new Date(value), { zone: timezone }).toJSDate();
-    }
-    // Use a consistent format
-    return date.toISOString()
-  }
 }
 
 export function CreateHappeningPage() {

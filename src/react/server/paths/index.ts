@@ -21,7 +21,8 @@ import {
   userCredential,
   appointment,
   membership,
-  service
+  service,
+  durableEvent
 } from "./views";
 
 export * as namedViews from "./views";
@@ -62,7 +63,9 @@ export const views: View[] = [
   membership.list,
   membership.view,
   service.create,
-  service.list
+  service.list,
+  durableEvent.create,
+  durableEvent.list,
 ];
 
 export * from "./types";

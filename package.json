@@ -38,6 +38,9 @@
       ],
       "authentication": [
         "./esnext/authentication/index.d.ts"
+      ],
+      "scheduled": [
+        "./esnext/scheduled.d.ts"
       ]
     }
   },
@@ -53,7 +56,8 @@
     "./vercel/serverless": "./esnext/listen/serverless.js",
     "./react/views": "./esnext/react/server/paths/index.js",
     "./react/views/*": "./esnext/react/server/paths/*/index.js",
-    "./authentication": "./esnext/authentication/index.js"
+    "./authentication": "./esnext/authentication/index.js",
+    "./scheduled": "./esnext/scheduled.js"
   },
   "repository": {
     "type": "git",

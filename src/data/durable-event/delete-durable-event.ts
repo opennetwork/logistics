@@ -1,7 +1,7 @@
 import {getDurableEventStore} from "./store";
-import {DurableEvent} from "./types";
+import {DurableEvent, DurableEventData} from "./types";
 
-export function deleteDurableEvent(event: DurableEvent) {
+export function deleteDurableEvent(event: DurableEventData) {
     const store = getDurableEventStore(event);
     if (!event.eventId) return undefined;
     return store.delete(event.eventId);

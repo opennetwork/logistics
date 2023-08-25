@@ -2,6 +2,7 @@ import {on} from "../schedule";
 import {dispatchScheduledDurableEvents} from "../schedule/dispatch-scheduled";
 import {DurableEventData, UnknownEvent} from "../../data";
 import {isLike} from "../../is";
+import {v4} from "uuid";
 
 const DISPATCH = "dispatch" as const;
 type DispatchEventType = typeof DISPATCH;
@@ -11,17 +12,32 @@ export interface DispatchEvent extends DurableEventData {
     dispatch: DurableEventData;
 }
 
-function isDispatchEvent(event?: UnknownEvent): event is DispatchEvent {
+export function isDispatchEvent(event?: UnknownEvent): event is DispatchEvent {
     return (
-        isLike<DispatchEvent>(event) &&
+        isLike<Partial<DispatchEvent>>(event) &&
+        event.type === "dispatch" &&
         !!event.dispatch
     );
 }
 
 export async function onDispatchEvent(event: UnknownEvent) {
     if (!isDispatchEvent(event)) return;
+    if (event.dispatch.type === "dispatch") {
+        // This is to prevent infinite loops
+        console.warn("dispatch cannot be used to dispatch additional events");
+        return;
+    }
+    const dispatching: DurableEventData = {
+        ...event.dispatch,
+        // Dispatched events are virtual, no need to delete, mark as retain
+        retain: true
+    };
+    // If the instance has no id, give it one
+    if (!dispatching.eventId) {
+        dispatching.eventId = v4();
+    }
     await dispatchScheduledDurableEvents({
-        event: event.dispatch
+        event: dispatching
     });
 }
 

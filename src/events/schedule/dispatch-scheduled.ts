@@ -1,6 +1,6 @@
 import {getScheduledFunctions, ScheduledFunctionOptions, ScheduledOptions} from "./schedule";
 
-import {DurableEvent, DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent} from "../../data";
+import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent} from "../../data";
 import {limited} from "../../limited";
 
 export interface BackgroundScheduleOptions extends ScheduledFunctionOptions {
@@ -19,7 +19,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
 
     async function dispatchEvent(event: DurableEventData, { handler }: ScheduledOptions) {
         if (event.eventId) {
-            const schedule = await getDurableEvent(event);
+            const schedule = (await getDurableEvent(event)) ?? event;
             if (!isMatchingSchedule(schedule)) {
                 return;
             }
@@ -35,7 +35,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
             await dispatchEventToHandler(event);
         }
 
-        async function dispatchScheduledEvent(event: DurableEvent) {
+        async function dispatchScheduledEvent(event: DurableEventData) {
             await dispatchEventToHandler(event);
             if (!event.retain) {
                 await deleteDurableEvent(event);

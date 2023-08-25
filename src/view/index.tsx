@@ -27,6 +27,7 @@ import {importmapPrefix, importmapRoot, importmapRootName, name, root} from "../
 import etag from "@fastify/etag";
 import files from "@fastify/static";
 import {FunctionComponent} from "react";
+import {ALLOW_ANONYMOUS_VIEWS, DEFAULT_TIMEZONE, ENABLE_CACHE} from "../config";
 
 export * from "./error";
 export * from "./types";
@@ -69,7 +70,6 @@ export async function styleRoutes(fastify: FastifyInstance) {
 }
 
 export async function viewRoutes(fastify: FastifyInstance) {
-  const { ALLOW_ANONYMOUS_VIEWS, ENABLE_CACHE, DEFAULT_TIMEZONE = "Pacific/Auckland" } = process.env;
 
   fastify.register(fileRoutes);
   fastify.register(styleRoutes);

@@ -8,6 +8,7 @@ import {
 } from "../../../../data";
 import {ok} from "../../../../is";
 import {DateTime} from "luxon";
+import {DEFAULT_TIMEZONE} from "../../../../config";
 
 export const path = "/appointment/create";
 
@@ -48,16 +49,16 @@ export async function submit(request: FastifyRequest) {
   };
 
   if (startAt) {
-    appointmentData.startAt = fromWebDate(startAt);
+    appointmentData.startAt = fromWebDate(startAt, timezone);
   }
   if (startedAt) {
-    appointmentData.startedAt = fromWebDate(startedAt);
+    appointmentData.startedAt = fromWebDate(startedAt, timezone);
   }
   if (endAt) {
-    appointmentData.endAt = fromWebDate(endAt);
+    appointmentData.endAt = fromWebDate(endAt, timezone);
   }
   if (endedAt) {
-    appointmentData.endedAt = fromWebDate(endedAt);
+    appointmentData.endedAt = fromWebDate(endedAt, timezone);
   }
 
   const appointment = await addAppointment(appointmentData);
@@ -65,17 +66,19 @@ export async function submit(request: FastifyRequest) {
 
   return { success: true, appointment };
 
-  function fromWebDate(value?: string) {
-    if (!value) return undefined;
-    let date;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      date = DateTime.fromFormat(value, "yyyy-MM-dd", { zone: timezone }).toJSDate();
-    } else {
-      date = DateTime.fromJSDate(new Date(value), { zone: timezone }).toJSDate();
-    }
-    // Use a consistent format
-    return date.toISOString()
+
+}
+
+export function fromWebDate(value?: string, timezone?: string) {
+  if (!value) return undefined;
+  let date;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    date = DateTime.fromFormat(value, "yyyy-MM-dd", { zone: timezone || DEFAULT_TIMEZONE }).toJSDate();
+  } else {
+    date = DateTime.fromJSDate(new Date(value), { zone: timezone || DEFAULT_TIMEZONE }).toJSDate();
   }
+  // Use a consistent format
+  return date.toISOString()
 }
 
 export function CreateAppointmentPage() {

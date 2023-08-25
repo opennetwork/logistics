@@ -1,4 +1,5 @@
 import "./references";
+import "./scheduled";
 
 export * from "./data";
 export * from "./config";
