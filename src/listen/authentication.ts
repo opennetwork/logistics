@@ -1,4 +1,4 @@
-import {isLike, ok} from "../is";
+import {isLike, isNumberString, ok} from "../is";
 import {
     AuthenticationState, DEFAULT_COOKIE_STATE_EXPIRES_MS,
     getAccessToken as getAccessTokenDocument,
@@ -24,9 +24,10 @@ import {
 } from "../authentication";
 import { preHandlerHookHandler } from "fastify/types/hooks";
 import accepts from "accepts";
-import { getOrigin } from "./config";
 import { logoutResponse } from "./auth/logout";
 import "@fastify/cookie";
+import "fastify-raw-body";
+import {verifyTokenWithKeys, VerifyWithKeyOptions} from "../authentication/token-signature";
 
 export const NOT_AUTHORIZED_ERROR_MESSAGE = "not authorized";
 export const NOT_ANONYMOUS_ERROR_MESSAGE = "not anonymous";
@@ -151,6 +152,7 @@ export function getFastifyAuth(fastify: FastifyInstance) {
 }
 
 export interface AuthInput extends FastifyAuthOptions {
+    internal?: boolean;
     unauthenticated?: boolean;
     /**
      * @deprecated use unauthenticated: true
@@ -167,17 +169,103 @@ export function isHTMLResponse(request: FastifyRequest) {
     return accept === "html";
 }
 
-export function authenticate(
+type TokenAuthOptions = Omit<VerifyWithKeyOptions, "token">;
+
+function getInternalTokenKeys() {
+    return Object.entries(process.env)
+        .filter(entry => /^INTERNAL_KEY_SECRET(_\d+)?$/.test(entry[0]))
+        .map(entry => entry[1]);
+}
+
+function createVerifyTokenAuth(options: TokenAuthOptions): FastifyAuthFunction {
+    return async (request) => {
+        const token = getAccessToken(request);
+        await verifyWithToken(options, token);
+    }
+}
+
+async function verifyWithToken(options: TokenAuthOptions, token?: string) {
+    ok(token, NOT_AUTHORIZED_ERROR_MESSAGE);
+    const verified = await verifyTokenWithKeys({
+        ...options,
+        token
+    });
+    ok(verified, NOT_AUTHORIZED_ERROR_MESSAGE);
+}
+
+function createUpstashSignatureAuth(): FastifyAuthFunction {
+    const {
+        QSTASH_URL,
+        QSTASH_CURRENT_SIGNING_KEY,
+        QSTASH_NEXT_SIGNING_KEY,
+        QSTASH_CLOCK_TOLERANCE,
+        QSTASH_ISSUER,
+        QSTASH_SUBJECT
+    } = process.env;
+    ok(QSTASH_CURRENT_SIGNING_KEY, "Expected QSTASH_CURRENT_SIGNING_KEY");
+    ok(QSTASH_NEXT_SIGNING_KEY, "Expected QSTASH_NEXT_SIGNING_KEY");
+    const clockTolerance = isNumberString(QSTASH_CLOCK_TOLERANCE) ? +QSTASH_CLOCK_TOLERANCE : 0;
+    const options: TokenAuthOptions = {
+        keys: [
+            QSTASH_CURRENT_SIGNING_KEY,
+            QSTASH_NEXT_SIGNING_KEY,
+        ],
+        url: QSTASH_URL,
+        clockTolerance,
+        issuer: QSTASH_ISSUER || "Upstash",
+        subject: QSTASH_SUBJECT,
+    }
+    return async (request) => {
+        const upstashSignature = request.headers["upstash-signature"];
+        ok(typeof upstashSignature === "string", NOT_AUTHORIZED_ERROR_MESSAGE)
+        await verifyWithToken({
+            ...options,
+            body: request.rawBody ?? request.body
+        }, upstashSignature);
+    }
+}
+
+function isUnauthenticatedOptions(options?: AuthInput) {
+    return !!(options?.anonymous || options?.unauthenticated);
+}
+
+export function authenticateSignature(
     fastify: FastifyInstance,
     options?: AuthInput
-): preHandlerHookHandler {
+) {
     const methods: FastifyAuthFunction[] = [
-        createCookieAuth(fastify),
-        accessToken,
-        getFastifyVerifyBearerAuth(fastify),
+        createUpstashSignatureAuth()
     ];
+    return createAuthHandler(
+        fastify,
+        methods,
+        options
+    );
+}
 
-    if (options?.anonymous || options?.unauthenticated) {
+function createInternalAuth(keys: string[]) {
+    const {
+        INTERNAL_KEY_ISSUER,
+        INTERNAL_KEY_SUBJECT
+    } = process.env;
+    return createVerifyTokenAuth({
+        keys,
+        issuer: INTERNAL_KEY_ISSUER,
+        subject: INTERNAL_KEY_SUBJECT
+    });
+}
+
+function createAuthHandler(fastify: FastifyInstance, methods: FastifyAuthFunction[], options?: AuthInput): preHandlerHookHandler {
+    if (options?.internal) {
+        const keys = getInternalTokenKeys();
+        if (keys.length) {
+            methods.push(createInternalAuth(keys))
+        } else {
+            console.warn("Warning, internal key functionality available but no INTERNAL_KEY_SECRET given");
+        }
+    }
+
+    if (isUnauthenticatedOptions(options)) {
         methods.unshift(allowUnauthenticated);
     }
 
@@ -210,6 +298,23 @@ export function authenticate(
             });
         });
     };
+}
+
+export function authenticate(
+    fastify: FastifyInstance,
+    options?: AuthInput
+): preHandlerHookHandler {
+    const methods: FastifyAuthFunction[] = [
+        createCookieAuth(fastify),
+        accessToken,
+        getFastifyVerifyBearerAuth(fastify),
+    ];
+
+    return createAuthHandler(
+        fastify,
+        methods,
+        options
+    );
 }
 
 export function setAuthenticationStateCookie(response: FastifyReply, { stateId, expiresAt }: AuthenticationState) {

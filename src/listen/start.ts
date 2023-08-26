@@ -32,6 +32,7 @@ import { errorHandler } from "../view/error";
 import etag from "@fastify/etag";
 import { parseStringFields } from "./body-parser";
 import {Config, getConfig, setConfig, withConfig} from "../config";
+import rawBody from "fastify-raw-body";
 
 const { pathname } = new URL(import.meta.url);
 const directory = dirname(pathname);
@@ -49,18 +50,21 @@ export async function createFastifyApplication() {
 
     const register: (...args: unknown[]) => void = app.register.bind(fastify);
 
-    register(cookie, {
+    await register(cookie, {
         secret: COOKIE_SECRET || name,
         hook: "onRequest",
         parseOptions: {},
     });
+    await register(rawBody, {
+        global: false
+    });
 
-    register(multipart);
-    register(formbody, {
+    await register(multipart);
+    await register(formbody, {
         parser: parseStringFields,
     });
 
-    register(helmet, { contentSecurityPolicy: false });
+    await register(helmet, { contentSecurityPolicy: false });
 
     app.addHook("preValidation", async (request, response) => {
         if (request.headers.apikey && !request.headers.authorization) {
@@ -68,7 +72,7 @@ export async function createFastifyApplication() {
         }
     });
 
-    register(fastifyRequestContext, {
+    await register(fastifyRequestContext, {
         hook: "preValidation",
         defaultStoreValues: {},
     });
@@ -86,16 +90,16 @@ export async function createFastifyApplication() {
         response.header("X-Source-Commit-At", commitAt);
     });
 
-    register(authPlugin);
-    register(bearerAuthPlugin, {
+    await register(authPlugin);
+    await register(bearerAuthPlugin, {
         keys: new Set<string>(),
         auth: bearerAuthentication,
         addHook: false,
     });
     app.setErrorHandler(errorHandler);
 
-    register(blippPlugin);
-    register(corsPlugin);
+    await register(blippPlugin);
+    await register(corsPlugin);
 
     await setupSwagger(app);
 
@@ -105,7 +109,7 @@ export async function createFastifyApplication() {
         await register(providedRoutes);
     }
 
-    register(routes);
+    await register(routes);
 
     return app;
 }
