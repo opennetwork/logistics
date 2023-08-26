@@ -28,38 +28,31 @@ function isQueryInput(input: BackgroundInput): input is QueryInput {
 
 export async function background(input: BackgroundInput | QueryInput = {}) {
 
-    const backgroundId = getBackgroundIdentifier();
-
-    if (!input.quiet) {
-        console.log(`Running background tasks for ${backgroundId}`, input);
-    }
-
-    const complete = await getIdentifiedBackground(backgroundId);
-
-    try {
-        if (isQueryInput(input) && input.query.seed) {
+    if (isQueryInput(input) && input.query.seed) {
+        const backgroundId = getBackgroundIdentifier();
+        if (!input.quiet) {
+            console.log(`Running background tasks for ${backgroundId}`, input);
+        }
+        const complete = await getIdentifiedBackground(backgroundId);
+        try {
             await seed();
-        } else {
-            await backgroundScheduleWithOptions(input);
+        } finally {
+            // Complete no matter what, but allow above to throw
+            await complete();
         }
 
         if (!input.quiet) {
             console.log(`Completed background tasks for ${backgroundId}`, input);
         }
-    } finally {
-        // Complete no matter what, but allow above to throw
-        await complete();
+    } else {
+        // Has its own locking
+        await backgroundScheduleWithOptions(input);
     }
 
     function getBackgroundIdentifier() {
         if (isQueryInput(input)) {
             if (input.query.cron) {
                 return `background:cron:${input.query.cron}`;
-            }
-            if (input.query.event) {
-                // Note this is locking per event type
-                // This is expected here
-                return `background:event:${input.query.event}`;
             }
         }
         return BACKGROUND_STATIC;

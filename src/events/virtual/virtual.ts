@@ -32,6 +32,10 @@ export async function *generateVirtualEvents() {
                 // Provide it or have it mutated...
                 event.eventId = v4();
             }
+            if (!event.virtual) {
+                // Provide it or have it mutated...
+                event.virtual = true;
+            }
         }
         yield yieldingEvents;
         for (const event of yieldingEvents) {

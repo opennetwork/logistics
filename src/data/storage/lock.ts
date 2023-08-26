@@ -32,7 +32,6 @@ export function createFakeLock(): UnlockFn {
 }
 
 export function getGlobalLock(): LockFn | undefined {
-  if (isRedisMemory()) return undefined;
   if (!isRedis()) return undefined;
   const url = getRedisUrl();
   const existing = GLOBAL_LOCKS.get(url);

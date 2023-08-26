@@ -2,8 +2,12 @@ import {getOrigin} from "../../listen";
 import {BackgroundQuery} from "../../background";
 import {DurableEventData, getDurableEventStore} from "../../data";
 import {ok} from "../../is";
+import {TESTING} from "../../config";
 
 export function isQStash() {
+    if (TESTING && !process.env.QSTASH_TESTING) {
+        return false;
+    }
     return !!process.env.QSTASH_TOKEN;
 }
 

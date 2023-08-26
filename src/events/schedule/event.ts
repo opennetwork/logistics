@@ -1,13 +1,24 @@
-import {addDurableEvent, deleteDurableEvent, DurableEventData} from "../../data";
+import {addDurableEvent, deleteDurableEvent, DurableEventData, getDurableEvent} from "../../data";
 import {deleteDispatchQStash, dispatchQStash, isQStash} from "./qstash";
 
 const {
     DURABLE_EVENTS_IMMEDIATE
 } = process.env;
 
+async function hasDurableEvent(event: DurableEventData) {
+    const existing = await getDurableEvent(event);
+    return !!existing;
+}
+
 export async function dispatchEvent(event: DurableEventData) {
 
-    const durable = event.eventId ? event : await addDurableEvent(event);
+    let durable = event;
+
+    if (!event.virtual) {
+        if (!event.eventId || !(await hasDurableEvent(event))) {
+            durable = await addDurableEvent(event);
+        }
+    }
 
     if (isQStash()) {
         await dispatchQStash(durable);

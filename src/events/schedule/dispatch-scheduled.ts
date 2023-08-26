@@ -1,7 +1,8 @@
 import {getScheduledFunctions, ScheduledFunctionOptions, ScheduledOptions} from "./schedule";
 
-import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent} from "../../data";
+import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent, lock} from "../../data";
 import {limited} from "../../limited";
+import {ok} from "../../is";
 
 export interface BackgroundScheduleOptions extends ScheduledFunctionOptions {
 
@@ -36,9 +37,16 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
         }
 
         async function dispatchScheduledEvent(event: DurableEventData) {
-            await dispatchEventToHandler(event);
-            if (!event.retain) {
-                await deleteDurableEvent(event);
+            ok(event.eventId, "Expected dispatching event to have an id");
+            const done = await lock(`dispatch:event:${event.type}:${event.eventId}`);
+            // TODO detect if this event tries to dispatch again
+            try {
+                await dispatchEventToHandler(event);
+                if (!event.retain) {
+                    await deleteDurableEvent(event);
+                }
+            } finally {
+                await done();
             }
         }
 

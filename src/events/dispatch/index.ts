@@ -30,7 +30,8 @@ export async function onDispatchEvent(event: UnknownEvent) {
     const dispatching: DurableEventData = {
         ...event.dispatch,
         // Dispatched events are virtual, no need to delete, mark as retain
-        retain: true
+        retain: true,
+        virtual: true,
     };
     // If the instance has no id, give it one
     if (!dispatching.eventId) {
