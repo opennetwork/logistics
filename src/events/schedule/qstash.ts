@@ -1,18 +1,34 @@
 import {getOrigin} from "../../listen";
 import {BackgroundQuery} from "../../background";
-import {DurableEventSchedule} from "../../data";
+import {DurableEventData, getDurableEventStore} from "../../data";
 import {ok} from "../../is";
-
-export interface DispatchQStashOptions {
-    background: BackgroundQuery;
-    schedule?: DurableEventSchedule;
-}
 
 export function isQStash() {
     return !!process.env.QSTASH_TOKEN;
 }
 
-export async function dispatchQStash({ schedule, background }: DispatchQStashOptions) {
+const SCHEDULE_KEY = "schedule";
+
+interface ScheduleMeta {
+    messageId: string;
+    scheduleId?: string;
+    createdAt: string;
+}
+
+
+function getMetaStore(event: DurableEventData) {
+    ok(event.eventId, "Expected eventId");
+    return getDurableEventStore(event).meta<ScheduleMeta>(event.eventId);
+}
+
+export async function dispatchQStash(event: DurableEventData) {
+    const store = getMetaStore(event);
+
+    if (await store.has(SCHEDULE_KEY)) {
+        await deleteDispatchQStash(event);
+    }
+
+    const { schedule } = event;
     const {
         QSTASH_URL,
         QSTASH_EVENT_URL,
@@ -28,7 +44,7 @@ export async function dispatchQStash({ schedule, background }: DispatchQStashOpt
     );
     const baseUrl = new URL(QSTASH_URL || "https://qstash.upstash.io/v1/publish/");
     if (!baseUrl.pathname.endsWith("/")) {
-        baseUrl.pathname = "/";
+        baseUrl.pathname = `${baseUrl.pathname}/`;
     }
     const url = new URL(
         `${baseUrl.pathname}${targetUrl.toString()}`,
@@ -62,6 +78,11 @@ export async function dispatchQStash({ schedule, background }: DispatchQStashOpt
         // Allows for a default delay
         headers.set("Upstash-Delay", QSTASH_DELAY);
     }
+    const background: BackgroundQuery = {
+        event: event.type,
+        eventId: event.eventId,
+        eventTimeStamp: event.timeStamp
+    };
     const response = await fetch(
         url.toString(),
         {
@@ -71,7 +92,39 @@ export async function dispatchQStash({ schedule, background }: DispatchQStashOpt
         }
     );
     ok(response.ok, "Could not dispatch QStash message");
-    const { messageId }: { messageId: string } = await response.json();
-    console.log(`Dispatched QStash ${messageId}`)
-    return { messageId };
+    const { messageId, scheduleId }: { messageId: string, scheduleId?: string } = await response.json();
+    console.log(`Dispatched QStash ${messageId} ${scheduleId || "No Schedule"}`)
+    return { messageId, scheduleId };
+}
+
+export async function deleteDispatchQStash(event: DurableEventData) {
+    const store = getMetaStore(event);
+    const schedule = await store.get(SCHEDULE_KEY);
+    if (!schedule) {
+        return;
+    }
+    const {
+        QSTASH_URL,
+        QSTASH_MESSAGES_URL,
+        QSTASH_TOKEN
+    } = process.env;
+    ok(QSTASH_TOKEN, "Expected QSTASH_TOKEN");
+    const baseUrl = new URL(QSTASH_MESSAGES_URL || "/v1/messages/", QSTASH_URL || "https://qstash.upstash.io");
+    if (!baseUrl.pathname.endsWith("/")) {
+        baseUrl.pathname = `${baseUrl.pathname}/`;
+    }
+    const url = new URL(
+        `${baseUrl.pathname}${schedule.messageId}`,
+        baseUrl
+    );
+    const response = await fetch(
+        url.toString(),
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${QSTASH_TOKEN}`
+            }
+        }
+    )
+    ok(response.ok, "Could not delete dispatch QStash message");
 }
