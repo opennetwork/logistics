@@ -1,6 +1,6 @@
 import {useData, useInput} from "../../data";
 import {getDurableEvent, listDurableEvents} from "../../../../data";
-import {DispatchEvent} from "../../../../events";
+import {dispatchEvent, DispatchEvent} from "../../../../events";
 import {path as createPath} from "./schedule";
 import {FastifyRequest} from "fastify";
 import {dispatchScheduledDurableEvents} from "../../../../events/schedule/dispatch-scheduled";
@@ -34,9 +34,7 @@ export async function submit(request: FastifyRequest<Schema>) {
             eventId: request.body.dispatch
         });
         if (event) {
-            await dispatchScheduledDurableEvents({
-                event
-            });
+            await dispatchEvent(event);
         }
     }
 }

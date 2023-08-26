@@ -73,6 +73,9 @@ export async function submit(request: FastifyRequest) {
             schedule.timezone = data.schedule.timezone;
             schedule.before = fromWebDate(data.schedule.before, schedule.timezone);
         }
+        if (data.schedule.cron) {
+            schedule.cron = data.schedule.cron;
+        }
     }
     const event = await dispatchEvent({
         type: "dispatch",
@@ -174,8 +177,20 @@ export function ScheduleDurableEvent() {
                         defaultChecked={body?.retain ?? false}
                     />
                     <span className="flex flex-col ml-4">
-                        Repeat Event
+                        Retain Event After Dispatch
                     </span>
+                </label>
+                <label className={`${FORM_GROUP_CLASS} scheduled`}>
+                    <span className="text-gray-700">Repeat Event on Cron Schedule (<a href="https://crontab.guru/" target="_blank" className={LINK_CLASS}>crontab.guru</a>)</span>
+                    <input
+                        className={FORM_CLASS}
+                        type="text"
+                        name="schedule.cron"
+                        placeholder="Cron pattern (0 * * * *)"
+                        defaultValue={body?.type || ""}
+                    />
+                    <br />
+
                 </label>
                 <div className="flex flex-col">
                     <label className={FORM_GROUP_CLASS}>

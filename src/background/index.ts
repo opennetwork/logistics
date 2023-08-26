@@ -10,10 +10,10 @@ export interface BackgroundInput extends Record<string, unknown> {
     quiet?: boolean;
 }
 
-export interface BackgroundQuery extends Record<string, string> {
+export interface BackgroundQuery extends Record<string, unknown> {
     event?: string;
     eventId?: string;
-    eventTimeStamp?: string | `${number}`;
+    eventTimeStamp?: string | `${number}` | number;
     cron?: string;
     seed?: string;
 }

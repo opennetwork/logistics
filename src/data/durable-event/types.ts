@@ -6,6 +6,7 @@ export interface DurableEventSchedule {
     // For cases where we want an event triggered before a specific time
     before?: string;
     immediate?: boolean;
+    cron?: string;
 }
 
 export interface UnknownEvent {

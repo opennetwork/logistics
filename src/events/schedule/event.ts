@@ -1,4 +1,5 @@
 import {addDurableEvent, DurableEventData} from "../../data";
+import {dispatchQStash, isQStash} from "./qstash";
 
 const {
     DURABLE_EVENTS_IMMEDIATE
@@ -6,9 +7,18 @@ const {
 
 export async function dispatchEvent(event: DurableEventData) {
 
-    const durable = await addDurableEvent(event);
+    const durable = event.eventId ? event : await addDurableEvent(event);
 
-    if (DURABLE_EVENTS_IMMEDIATE || durable.schedule?.immediate) {
+    if (isQStash()) {
+        await dispatchQStash({
+            background: {
+                event: durable.type,
+                eventId: durable.eventId,
+                eventTimeStamp: durable.timeStamp
+            },
+            schedule: durable.schedule
+        })
+    } else if (DURABLE_EVENTS_IMMEDIATE || durable.schedule?.immediate) {
         const { background } = await import("../../background");
         // Note that background is locking, so if an event is already running
         // with the same type, it will wait until all prior immediate events are
