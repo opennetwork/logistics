@@ -39,10 +39,10 @@ export function getMediaPrefix() {
     function getWithTemplate(id: string, template?: string, prefix?: string) {
         if (template) {
             return template
-                .replaceAll("{partnerId}", partnerId)
-                .replaceAll("{userId}", userId)
-                .replaceAll("{organisationId}", organisationId)
-                .replaceAll("{id}", id);
+                .replaceAll(":partnerId", partnerId)
+                .replaceAll(":userId", userId)
+                .replaceAll(":organisationId", organisationId)
+                .replaceAll(":id", id);
         }
         return join(prefix, id);
     }
