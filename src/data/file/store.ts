@@ -16,11 +16,17 @@ export const NAMED_FILE_TYPE: FileType[] = [
 ];
 const FILE_NAMES: string[] = NAMED_FILE_TYPE;
 
-export function isNamedImportFileType(type: string): type is FileType & `${string}_import` {
+export function isNamedImportFileType(type?: string): type is FileType & `${string}_import` {
+  if (!type) {
+    return false;
+  }
   return type.endsWith("_import");
 }
 
-export function isNamedFileType(type: string): type is FileType {
+export function isNamedFileType(type?: string): type is FileType {
+  if (!type) {
+    return false;
+  }
   if (FILE_NAMES.includes(type)) {
     return true;
   }
@@ -39,9 +45,7 @@ export function getFileStore() {
   });
 }
 
-export function getNamedFileStore(name: string, prefix: string) {
-  ok(isNamedFileType(name), `Expected "${name}" to be one of "${NAMED_FILE_TYPE.join(", ")}"`);
-  ok(prefix);
+export function getNamedFileStore(name: string, prefix?: string) {
   return getKeyValueStore<File>(`${name}${NAMED_STORE_SUFFIX}`, {
     counter: false,
     prefix

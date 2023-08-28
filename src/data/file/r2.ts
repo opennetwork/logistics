@@ -149,6 +149,7 @@ export interface SignedUrlOptions extends RequestPresigningArguments {
     method?: "get" | "put" | "post" | string;
     extension?: string;
     key?: string;
+    url?: string;
     redirect?: string;
 }
 
@@ -183,20 +184,27 @@ export interface R2SignedURL {
 
 export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL> {
     const client = await getR2();
-    let { key, method, extension, redirect, ...signedUrlOptions } = options;
+    let { key, method, extension, redirect, url: givenUrl, ...signedUrlOptions } = options;
     if (!method) {
         method = "get";
     }
+    let bucket = R2_BUCKET;
     if (!key) {
-        let name = v4();
-        if (extension) {
-            // "Extension should be like ".png", same value returned by extname(name)
-            name = `${name}${extension}`;
+        if (givenUrl) {
+            const { pathname } = new URL(givenUrl);
+            // Pathname starts with a slash, we want to skip it
+            key = pathname.substring(1);
+        } else {
+            let name = v4();
+            if (extension) {
+                // "Extension should be like ".png", same value returned by extname(name)
+                name = `${name}${extension}`;
+            }
+            // Key information becomes encoded in the returned url as pathname
+            // no need to relay back this information
+            // see getR2URLFileData
+            key = joinMediaPrefix(name);
         }
-        // Key information becomes encoded in the returned url as pathname
-        // no need to relay back this information
-        // see getR2URLFileData
-        key = joinMediaPrefix(name);
     }
     if (method === "post") {
         console.warn("Warning POST upload is not supported by R2");
@@ -206,10 +214,10 @@ export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL>
             mime.getType(key) ?? undefined
         ) : undefined;
         const { url, fields } = await create(client, {
-            Bucket: R2_BUCKET,
+            Bucket: bucket,
             Key: key,
             Conditions: [
-                { bucket: R2_BUCKET },
+                { bucket: bucket },
                 ["starts-with", "$key", `${prefix}/`]
             ],
             Fields: {
@@ -226,7 +234,7 @@ export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL>
         const { PutObjectCommand, GetObjectCommand } = await import("@aws-sdk/client-s3");
         const Command = method.toLowerCase() === "put" ? PutObjectCommand : GetObjectCommand;
         const command = new Command({
-            Bucket: R2_BUCKET,
+            Bucket: bucket,
             Key: key
         });
         return {

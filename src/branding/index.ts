@@ -1,12 +1,37 @@
-import {DEFAULT_BRANDING_LOGO, getConfig, PUBLIC_PATH, BRANDING_LOGO} from "../config";
+import {DEFAULT_BRANDING_LOGO, getConfig, PUBLIC_PATH, BRANDING_LOGO, BRANDING_LOGO_REDIRECT} from "../config";
 import {root} from "../package";
-import {join} from "node:path";
+import {basename, join} from "node:path";
 import {stat} from "fs/promises";
 import {ok} from "../is";
 import {ROOT_PUBLIC_PATH} from "../view";
 import {readFile} from "node:fs/promises";
 import mime from "mime";
+import {File, FileData, getNamedFileStore, getSignedUrl, setFile} from "../data";
+import {save} from "../data/file/save";
 
+const BRANDING_FILE_KEY = "branding";
+const BRANDING_LOGO_KEY = "logo";
+
+function getBrandingFileStore() {
+    return getNamedFileStore(BRANDING_FILE_KEY);
+}
+
+interface LogoFile extends File {
+    logo?: unknown;
+}
+
+async function getLogoFile(logo: string): Promise<LogoFile> {
+    const store = getBrandingFileStore();
+    const existing = await store.get(BRANDING_LOGO_KEY);
+    if (existing) {
+        return existing;
+    }
+    return setFile({
+        fileName: basename(logo),
+        fileId: BRANDING_LOGO_KEY,
+        type: BRANDING_FILE_KEY
+    }, store);
+}
 
 function getPublicRoots() {
     const roots = [
@@ -21,22 +46,76 @@ function getPublicRoots() {
     return roots;
 }
 
-export async function getBrandingLogoBufferAndType() {
-    const logo = await getBrandingLogoLocation();
-    if (isFetchHTTP(logo)) {
-        return fetchHTTPBufferAndType(logo);
-    }
-    return getFileBufferAndType(logo);
+export async function deleteBrandingLogoFile() {
+    const store = getBrandingFileStore();
+    // TODO delete file behind the scenes too
+    await store.delete(BRANDING_FILE_KEY);
 }
+
+export async function getBrandingLogoBufferAndType() {
+    const logo = await getBrandingLogo();
+    // If we don't have a buffer it's because we expected a redirect to be used
+    // where a buffer isn't needed. But if a buffer is wanted, it can happen using a fetch.
+    if (logo.buffer) {
+        return logo;
+    }
+    ok(isFetchHTTP(logo.url), "Expected http or https if no buffer for logo");
+    return fetchHTTPBufferAndType(logo.url);
+}
+
+export async function getBrandingLogo() {
+    const logo = await getBrandingLogoLocation();
+
+    if (isFetchHTTP(logo) && BRANDING_LOGO_REDIRECT) {
+        return {
+            url: logo,
+            buffer: undefined,
+            contentType: undefined
+        }
+    }
+
+    const existing = await getLogoFile(logo);
+
+    if (existing.logo === logo && existing.url) {
+        return {
+            url: existing.signed ? existing.url : await getSignedUrl({
+                url: existing.url
+            }),
+            buffer: undefined,
+            contentType: existing.contentType
+        }
+    }
+
+    return await setFileLogo();
+
+    async function setFileLogo() {
+        const { buffer, contentType, url } = await fetchLogo();
+        await save({
+            ...existing,
+            contentType,
+            logo
+        }, buffer, getBrandingFileStore());
+        return { buffer, contentType, url }
+    }
+
+    async function fetchLogo() {
+        if (isFetchHTTP(logo)) {
+            return fetchHTTPBufferAndType(logo);
+        }
+        return getFileBufferAndType(logo);
+    }
+}
+
 
 async function fetchHTTPBufferAndType(url: string) {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const type = response.headers.get("Content-Type") || mime.getType(url);
+    const contentType = response.headers.get("Content-Type") || mime.getType(url);
     return {
+        url,
         buffer,
-        type
+        contentType
     }
 }
 
@@ -44,8 +123,9 @@ async function getFileBufferAndType(path: string) {
     const buffer = await readFile(path);
     // Could use blob here, but then we need to go from blob to buffer elsewhere
     return {
+        url: `file://${path}`,
         buffer,
-        type: mime.getType(path)
+        contentType: mime.getType(path)
     }
 }
 

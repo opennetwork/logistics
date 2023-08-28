@@ -12,3 +12,4 @@ export * from "./remote";
 export * from "./is";
 export * from "./email";
 export * from "./events";
+export * from "./branding";
