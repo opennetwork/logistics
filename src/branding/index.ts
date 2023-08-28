@@ -90,24 +90,13 @@ export async function getBrandingLogo() {
         }
     }
 
-    return await setFileLogo();
-
-    async function setFileLogo() {
-        const { buffer, contentType, url } = await fetchLogo();
-        await save({
-            ...existing,
-            contentType,
-            logo
-        }, buffer, getBrandingFileStore());
-        return { buffer, contentType, url }
-    }
-
-    async function fetchLogo() {
-        if (isFetchHTTP(logo)) {
-            return fetchHTTPBufferAndType(logo);
-        }
-        return getFileBufferAndType(logo);
-    }
+    const { buffer, contentType, url } = await fetchHTTPBufferAndType();
+    await save({
+        ...existing,
+        contentType,
+        logo
+    }, buffer, getBrandingFileStore());
+    return { buffer, contentType, url };
 }
 
 
