@@ -36,6 +36,8 @@ const { pathname } = new URL(import.meta.url);
 const DIRECTORY = dirname(pathname);
 export const REACT_CLIENT_DIRECTORY = join(DIRECTORY, "../react/client");
 
+export const ROOT_PUBLIC_PATH = join(root, "./public")
+
 export async function fileRoutes(fastify: FastifyInstance) {
   await fastify.register(etag);
   await fastify.addHook("onRequest", (request, response, done) => {
@@ -47,9 +49,8 @@ export async function fileRoutes(fastify: FastifyInstance) {
     decorateReply: !fastify.hasReplyDecorator("sendFile"),
     prefix: `/${name}/client`,
   });
-  const publicPath = join(root, "./public");
   await fastify.register(files, {
-    root: publicPath,
+    root: ROOT_PUBLIC_PATH,
     decorateReply: false,
     prefix: `/${name}/public`,
   });

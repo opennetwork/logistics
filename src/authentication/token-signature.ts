@@ -1,8 +1,9 @@
 // See https://github.com/upstash/sdk-qstash-ts/blob/main/pkg/receiver.ts
 // This is a version that doesn't rely on deno
-import {JwtPayload, verify} from "jsonwebtoken";
+import type {JwtPayload} from "jsonwebtoken";
 import {ok} from "../is";
 import {subtle} from "crypto";
+import JsonWebToken from "jsonwebtoken";
 
 export interface VerifyWithKeyOptions {
     token: string;
@@ -27,7 +28,7 @@ export async function verifyTokenWithKeys(req: VerifyWithKeyOptions) {
 
 export async function verifyTokenWithKey(req: VerifyWithKeyOptions, key: string) {
     try {
-        const verified = verify(req.token, key, {
+        const verified = JsonWebToken.verify(req.token, key, {
             issuer: req.issuer,
             subject: req.subject
         });

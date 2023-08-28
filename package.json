@@ -122,7 +122,7 @@
     "human-readable-ids": "^1.0.4",
     "ioredis": "^5.3.2",
     "json-schema-to-ts": "^2.8.0",
-    "jsonwebtoken": "^9.0.0",
+    "jsonwebtoken": "^9.0.1",
     "luxon": "^3.3.0",
     "nanoid": "^4.0.2",
     "nodemailer": "^6.9.3",

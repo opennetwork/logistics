@@ -35,4 +35,5 @@ export interface Config extends
     VirtualEventConfig {
     name: string;
     version: string;
+    root: string;
 }
