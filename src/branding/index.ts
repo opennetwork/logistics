@@ -22,16 +22,40 @@ function getPublicRoots() {
 }
 
 export async function getBrandingLogoBufferAndType() {
-    const logo = await getBrandingLogoFile();
-    const buffer = await readFile(logo.path);
-    // Could use blob here, but then we need to go from blob to buffer elsewhere
+    const logo = await getBrandingLogoLocation();
+    if (isFetchHTTP(logo)) {
+        return fetchHTTPBufferAndType(logo);
+    }
+    return getFileBufferAndType(logo);
+}
+
+async function fetchHTTPBufferAndType(url: string) {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const type = response.headers.get("Content-Type") || mime.getType(url);
     return {
         buffer,
-        type: mime.getType(logo.path)
+        type
     }
 }
 
-export async function getBrandingLogoFile() {
+async function getFileBufferAndType(path: string) {
+    const buffer = await readFile(path);
+    // Could use blob here, but then we need to go from blob to buffer elsewhere
+    return {
+        buffer,
+        type: mime.getType(path)
+    }
+}
+
+function isFetchHTTP(name?: string) {
+    if (!name) return false;
+    const { protocol } = new URL(name, "file://");
+    return protocol === "http:" || protocol === "https:";
+}
+
+export async function getBrandingLogoLocation() {
 
     const roots = getPublicRoots();
 
@@ -41,6 +65,9 @@ export async function getBrandingLogoFile() {
     return getPublicLogo();
 
     async function getBrandingLogo(logo: string) {
+        if (isFetchHTTP(logo)) {
+            return logo;
+        }
         const found = await getFirstFile(roots, [
             logo
         ]);
@@ -49,6 +76,9 @@ export async function getBrandingLogoFile() {
     }
 
     async function getPublicLogo() {
+        if (isFetchHTTP(DEFAULT_BRANDING_LOGO)) {
+            return DEFAULT_BRANDING_LOGO;
+        }
         const found = await getFirstFile(roots, [
             DEFAULT_BRANDING_LOGO,
             "logo.svg",
@@ -65,11 +95,7 @@ export async function getBrandingLogoFile() {
                 if (!name) continue;
                 const path = join(root, name);
                 if (await isFile(path)) {
-                    return {
-                        root,
-                        path,
-                        name,
-                    };
+                    return path;
                 }
             }
         }
