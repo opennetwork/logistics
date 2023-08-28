@@ -6,7 +6,7 @@ import {ok} from "../is";
 import {ROOT_PUBLIC_PATH} from "../view";
 import {readFile} from "node:fs/promises";
 import mime from "mime";
-import {File, FileData, getNamedFileStore, getSignedUrl, setFile} from "../data";
+import {File, FileData, getExpiresInSeconds, getNamedFileStore, getSignedUrl, setFile} from "../data";
 import {save} from "../data/file/save";
 
 const BRANDING_FILE_KEY = "branding";
@@ -63,7 +63,13 @@ export async function getBrandingLogoBufferAndType() {
     return fetchHTTPBufferAndType(logo.url);
 }
 
-export async function getBrandingLogo() {
+export interface BrandingFileInfo {
+    url: string;
+    buffer?: Buffer;
+    contentType?: string;
+}
+
+export async function getBrandingLogo(): Promise<BrandingFileInfo> {
     const logo = await getBrandingLogoLocation();
 
     if (!isFetchHTTP(logo)) {
@@ -81,26 +87,38 @@ export async function getBrandingLogo() {
     const existing = await getLogoFile(logo);
 
     if (existing.logo === logo && existing.url) {
-        return {
-            url: existing.signed ? existing.url : await getSignedUrl({
-                url: existing.url
-            }),
-            buffer: undefined,
-            contentType: existing.contentType
-        }
+        return getFileInfo(existing);
     }
 
-    const { buffer, contentType, url } = await fetchHTTPBufferAndType(logo);
-    await save({
+    const { buffer, contentType } = await fetchHTTPBufferAndType(logo);
+    const file = await save({
         ...existing,
         contentType,
         logo
     }, buffer, getBrandingFileStore());
-    return { buffer, contentType, url };
+    return getFileInfo(file);
+
+    async function getFileInfo(file: File): Promise<BrandingFileInfo> {
+        return {
+            url: await getFileUrl(file),
+            buffer: undefined,
+            contentType: file.contentType
+        }
+    }
+
+    async function getFileUrl(file: File) {
+        if (file.signed) {
+            return file.url;
+        }
+        return getSignedUrl({
+            url: file.url,
+            expiresIn: getExpiresInSeconds()
+        });
+    }
 }
 
 
-async function fetchHTTPBufferAndType(url: string) {
+async function fetchHTTPBufferAndType(url: string): Promise<BrandingFileInfo> {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -112,7 +130,7 @@ async function fetchHTTPBufferAndType(url: string) {
     }
 }
 
-async function getFileBufferAndType(path: string) {
+async function getFileBufferAndType(path: string): Promise<BrandingFileInfo> {
     const buffer = await readFile(path);
     // Could use blob here, but then we need to go from blob to buffer elsewhere
     return {
