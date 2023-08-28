@@ -60,7 +60,9 @@ export async function getBrandingLogoFile() {
 
     async function getFirstFile(paths: string[], names: string[]) {
         for (const root of paths) {
+            if (!root) continue;
             for (const name of names) {
+                if (!name) continue;
                 const path = join(root, name);
                 if (await isFile(path)) {
                     return {
