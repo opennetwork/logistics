@@ -66,7 +66,11 @@ export async function getBrandingLogoBufferAndType() {
 export async function getBrandingLogo() {
     const logo = await getBrandingLogoLocation();
 
-    if (isFetchHTTP(logo) && BRANDING_LOGO_REDIRECT) {
+    if (!isFetchHTTP(logo)) {
+        return getFileBufferAndType(logo);
+    }
+
+    if (BRANDING_LOGO_REDIRECT) {
         return {
             url: logo,
             buffer: undefined,
