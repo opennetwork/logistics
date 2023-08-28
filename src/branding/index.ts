@@ -90,7 +90,7 @@ export async function getBrandingLogo() {
         }
     }
 
-    const { buffer, contentType, url } = await fetchHTTPBufferAndType();
+    const { buffer, contentType, url } = await fetchHTTPBufferAndType(logo);
     await save({
         ...existing,
         contentType,
