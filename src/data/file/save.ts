@@ -4,7 +4,7 @@ import {saveToDisk} from "./disk";
 import {setFile} from "./set-file";
 import {KeyValueStore} from "../storage";
 
-export async function save(file: FileData, contents: Buffer | Blob, store?: KeyValueStore<File>): Promise<Partial<FileData>> {
+export async function save(file: FileData, contents: Buffer | Blob, store?: KeyValueStore<File>): Promise<File> {
     const update = await saveTo();
     return setFile({
         ...file,

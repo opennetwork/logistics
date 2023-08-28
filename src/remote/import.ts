@@ -6,7 +6,7 @@ import {
     ResolvedFilePart,
     File,
     saveToR2,
-    setFile, FileData, isNamedFileType, isR2, saveToDisk
+    setFile, FileData, isNamedFileType, isR2, saveToDisk, save
 } from "../data";
 import {isLike, ok} from "../is";
 import {addFile, isNamedImportFileType, RemoteFileSourceName} from "../data";
@@ -79,17 +79,7 @@ export async function importRemoteSource<T>(options: RemoteSourceOptions<T>) {
     try {
         const buffer = Buffer.from(await contents.arrayBuffer());
 
-        let update
-        if (isR2()) {
-            update = await saveToR2(file, buffer);
-        } else {
-            update = await saveToDisk(file, buffer);
-        }
-
-        file = await setFile({
-            ...file,
-            ...update
-        });
+        file = await save(file, buffer);
 
         let contentsParsed: unknown = contents;
 
