@@ -2,8 +2,7 @@ import {File, ResolvedFile} from "./types";
 import {join} from "node:path";
 import {getRemoteSourceKey} from "./source";
 import {R2_ACCESS_KEY_ID, R2_ACCESS_KEY_SECRET, R2_BUCKET, r2Config} from "./r2";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import {getSignedUrl} from "./r2";
 
 import {ok, isNumberString} from "../../is";
 import {getOrigin} from "../../listen/config";
@@ -253,19 +252,18 @@ export async function getResolvedUrl(file: File, options?: ResolveFileOptions) {
 
     async function getR2URL(url: string) {
         const { pathname } = new URL(url);
-        const client = new S3Client(r2Config);
         let key = pathname.replace(/^\//, "");
         if (key.startsWith(`${R2_BUCKET}/`)) {
             // TODO remove, this was a bug 👀
             key = key.replace(`${R2_BUCKET}/`, "")
         }
-        const command = new GetObjectCommand({
-            Bucket: R2_BUCKET,
-            Key: key
-        });
         // Specify a custom expiry for the presigned URL, in seconds
         const expiresIn = getExpiresInSeconds(options.expiresInSeconds);
-        return await getSignedUrl(client, command, { expiresIn });
+        return await getSignedUrl({
+            method: "get",
+            key,
+            expiresIn
+        });
     }
 
     async function getDirectURL() {

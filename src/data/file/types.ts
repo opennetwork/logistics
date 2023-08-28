@@ -40,7 +40,7 @@ export interface FileErrorDescription {
 
 export interface FileData extends Record<string, unknown>, Partial<FileImageSize> {
   fileName: string;
-  contentType: string;
+  contentType?: string;
   size?: number;
   path?: string;
   url?: string;

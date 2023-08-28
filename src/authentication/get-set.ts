@@ -6,6 +6,7 @@ import {
   Partner,
   User,
 } from "../data";
+import {DEFAULT_ORGANISATION_ID} from "../config";
 
 export const AUTHORIZED_PARTNER_ID_KEY = "authorizedForPartnerIds";
 export const AUTHORIZED_ACCESS_TOKEN_KEY = "accessTokenKeyValue";
@@ -21,9 +22,23 @@ export function getMaybeAuthorizedForPartnerId() {
   return requestContext.get(AUTHORIZED_PARTNER_ID_KEY);
 }
 
+/**
+ * Where Authorized means is elevated membership and representative of given organisation
+ */
 export function getMaybeAuthorizedForOrganisationId() {
   const partner = getMaybePartner();
   return partner?.organisationId;
+}
+
+/**
+ * Where Authenticated means is part of membership
+ */
+export function getMaybeAuthenticatedForOrganisationId() {
+  const organisationId = getMaybeAuthorizedForOrganisationId();
+  if (organisationId) {
+    return organisationId;
+  }
+  return DEFAULT_ORGANISATION_ID;
 }
 
 export function isUnauthenticated() {
@@ -150,4 +165,21 @@ export function isIndustry() {
 
 export function isAnonymous() {
   return isRole("anonymous") || isUnauthenticated();
+}
+
+export function getAuthenticatedContext() {
+  const partner = getMaybePartner();
+  const user = getMaybeUser();
+  const organisationId = getMaybeAuthenticatedForOrganisationId() || "none";
+  // no partner id but user indicates direct user as partner
+  const partnerId = partner?.partnerId || "none";
+  // no user id but partner indicates api
+  const userId = user?.userId || "none";
+  return {
+    partner,
+    user,
+    partnerId,
+    organisationId,
+    userId
+  }
 }

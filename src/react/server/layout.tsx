@@ -219,6 +219,7 @@ export function BaseLayout({
     <html lang="en" className="h-full bg-white">
       <head>
         <meta charSet="utf-8" />
+        <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{title || project}</title>
         <meta name="description" content={description} />

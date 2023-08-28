@@ -1,8 +1,12 @@
-import {HeadObjectCommand, PutObjectCommand, S3Client, S3ClientConfig} from "@aws-sdk/client-s3";
+import type {S3Client as ClientType, S3ClientConfig} from "@aws-sdk/client-s3";
+import type {RequestPresigningArguments} from "@smithy/types";
 import {ok} from "../../is";
 import {FileData} from "./types";
 import {getRemoteSourcePrefix} from "./source";
-import {createHash} from "crypto";
+import {getMediaPrefix, joinMediaPrefix} from "./prefix";
+import {v4} from "uuid";
+import {basename, extname} from "node:path";
+import mime from "mime";
 
 export const {
     R2_ACCESS_KEY_ID,
@@ -20,7 +24,7 @@ export const r2Config: S3ClientConfig = {
     region: "auto"
 }
 
-let r2Client: S3Client | undefined = undefined;
+let r2Client: ClientType | undefined = undefined;
 
 export async function getR2() {
     if (r2Client) return r2Client;
@@ -52,6 +56,8 @@ export async function isExistingInR2(file: FileData) {
         prefix = `${prefix}/`;
     }
     const key = `${prefix}${file.fileName}`
+    // import {HeadObjectCommand, PutObjectCommand, S3Client, S3ClientConfig} from "@aws-sdk/client-s3";
+    const {HeadObjectCommand} = await import("@aws-sdk/client-s3");
     const headCommand = new HeadObjectCommand({
         Key: key,
         Bucket: R2_BUCKET,
@@ -70,12 +76,14 @@ export async function saveToR2(file: FileData, contents: Buffer | Blob): Promise
     if (prefix && !prefix.endsWith("/")) {
         prefix = `${prefix}/`;
     }
+    const {PutObjectCommand} = await import("@aws-sdk/client-s3");
     const key = `${prefix}${file.fileName}`
 
     const buffer = Buffer.isBuffer(contents) ?
         contents :
         Buffer.from(await contents.arrayBuffer());
 
+    const {createHash} = await import("node:crypto");
     const hash256 = createHash("sha256");
     hash256.update(buffer);
     const hash5 = createHash("md5");
@@ -133,5 +141,96 @@ function getChecksum(result: { ChecksumCRC32?: string, ChecksumCRC32C?: string, 
         CRC32C: result.ChecksumCRC32C,
         SHA1: result.ChecksumSHA1,
         SHA256: result.ChecksumSHA256
+    }
+}
+
+
+export interface SignedUrlOptions extends RequestPresigningArguments {
+    method?: "get" | "put" | "post" | string;
+    extension?: string;
+    key?: string;
+    redirect?: string;
+}
+
+export function getR2URLFileData(url: string | URL): FileData {
+    if (typeof url === "string") {
+        return getR2URLFileData(
+            new URL(url)
+        );
+    }
+    const { pathname } = new URL(url);
+    const fileName = basename(pathname);
+    const contentType = mime.getType(pathname) ?? undefined;
+    return {
+        fileName,
+        contentType,
+        url: new URL(
+            pathname, // Stripped url just the path
+            url
+        ).toString()
+    }
+}
+
+export async function getSignedUrl(options: SignedUrlOptions) {
+    const { url } = await getSigned(options);
+    return url;
+}
+
+export interface R2SignedURL {
+    url: string;
+    fields?: Record<string, string>
+}
+
+export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL> {
+    const client = await getR2();
+    let { key, method, extension, redirect, ...signedUrlOptions } = options;
+    if (!method) {
+        method = "get";
+    }
+    if (!key) {
+        let name = v4();
+        if (extension) {
+            // "Extension should be like ".png", same value returned by extname(name)
+            name = `${name}${extension}`;
+        }
+        // Key information becomes encoded in the returned url as pathname
+        // no need to relay back this information
+        // see getR2URLFileData
+        key = joinMediaPrefix(name);
+    }
+    if (method === "post") {
+        console.warn("Warning POST upload is not supported by R2");
+        const { createPresignedPost: create } = await import("@aws-sdk/s3-presigned-post");
+        const prefix = getMediaPrefix();
+        const contentType = extension ? (
+            mime.getType(key) ?? undefined
+        ) : undefined;
+        const { url, fields } = await create(client, {
+            Bucket: R2_BUCKET,
+            Key: key,
+            Conditions: [
+                { bucket: R2_BUCKET },
+                ["starts-with", "$key", `${prefix}/`]
+            ],
+            Fields: {
+                success_action_redirect: redirect,
+                "Content-Type": contentType
+            }
+        });
+        return {
+            url,
+            fields
+        }
+    } else {
+        const { getSignedUrl: get } = await import("@aws-sdk/s3-request-presigner");
+        const { PutObjectCommand, GetObjectCommand } = await import("@aws-sdk/client-s3");
+        const Command = method.toLowerCase() === "put" ? PutObjectCommand : GetObjectCommand;
+        const command = new Command({
+            Bucket: R2_BUCKET,
+            Key: key
+        });
+        return {
+            url: await get(client, command, signedUrlOptions)
+        };
     }
 }
