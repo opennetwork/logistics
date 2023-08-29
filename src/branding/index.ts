@@ -7,7 +7,8 @@ import {ROOT_PUBLIC_PATH} from "../view";
 import {readFile} from "node:fs/promises";
 import mime from "mime";
 import {File, FileData, getExpiresInSeconds, getNamedFileStore, getSignedUrl, setFile} from "../data";
-import {save} from "../data/file/save";
+import {save} from "../data";
+import getColors from "get-image-colors";
 
 const BRANDING_FILE_KEY = "branding";
 const BRANDING_LOGO_KEY = "logo";
@@ -79,7 +80,7 @@ export async function getBrandingLogo(): Promise<BrandingFileInfo> {
     if (BRANDING_LOGO_REDIRECT) {
         return {
             url: logo,
-            buffer: undefined,
+            buffer: null,
             contentType: undefined
         }
     }
@@ -201,5 +202,23 @@ async function isFile(path: string) {
         return fileStat.isFile();
     } catch {
         return false;
+    }
+}
+
+export async function getBrandingPalette() {
+    const {
+        buffer,
+        contentType: type
+    } = await getBrandingLogoBufferAndType();
+    const palette = (
+        await getColors(buffer, {
+            type,
+            count: 4
+        })
+    ).map(
+        color => color.hex()
+    );
+    return {
+        base: palette
     }
 }

@@ -1,9 +1,9 @@
 import {FastifyInstance} from "fastify";
 import {getBrandingLogo} from "../../branding";
 
-export async function brandingRoutes(fastify: FastifyInstance) {
+export async function logoRoutes(fastify: FastifyInstance) {
     try {
-        fastify.get("/branding/logo", {
+        fastify.get("/logo", {
             async handler(request, response) {
                 const { buffer, contentType, url } = await getBrandingLogo();
                 if (!buffer) {

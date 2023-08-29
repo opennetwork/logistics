@@ -19,6 +19,7 @@ import {appointmentRoutes} from "./appointment";
 import {changeRoutes} from "./change";
 import {membershipRoutes} from "./membership";
 import {serviceRoutes} from "./service";
+import {brandingRoutes} from "./branding";
 
 export async function routes(fastify: FastifyInstance) {
 
@@ -36,6 +37,7 @@ export async function routes(fastify: FastifyInstance) {
         fastify.register(changeRoutes);
         fastify.register(membershipRoutes);
         fastify.register(serviceRoutes);
+        fastify.register(brandingRoutes);
     }
 
     fastify.register(apiRoutes, {
