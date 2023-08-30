@@ -1,3 +1,4 @@
+import {Expiring} from "../expiring";
 
 export interface DurableEventSchedule {
     timezone?: string;
@@ -17,7 +18,7 @@ export interface DurableEventTypeData extends UnknownEvent {
     type: string;
 }
 
-export interface DurableEventData extends Record<string, unknown>, DurableEventTypeData {
+export interface DurableEventData extends Record<string, unknown>, DurableEventTypeData, Expiring {
     timeStamp?: number;
     eventId?: string;
     schedule?: DurableEventSchedule;

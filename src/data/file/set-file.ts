@@ -16,18 +16,20 @@ export async function setFile(
     uploadedAt: data.uploadedAt || createdAt,
     fileId,
   };
-  if (givenStore) {
-    await givenStore.set(fileId, meta);
-  } else if (isNamedFileType(meta.type)) {
-    const typedId = meta[`${meta.type}Id`];
-    if (typedId && typeof typedId === "string") {
-      const namedStore = getNamedFileStore(meta.type, typedId);
-      await namedStore.set(fileId, meta);
-      return meta;
-    }
-  } else {
-    const store = getFileStore();
-    await store.set(fileId, meta);
-  }
+  const store = getStore();
+  await store.set(fileId, meta);
   return meta;
+
+  function getStore() {
+    if (givenStore) {
+      return givenStore;
+    }
+    if (isNamedFileType(meta.type)) {
+      const typedId = meta[`${meta.type}Id`];
+      if (typedId && typeof typedId === "string") {
+        return getNamedFileStore(meta.type, typedId);
+      }
+    }
+    return getFileStore();
+  }
 }
