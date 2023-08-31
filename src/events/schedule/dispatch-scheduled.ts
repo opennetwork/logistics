@@ -1,4 +1,4 @@
-import {getScheduledFunctions, ScheduledFunctionOptions, ScheduledOptions} from "./schedule";
+import {getDispatcherFunction, getScheduledFunctions, ScheduledFunctionOptions, ScheduledOptions} from "./schedule";
 
 import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent, lock} from "../../data";
 import {limited} from "../../limited";
@@ -13,6 +13,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
     const event = getEventOption();
 
     const matching = getScheduledFunctions(options);
+    const dispatcher = getDispatcherFunction(options);
 
     await limited(
         matching.map(options => () => dispatchEvent(event, options))
@@ -51,7 +52,15 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
         }
 
         async function dispatchEventToHandler(event: DurableEventData) {
-            await handler(event);
+            if (dispatcher) {
+                // This allows a dispatcher to create an event that has deeper functionality
+                await dispatcher.handler(event, async (dispatching) => {
+                    // Hide the implementation function inside an anonymous function
+                    return handler(dispatching);
+                });
+            } else {
+                await handler(event);
+            }
         }
     }
 
