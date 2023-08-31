@@ -2,7 +2,7 @@ import {DurableEventData, UnknownEvent} from "../data";
 import {on} from "../events";
 import {dispatcher} from "../events/schedule/schedule";
 import {defer} from "@virtualstate/promise";
-import {isLike, isPromise, ok} from "../is";
+import {isLike, isPromise, isSignalled, ok} from "../is";
 
 const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
@@ -90,8 +90,7 @@ function isDurableFetchEventData(event?: DurableEventData): event is DurableFetc
 }
 
 export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dispatch) => {
-    const controller = new AbortController();
-    const { signal } = controller;
+    const { signal, controller } = getSignal();
     ok(isDurableFetchEventData(event));
     const {
         handled,
@@ -112,6 +111,7 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
     try {
         await dispatch({
             ...event,
+            signal,
             request,
             handled,
             respondWith,
@@ -121,16 +121,25 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
 
         // TODO cache response here
 
-
-
     } catch (error) {
         if (!signal.aborted) {
-            controller.abort(error);
+            controller?.abort(error);
         }
     } finally {
         if (!signal.aborted) {
-            controller.abort();
+            controller?.abort();
         }
         await wait();
+    }
+
+    function getSignal() {
+        if (isSignalled(event)) {
+            return { signal: event.signal, controller: undefined } as const;
+        }
+        const controller = new AbortController();
+        return {
+            signal: controller.signal,
+            controller
+        } as const;
     }
 })

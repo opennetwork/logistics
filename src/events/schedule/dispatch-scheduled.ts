@@ -8,7 +8,7 @@ import {
 
 import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent, lock} from "../../data";
 import {limited} from "../../limited";
-import {isLike, ok} from "../../is";
+import {isSignalled} from "../../is";
 
 export interface BackgroundScheduleOptions extends ScheduledFunctionOptions {
 
@@ -18,18 +18,6 @@ function notAborted(signal?: AbortSignal) {
     if (signal?.aborted) {
         throw new Error("Aborted");
     }
-}
-
-interface Signalled {
-    signal: AbortSignal;
-}
-
-function isSignalled(event: unknown): event is Signalled {
-   return !!(
-       isLike<Signalled>(event) &&
-       event.signal &&
-       typeof event.signal.aborted === "boolean"
-   )
 }
 
 export async function dispatchScheduledDurableEvents(options: BackgroundScheduleOptions) {

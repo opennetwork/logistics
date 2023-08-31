@@ -48,3 +48,15 @@ export function isNumberString(value?: unknown): value is `${number}` | number {
       typeof value === "number"
   );
 }
+
+export interface Signalled {
+  signal: AbortSignal;
+}
+
+export function isSignalled(event: unknown): event is Signalled {
+  return !!(
+      isLike<Signalled>(event) &&
+      event.signal &&
+      typeof event.signal.aborted === "boolean"
+  )
+}
