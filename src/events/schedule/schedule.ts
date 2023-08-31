@@ -75,6 +75,19 @@ export function getScheduledFunctionCorrelation(options: ScheduledOptions) {
     return "default";
 }
 
+export function getScheduledCorrelation(options: ScheduledFunctionOptions) {
+    if (options.event) {
+        if (options.event.eventId) {
+            return `event:${options.event.type}:${options.event.eventId}`;
+        }
+        return `event:${options.event.type}`;
+    }
+    if (options.cron) {
+        return `cron:${options.cron}`;
+    }
+    return "default";
+}
+
 function createRemoveFn<T>(array: T[], value: T) {
     return () => {
         const index = array.indexOf(value);

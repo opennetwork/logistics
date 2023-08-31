@@ -1,4 +1,10 @@
-import {getDispatcherFunction, getScheduledFunctions, ScheduledFunctionOptions, ScheduledOptions} from "./schedule";
+import {
+    getDispatcherFunction, getScheduledCorrelation,
+    getScheduledFunctionCorrelation,
+    getScheduledFunctions,
+    ScheduledFunctionOptions,
+    ScheduledOptions
+} from "./schedule";
 
 import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent, lock} from "../../data";
 import {limited} from "../../limited";
@@ -14,14 +20,21 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
 
     const matching = getScheduledFunctions(options);
     const dispatcher = getDispatcherFunction(options);
+    const correlation = getScheduledCorrelation(options);
 
-    await limited(
-        matching.map(options => () => dispatchEvent(event, options))
-    );
+    const done = await lock(`${correlation}:limited => dispatchEvent`);
+
+    try {
+        await limited(
+            matching.map(options => () => dispatchEvent(event, options))
+        );
+    } finally {
+        await done();
+    }
 
     async function dispatchEvent(event: DurableEventData, { handler }: ScheduledOptions) {
         if (event.eventId) {
-            const schedule = (await getDurableEvent(event)) ?? event;
+            const schedule = (await getDurableEvent(event)) ?? (event.virtual ? event : undefined);
             if (!isMatchingSchedule(schedule)) {
                 return;
             }
@@ -39,7 +52,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
 
         async function dispatchScheduledEvent(event: DurableEventData) {
             ok(event.eventId, "Expected dispatching event to have an id");
-            const done = await lock(`dispatch:event:${event.type}:${event.eventId}`);
+            const done = await lock(`dispatchEvent:${event.type}:${event.eventId}`);
             // TODO detect if this event tries to dispatch again
             try {
                 await dispatchEventToHandler(event);
