@@ -1,0 +1,124 @@
+import {DurableEventData, UnknownEvent} from "../data";
+import {on} from "../events";
+import {dispatcher} from "../events/schedule/schedule";
+import {defer} from "@virtualstate/promise";
+import {isLike, isPromise, ok} from "../is";
+
+const FETCH = "fetch" as const;
+type ScheduleFetchEventType = typeof FETCH;
+
+export interface DurableRequestData extends Pick<Request, "url" | "method"> {
+    headers: Record<string, string>
+    body?: string;
+}
+
+export interface DurableFetchEventData extends DurableEventData {
+    type: ScheduleFetchEventType;
+    request: DurableRequestData
+}
+
+export interface FetchEvent extends Omit<DurableFetchEventData, "request"> {
+    handled: Promise<void>;
+    request: Request;
+    respondWith(response: Response | Promise<Response>): void;
+    waitUntil(promise: Promise<void | unknown>): void;
+}
+
+function isFetchEvent(event: unknown): event is FetchEvent {
+    return !!(
+        isLike<FetchEvent>(event) &&
+        event.type === FETCH &&
+        event.request &&
+        event.respondWith
+    )
+}
+
+export const removeFetchScheduledFunction = on(FETCH, async (event) => {
+    ok(isFetchEvent(event));
+    event.respondWith(
+        fetch(
+            event.request
+        )
+    );
+});
+
+function createRespondWith() {
+    const { promise: handled, resolve, reject } = defer<Response>();
+
+    function respondWith(response: Response | Promise<Response>) {
+        if (isPromise(response)) {
+            return response.then(resolve, reject);
+        }
+        return resolve(response);
+    }
+
+    return {
+        handled,
+        respondWith
+    }
+}
+
+function createWaitUntil() {
+    const promises: Promise<unknown>[] = [];
+
+    function waitUntil(promise: Promise<unknown>) {
+        promises.push(
+            promise.catch(error => void error)
+        );
+    }
+
+    async function wait() {
+        if (promises.length) {
+            await Promise.all(promises);
+        }
+    }
+
+    return {
+        wait,
+        waitUntil
+    }
+}
+
+
+function isDurableFetchEventData(event?: DurableEventData): event is DurableFetchEventData {
+    return !!(
+        isLike<DurableFetchEventData>(event) &&
+        event.type === FETCH &&
+        event.request &&
+        event.request.url
+    );
+}
+
+export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dispatch) => {
+    ok(isDurableFetchEventData(event));
+    const {
+        handled,
+        respondWith
+    } = createRespondWith();
+    const {
+        wait,
+        waitUntil
+    } = createWaitUntil();
+    const { url, ...init } = event.request;
+    const request = new Request(
+        url,
+        init
+    )
+    await dispatch({
+        ...event,
+        request,
+        handled,
+        respondWith,
+        waitUntil
+    });
+    try {
+        const response = await handled;
+
+        // TODO cache response here
+
+
+
+    } finally {
+        await wait();
+    }
+})

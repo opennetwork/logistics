@@ -5,15 +5,15 @@ export interface ScheduledFn {
     (event: DurableEventData): Promise<void> | void;
 }
 
-export interface DispatcherFn extends ScheduledFn {
+export interface DispatcherFn {
     (event: DurableEventData, dispatch: (event: DurableEventData) => Promise<void>): Promise<void> | void;
 }
 
-export type ScheduledFunctionsRecord<F extends ScheduledFn = ScheduledFn> = Record<string, F>;
+export type ScheduledFunctionsRecord<F = ScheduledFn> = Record<string, F>;
 
-type ScheduledFunctionsConfig<F extends ScheduledFn = ScheduledFn> = ScheduledOptions<F>[] | ScheduledFunctionsRecord<F>;
+type ScheduledFunctionsConfig<F = ScheduledFn> = ScheduledOptions<F>[] | ScheduledFunctionsRecord<F>;
 
-export interface ScheduledOptions<F extends ScheduledFn = ScheduledFn> {
+export interface ScheduledOptions<F = ScheduledFn> {
     cron?: string;
     on?: string;
     handler: F;
@@ -65,7 +65,7 @@ export function createDispatcherFunction(optionsOrFn: ScheduledOptions<Dispatche
     }
 }
 
-export function getScheduledFunctionCorrelation(options: ScheduledOptions) {
+export function getScheduledFunctionCorrelation(options: ScheduledOptions<unknown>) {
     if (options.on) {
         return `event:${options.on}`;
     }
@@ -97,7 +97,7 @@ function createRemoveFn<T>(array: T[], value: T) {
     }
 }
 
-function parseScheduleOptions<F extends ScheduledFn>(optionsOrFn: ScheduledOptions<F> | F): ScheduledOptions<F> {
+function parseScheduleOptions<F>(optionsOrFn: ScheduledOptions<F> | F): ScheduledOptions<F> {
     if (isScheduleFn(optionsOrFn)) {
         return {
             handler: optionsOrFn
@@ -106,7 +106,7 @@ function parseScheduleOptions<F extends ScheduledFn>(optionsOrFn: ScheduledOptio
         return optionsOrFn;
     }
 
-    function isScheduleFn(options:  ScheduledOptions | ScheduledFn): options is ScheduledFn {
+    function isScheduleFn(options:  ScheduledOptions<F> | F): options is F {
         return typeof options === "function";
     }
 }
@@ -155,7 +155,7 @@ export function getDispatcherFunction(options: ScheduledFunctionOptions): Schedu
     }
 }
 
-function filterScheduledFunctions<F extends ScheduledFn>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], options: ScheduledFunctionOptions) {
+function filterScheduledFunctions<F>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], options: ScheduledFunctionOptions) {
     if (options.event) {
         return filterEventScheduled(config, fns, options.event.type)
     }
@@ -168,19 +168,19 @@ function filterScheduledFunctions<F extends ScheduledFn>(config: ScheduledFuncti
     return matching;
 }
 
-function filterEventScheduled<F extends ScheduledFn>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], event: string) {
+function filterEventScheduled<F>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], event: string) {
     return filteredScheduledFunctionsWithFn(config, fns, value => value.on === event);
 }
 
-function filterCronScheduled<F extends ScheduledFn>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], cron: string) {
+function filterCronScheduled<F>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], cron: string) {
     return filteredScheduledFunctionsWithFn(config, fns, value => value.cron === cron);
 }
 
-function filterDefaultScheduled<F extends ScheduledFn>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[]) {
+function filterDefaultScheduled<F>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[]) {
     return filteredScheduledFunctionsWithFn(config, fns, value => !(value.on || value.cron), true)
 }
 
-function filteredScheduledFunctionsWithFn<F extends ScheduledFn>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], filter: (options: ScheduledOptions) => boolean, isDefault?: boolean): ScheduledOptions<F>[] {
+function filteredScheduledFunctionsWithFn<F>(config: ScheduledFunctionsConfig<F> | undefined, fns: ScheduledOptions<F>[], filter: (options: ScheduledOptions<F>) => boolean, isDefault?: boolean): ScheduledOptions<F>[] {
     const internal = fns.filter(filter);
     if (!config) return internal;
     if (Array.isArray(config)) {
