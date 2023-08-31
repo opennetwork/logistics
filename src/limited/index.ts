@@ -31,7 +31,9 @@ export async function limited<T = void | unknown>(fns: AsyncLikeFn<T>[]): Promis
 
     if (!LIMITED_BOTTLENECK) {
         return await Promise.all<T>(
-            fns.map(async fn => fn())
+            fns.map(async fn => {
+                return fn();
+            })
         );
     }
 
@@ -58,6 +60,8 @@ export async function limited<T = void | unknown>(fns: AsyncLikeFn<T>[]): Promis
     });
 
     return await Promise.all<T>(
-        fns.map(fn => bottleneck.schedule<T>(async () => fn()))
+        fns.map(fn => bottleneck.schedule<T>(async () => {
+            return fn()
+        }))
     );
 }

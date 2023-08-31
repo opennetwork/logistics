@@ -90,6 +90,8 @@ function isDurableFetchEventData(event?: DurableEventData): event is DurableFetc
 }
 
 export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dispatch) => {
+    const controller = new AbortController();
+    const { signal } = controller;
     ok(isDurableFetchEventData(event));
     const {
         handled,
@@ -102,23 +104,33 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
     const { url, ...init } = event.request;
     const request = new Request(
         url,
-        init
-    )
-    await dispatch({
-        ...event,
-        request,
-        handled,
-        respondWith,
-        waitUntil
-    });
+        {
+            ...init,
+            signal
+        }
+    );
     try {
+        await dispatch({
+            ...event,
+            request,
+            handled,
+            respondWith,
+            waitUntil
+        });
         const response = await handled;
 
         // TODO cache response here
 
 
 
+    } catch (error) {
+        if (!signal.aborted) {
+            controller.abort(error);
+        }
     } finally {
+        if (!signal.aborted) {
+            controller.abort();
+        }
         await wait();
     }
 })

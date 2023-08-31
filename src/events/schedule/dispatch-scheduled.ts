@@ -8,10 +8,28 @@ import {
 
 import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent, lock} from "../../data";
 import {limited} from "../../limited";
-import {ok} from "../../is";
+import {isLike, ok} from "../../is";
 
 export interface BackgroundScheduleOptions extends ScheduledFunctionOptions {
 
+}
+
+function notAborted(signal?: AbortSignal) {
+    if (signal?.aborted) {
+        throw new Error("Aborted");
+    }
+}
+
+interface Signalled {
+    signal: AbortSignal;
+}
+
+function isSignalled(event: unknown): event is Signalled {
+   return !!(
+       isLike<Signalled>(event) &&
+       event.signal &&
+       typeof event.signal.aborted === "boolean"
+   )
 }
 
 export async function dispatchScheduledDurableEvents(options: BackgroundScheduleOptions) {
@@ -24,57 +42,79 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
 
     const done = await lock(`${correlation}:limited => dispatchEvent`);
 
+    const controller = new AbortController();
+    const { signal } = controller;
+
     try {
-        await limited(
-            matching.map(options => () => dispatchEvent(event, options))
-        );
+        await dispatchScheduledEvent(event);
+    } catch (error) {
+        if (!signal.aborted) {
+            controller.abort(error);
+        }
     } finally {
+        if (!signal.aborted) {
+            controller.abort("dispatchScheduledEvent finalised");
+        }
         await done();
     }
 
-    async function dispatchEvent(event: DurableEventData, { handler }: ScheduledOptions) {
+    async function dispatchScheduledEvent(event: DurableEventData) {
         if (event.eventId) {
             const schedule = (await getDurableEvent(event)) ?? (event.virtual ? event : undefined);
             if (!isMatchingSchedule(schedule)) {
                 return;
             }
-            await dispatchScheduledEvent(schedule);
-        } else if (event.type !== "background") {
+            await dispatchEvent(schedule);
+        } else if (event.type === "background") {
+            await dispatchEvent(event);
+        } else {
             const schedules = await listDurableEvents(event);
             await limited(
                 schedules
                     .filter(isMatchingSchedule)
-                    .map(schedule => () => dispatchScheduledEvent(schedule))
+                    .map(schedule => () => dispatchEvent(schedule))
             );
+        }
+    }
+
+    async function dispatchEvent(event: DurableEventData) {
+        const done = await lock(`dispatchEvent:${event.type}:${event.eventId || "no-event-id"}`);
+        // TODO detect if this event tries to dispatch again
+        try {
+            await dispatchEventToHandlers(event);
+            if (!event.retain) {
+                await deleteDurableEvent(event);
+            }
+        } finally {
+            await done();
+        }
+    }
+
+    async function dispatchEventToHandlers(event: DurableEventData) {
+        const signalledEvent = {
+            ...event,
+            signal
+        }
+        if (dispatcher) {
+            // This allows a dispatcher to create an event that has deeper functionality
+            await dispatcher.handler(signalledEvent, dispatchLimited);
         } else {
-            await dispatchEventToHandler(event);
+            await dispatchLimited(signalledEvent);
         }
 
-        async function dispatchScheduledEvent(event: DurableEventData) {
-            ok(event.eventId, "Expected dispatching event to have an id");
-            const done = await lock(`dispatchEvent:${event.type}:${event.eventId}`);
-            // TODO detect if this event tries to dispatch again
-            try {
-                await dispatchEventToHandler(event);
-                if (!event.retain) {
-                    await deleteDurableEvent(event);
-                }
-            } finally {
-                await done();
-            }
+        async function dispatchLimited(event: DurableEventData) {
+            await limited(
+                matching.map(options => () => dispatchEventToHandler(event, options))
+            )
         }
+    }
 
-        async function dispatchEventToHandler(event: DurableEventData) {
-            if (dispatcher) {
-                // This allows a dispatcher to create an event that has deeper functionality
-                await dispatcher.handler(event, async (dispatching) => {
-                    // Hide the implementation function inside an anonymous function
-                    return handler(dispatching);
-                });
-            } else {
-                await handler(event);
-            }
+    async function dispatchEventToHandler(event: DurableEventData, { handler }: ScheduledOptions) {
+        notAborted(signal);
+        if (isSignalled(event) && event.signal !== signal) {
+            notAborted(event.signal);
         }
+        await handler(event);
     }
 
     function isMatchingSchedule(event?: DurableEventData) {
@@ -103,6 +143,6 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
             return options.event;
         }
 
-        return { type: "background" }
+        return { type: "background", virtual: true, retain: true }
     }
 }
