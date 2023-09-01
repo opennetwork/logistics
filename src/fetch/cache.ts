@@ -26,18 +26,13 @@ function getRequestQueryURL(requestQuery: RequestInfo | URL) {
 }
 
 // https://w3c.github.io/ServiceWorker/#query-cache
-function isQueryCacheMatch(requestQuery: RequestInfo | URL, request: DurableRequest, response: DurableResponse | undefined, options?: CacheQueryOptions) {
+function isQueryCacheMatch(requestQuery: RequestInfo | URL | undefined, request: DurableRequest, response: DurableResponse | undefined, options?: CacheQueryOptions) {
 
     return (
         isMethodMatch() &&
         isURLMatch() &&
         isVaryMatch()
     );
-
-    function isURLMatch() {
-        const queryUrl = getRequestQueryURL(requestQuery);
-        return getCacheURLString(queryUrl, options) === getCacheURLString(request.url, options)
-    }
 
     function isMethodMatch() {
         if (options?.ignoreMethod) {
@@ -47,6 +42,14 @@ function isQueryCacheMatch(requestQuery: RequestInfo | URL, request: DurableRequ
             request.method === "GET" ||
             request.method === "HEAD"
         );
+    }
+
+    function isURLMatch() {
+        if (!requestQuery) {
+            return true;
+        }
+        const queryUrl = getRequestQueryURL(requestQuery);
+        return getCacheURLString(queryUrl, options) === getCacheURLString(request.url, options)
     }
 
     function isVaryMatch() {
@@ -200,18 +203,20 @@ export class DurableCache implements Cache {
     }
 
     async delete(requestQuery: RequestInfo | URL, options?: DurableCacheQueryOptions): Promise<boolean> {
-        const durableRequest = await matchDurableRequest(this.name, requestQuery, options);
-        if (!durableRequest) {
-            return false;
+        let deleted = false;
+        const durableRequests = new Set();
+        for await (const { durableRequest, durableResponse } of matchDurableRequestResponses(this.name, requestQuery, options)) {
+            const responseStore = getDurableResponseStore(this.name, durableRequest);
+            durableRequests.add(durableRequest);
+            await responseStore.delete(durableResponse.durableResponseId);
+            deleted = true;
         }
-        const requestStore = getDurableRequestStore(this.name, getRequestQueryURL(requestQuery));
-        const responseStore = getDurableResponseStore(this.name, durableRequest);
-        await Promise.all([
-            await requestStore.delete(durableRequest.durableRequestId),
-            // Matching request/response id
-            await responseStore.delete(durableRequest.durableRequestId)
-        ]);
-        return true;
+        for (const durableRequest of durableRequests) {
+            const requestStore = getDurableRequestStore(this.name, durableRequest.url);
+            await requestStore.delete(durableRequest.durableRequestId);
+            deleted = true;
+        }
+        return deleted;
     }
 
     async match(requestQuery: RequestInfo | URL, options?: DurableCacheQueryOptions): Promise<Response | undefined> {
@@ -255,7 +260,7 @@ export class DurableCache implements Cache {
         const responseStore = getDurableResponseStore(this.name, durableRequest);
 
         const durableResponse: DurableResponse = {
-            durableResponseId: durableRequestId,
+            durableResponseId: v4(),
             headers: getResponseHeadersObject(),
             status: response.status,
             statusText: response.statusText,
@@ -329,12 +334,21 @@ async function matchResponse(cacheName: string, requestQuery?: RequestInfo | URL
     return next.value;
 }
 
-async function * matchResponses(cacheName: string, requestQuery?: RequestInfo | URL, options?: DurableCacheQueryOptions): AsyncIterable<Response> {
+async function * matchResponses(cacheName: string, requestQuery?: RequestInfo | URL, options?: DurableCacheQueryOptions) {
+    for await (const { durableResponse } of matchDurableRequestResponses(cacheName, requestQuery, options)) {
+        yield fromDurableResponse(durableResponse);
+    }
+}
+
+async function * matchDurableRequestResponses(cacheName: string, requestQuery?: RequestInfo | URL, options?: DurableCacheQueryOptions) {
     for await (const durableRequest of matchDurableRequests(this.name, requestQuery, options)) {
         const responseStore = getDurableResponseStore(this.name, durableRequest);
         for await (const durableResponse of responseStore) {
             if (isQueryCacheMatch(requestQuery, durableRequest, durableResponse, options)) {
-                yield fromDurableResponse(durableResponse);
+                yield {
+                    durableRequest,
+                    durableResponse,
+                } as const;
             }
         }
     }
