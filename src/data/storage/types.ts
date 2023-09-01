@@ -11,6 +11,7 @@ export interface MetaKeyValueStore<M = unknown> extends KeyValueStore<M> {
 export interface KeyValueStoreOptions {
     prefix?: string;
     counter?: boolean; // To disable set to false
+    memory?: boolean;
     meta?<M>(key?: string): MetaKeyValueStore<M>; // Optional
 }
 

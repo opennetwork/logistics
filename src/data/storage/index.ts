@@ -6,3 +6,4 @@ export * from "./redis-client-helpers";
 export * from "./lock";
 export * from "./start";
 export * from "./hook";
+export * from "./memory";
