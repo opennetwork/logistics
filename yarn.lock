@@ -6304,6 +6304,11 @@ http-errors@2.0.0:
     statuses "2.0.1"
     toidentifier "1.0.1"
 
+http-header-list@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/http-header-list/-/http-header-list-1.0.0.tgz#992ef619d59ebe2a32bf9caf97cda1b608a81918"
+  integrity sha512-8j+4CgDL85vyEIGRVi1At5pNivTjlszmAN2CTbzTV6po3D62ofqsCms2ftdMir3iydeMK+ZfTbEOz5QSMsaHpw==
+
 http-proxy-agent@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/http-proxy-agent/-/http-proxy-agent-4.0.1.tgz#8a8c8ef7f5932ccf953c296ca8291b95aa74aa3a"

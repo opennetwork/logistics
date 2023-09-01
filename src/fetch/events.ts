@@ -3,18 +3,16 @@ import {on} from "../events";
 import {dispatcher} from "../events/schedule/schedule";
 import {defer} from "@virtualstate/promise";
 import {isLike, isPromise, isSignalled, ok} from "../is";
+import {DurableRequestData} from "./types";
 
 const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
 
-export interface DurableRequestData extends Pick<Request, "url" | "method"> {
-    headers: Record<string, string>
-    body?: string;
-}
+
 
 export interface DurableFetchEventData extends DurableEventData {
     type: ScheduleFetchEventType;
-    request: DurableRequestData
+    request: DurableRequestData;
 }
 
 export interface FetchEvent extends Omit<DurableFetchEventData, "request"> {
@@ -119,7 +117,9 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
         });
         const response = await handled;
 
-        // TODO cache response here
+        // no response usage
+        // we don't care if its resolved etc
+        void response;
 
     } catch (error) {
         if (!signal.aborted) {
