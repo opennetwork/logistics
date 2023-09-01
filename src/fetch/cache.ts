@@ -1,10 +1,8 @@
 import {getKeyValueStore, KeyValueStore} from "../data";
 import {DurableRequest, DurableResponse} from "./types";
-import {isIteratorYieldResult} from "@virtualstate/kdl/esnext/is";
 import {ok} from "../is";
 import {v4} from "uuid";
 import { HeaderList } from "http-header-list";
-import {union} from "@virtualstate/union";
 
 export interface CachedResponse {
 
@@ -306,8 +304,15 @@ async function * matchDurableRequests(cacheName: string, requestQuery?: RequestI
     }
 }
 
+interface DurableCacheReference {
+    cacheName: string;
+    createdAt: string;
+    lastOpenedAt: string;
+}
+
 export class DurableCacheStorage implements CacheStorage {
 
+    store: KeyValueStore<DurableCacheReference>;
     caches: Map<string, Cache>;
 
     constructor() {
@@ -319,6 +324,14 @@ export class DurableCacheStorage implements CacheStorage {
         if (existing) {
             return existing;
         }
+        const existingReference = await this.store.get(cacheName);
+        const lastOpenedAt = new Date().toISOString();
+        const reference: DurableCacheReference = {
+            createdAt: existingReference?.createdAt || lastOpenedAt,
+            cacheName,
+            lastOpenedAt
+        };
+        await this.store.set(cacheName, reference);
         const cache = new DurableCache(cacheName);
         this.caches.set(cacheName, cache);
         return cache;
@@ -328,13 +341,11 @@ export class DurableCacheStorage implements CacheStorage {
         if (this.caches.has(cacheName)) {
             return true;
         }
-        // TODO check if caches exist
-        return false;
+        return this.store.has(cacheName);
     }
 
     async keys(): Promise<string[]> {
-        // TODO check if caches exist
-        return [...this.caches.keys()];
+        return await this.store.keys();
     }
 
     async delete(cacheName: string): Promise<boolean> {
@@ -347,6 +358,7 @@ export class DurableCacheStorage implements CacheStorage {
         for (const key of keys) {
             await cache.delete(key);
         }
+        await this.store.delete(cacheName);
         this.caches.delete(cacheName);
         return true;
     }
