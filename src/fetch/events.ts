@@ -1,18 +1,18 @@
-import {setDurableRequest, DurableEventData, DurableRequestData, setDurableRequestForEvent} from "../data";
-import {on} from "../events";
+import {DurableEventData, DurableRequestData, setDurableRequestForEvent} from "../data";
+import {dispatchEvent, on} from "../events";
 import {dispatcher} from "../events/schedule/schedule";
 import {defer} from "@virtualstate/promise";
 import {isLike, isPromise, isSignalled, ok} from "../is";
 import {fromDurableRequest, fromRequestResponse} from "../data/durable-request/from";
+import {v4} from "uuid";
 
 const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
 
-
-
 export interface DurableFetchEventData extends DurableEventData {
     type: ScheduleFetchEventType;
     request: DurableRequestData;
+    dispatch?: DurableEventData;
 }
 
 export interface FetchEvent extends Omit<DurableFetchEventData, "request"> {
@@ -109,8 +109,20 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
             waitUntil
         });
         const response = await handled;
-        const durableRequest = await fromRequestResponse(request, response);
-        await setDurableRequestForEvent(durableRequest, event);
+        let durableEventDispatch: DurableEventData;
+        if (event.dispatch) {
+            durableEventDispatch = {
+                durableEventId: v4(),
+                ...event.dispatch
+            };
+        }
+        if (durableEventDispatch || (event.durableEventId && (event.virtual || event.retain))) {
+            const durableRequest = await fromRequestResponse(request, response);
+            await setDurableRequestForEvent(durableRequest, durableEventDispatch || event);
+            if (durableEventDispatch) {
+                await dispatchEvent(durableEventDispatch);
+            }
+        }
     } catch (error) {
         if (!signal.aborted) {
             controller?.abort(error);
