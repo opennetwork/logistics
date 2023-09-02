@@ -4012,10 +4012,10 @@
     uuid "^8.3.2"
     whatwg-url "^9.1.0"
 
-"@virtualstate/navigation@^1.0.1-alpha.159":
-  version "1.0.1-alpha.195"
-  resolved "https://registry.yarnpkg.com/@virtualstate/navigation/-/navigation-1.0.1-alpha.195.tgz#26292d17298df839305577270aed07d34e6a9831"
-  integrity sha512-Qtq8r5VZDC46H1h/CqRplefwl2FNURp8UTkw+uJdJ4NtT3Q8VLlh4og1SnfLaBw7jD1EJIBw0G3Uk+qBFPDtIw==
+"@virtualstate/navigation@^1.0.1-alpha.196":
+  version "1.0.1-alpha.196"
+  resolved "https://registry.yarnpkg.com/@virtualstate/navigation/-/navigation-1.0.1-alpha.196.tgz#c767538bae4a01f665ab047b7972baa08fbf84fa"
+  integrity sha512-ovHT29Ec7QaJsgWHKRU2DQ5fX7RHVvPOvKMZOqtjw4uwny4U3K7hfbyjBFUMfGCIxjoYQMmfCUPR/Hn2GY6T9g==
   dependencies:
     "@ungap/structured-clone" "^1.0.2"
     "@virtualstate/composite-key" "^1.0.0"
