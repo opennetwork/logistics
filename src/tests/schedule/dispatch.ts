@@ -71,14 +71,14 @@ import {getDurableEvent} from "../../data";
 
 {
     const type = v4();
-    const eventId = v4();
+    const durableEventId = v4();
     const fn = spy();
 
     const value = v4()
 
     const initial = {
         type,
-        eventId,
+        durableEventId,
         value
     };
     ok(!await getDurableEvent(initial));
@@ -92,7 +92,7 @@ import {getDurableEvent} from "../../data";
     await dispatchScheduledDurableEvents({
         event: {
             type,
-            eventId
+            durableEventId
         }
     });
 
@@ -102,7 +102,7 @@ import {getDurableEvent} from "../../data";
     const [[event]] = fn.args;
 
     ok(event);
-    ok(event.eventId === eventId);
+    ok(event.durableEventId === durableEventId);
     ok(event.value === value);
 
     const schedule = await getDurableEvent(event);

@@ -31,7 +31,7 @@ export async function submit(request: FastifyRequest<Schema>) {
     if (request.body?.dispatch) {
         const event = await getDurableEvent({
             type: "dispatch",
-            eventId: request.body.dispatch
+            durableEventId: request.body.dispatch
         });
         if (event) {
             await dispatchEvent(event);
@@ -47,12 +47,12 @@ export function ListDurableEvents() {
             {!isUnauthenticated ? <a href={createPath} className={LINK_CLASS}>Schedule Event</a> : undefined}
             <div className="flex flex-col divide-y">
                 {events.map(event => (
-                    <div key={event.eventId} className="flex flex-row justify-between">
+                    <div key={event.durableEventId} className="flex flex-row justify-between">
                         <div>{event.dispatch.type}</div>
                         {
                             !isUnauthenticated ? (
                                 <form action={path} method="POST">
-                                    <input type="hidden" name="dispatch" value={event.eventId} />
+                                    <input type="hidden" name="dispatch" value={event.durableEventId} />
                                     <button type="submit" className="bg-sky-500 hover:bg-sky-700 px-4 py-2.5 text-sm leading-5 rounded-md font-semibold text-white">
                                         Dispatch
                                     </button>

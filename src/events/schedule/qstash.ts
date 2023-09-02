@@ -21,8 +21,8 @@ interface ScheduleMeta {
 
 
 function getMetaStore(event: DurableEventData) {
-    ok(event.eventId, "Expected eventId");
-    return getDurableEventStore(event).meta<ScheduleMeta>(event.eventId);
+    ok(event.durableEventId, "Expected eventId");
+    return getDurableEventStore(event).meta<ScheduleMeta>(event.durableEventId);
 }
 
 export async function dispatchQStash(event: DurableEventData) {
@@ -84,7 +84,7 @@ export async function dispatchQStash(event: DurableEventData) {
     }
     const background: BackgroundQuery = {
         event: event.type,
-        eventId: event.eventId,
+        eventId: event.durableEventId,
         eventTimeStamp: event.timeStamp
     };
     const response = await fetch(

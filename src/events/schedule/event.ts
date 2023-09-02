@@ -15,7 +15,7 @@ export async function dispatchEvent(event: DurableEventData) {
     let durable = event;
 
     if (!event.virtual) {
-        if (!event.eventId || !(await hasDurableEvent(event))) {
+        if (!event.durableEventId || !(await hasDurableEvent(event))) {
             durable = await addDurableEvent(event);
         }
     }
@@ -30,7 +30,7 @@ export async function dispatchEvent(event: DurableEventData) {
         await background({
             query: {
                 event: durable.type,
-                eventId: durable.eventId
+                eventId: durable.durableEventId
             },
             quiet: true
         });

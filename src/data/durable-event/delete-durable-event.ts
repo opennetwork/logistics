@@ -3,6 +3,6 @@ import {DurableEvent, DurableEventData} from "./types";
 
 export function deleteDurableEvent(event: DurableEventData) {
     const store = getDurableEventStore(event);
-    if (!event.eventId) return undefined;
-    return store.delete(event.eventId);
+    if (!event.durableEventId) return undefined;
+    return store.delete(event.durableEventId);
 }

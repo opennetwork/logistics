@@ -34,8 +34,8 @@ export async function onDispatchEvent(event: UnknownEvent) {
         virtual: true,
     };
     // If the instance has no id, give it one
-    if (!dispatching.eventId) {
-        dispatching.eventId = v4();
+    if (!dispatching.durableEventId) {
+        dispatching.durableEventId = v4();
     }
     await dispatchScheduledDurableEvents({
         event: dispatching

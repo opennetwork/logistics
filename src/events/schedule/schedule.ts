@@ -77,8 +77,8 @@ export function getScheduledFunctionCorrelation(options: ScheduledOptions<unknow
 
 export function getScheduledCorrelation(options: ScheduledFunctionOptions) {
     if (options.event) {
-        if (options.event.eventId) {
-            return `event:${options.event.type}:${options.event.eventId}`;
+        if (options.event.durableEventId) {
+            return `event:${options.event.type}:${options.event.durableEventId}`;
         }
         return `event:${options.event.type}`;
     }

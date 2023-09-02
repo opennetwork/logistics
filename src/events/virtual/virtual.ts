@@ -28,9 +28,9 @@ export async function *generateVirtualEvents() {
         const yieldingEvents = events.filter(event => !seen.has(event));
         if (!yieldingEvents.length) continue;
         for (const event of yieldingEvents) {
-            if (!event.eventId) {
+            if (!event.durableEventId) {
                 // Provide it or have it mutated...
-                event.eventId = v4();
+                event.durableEventId = v4();
             }
             if (!event.virtual) {
                 // Provide it or have it mutated...

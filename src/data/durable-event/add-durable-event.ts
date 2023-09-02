@@ -5,12 +5,12 @@ import {ok} from "../../is";
 
 export async function addDurableEvent(event: DurableEventData) {
     const createdAt = new Date().toISOString();
-    const eventId = event.eventId || v4();
+    const eventId = event.durableEventId || v4();
     const durable: DurableEvent = {
         timeStamp: Date.now(),
         createdAt,
         updatedAt: createdAt,
-        eventId,
+        durableEventId: eventId,
         ...event
     };
     ok(!durable.virtual, "Cannot store virtual event");

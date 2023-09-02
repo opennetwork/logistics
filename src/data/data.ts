@@ -32,3 +32,4 @@ export * from "./change";
 export * from "./membership";
 export * from "./service";
 export * from "./durable-event";
+export * from "./durable-request";

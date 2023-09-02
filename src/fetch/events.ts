@@ -1,9 +1,9 @@
-import {DurableEventData, UnknownEvent} from "../data";
+import {setDurableRequest, DurableEventData, DurableRequestData} from "../data";
 import {on} from "../events";
 import {dispatcher} from "../events/schedule/schedule";
 import {defer} from "@virtualstate/promise";
 import {isLike, isPromise, isSignalled, ok} from "../is";
-import {DurableRequestData} from "./types";
+import {fromDurableRequest, fromRequestResponse} from "../data/durable-request/from";
 
 const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
@@ -98,14 +98,7 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
         wait,
         waitUntil
     } = createWaitUntil();
-    const { url, ...init } = event.request;
-    const request = new Request(
-        url,
-        {
-            ...init,
-            signal
-        }
-    );
+    const request = fromDurableRequest(event.request);
     try {
         await dispatch({
             ...event,
@@ -116,11 +109,11 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
             waitUntil
         });
         const response = await handled;
-
-        // no response usage
-        // we don't care if its resolved etc
-        void response;
-
+        const durableRequest = await fromRequestResponse(request, response);
+        await setDurableRequest({
+            ...durableRequest,
+            durableRequestId: `${event.type}:request:${event.durableEventId}`
+        });
     } catch (error) {
         if (!signal.aborted) {
             controller?.abort(error);

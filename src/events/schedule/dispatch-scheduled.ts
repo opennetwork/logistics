@@ -47,7 +47,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
     }
 
     async function dispatchScheduledEvent(event: DurableEventData) {
-        if (event.eventId) {
+        if (event.durableEventId) {
             const schedule = (await getDurableEvent(event)) ?? (event.virtual ? event : undefined);
             if (!isMatchingSchedule(schedule)) {
                 return;
@@ -66,7 +66,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
     }
 
     async function dispatchEvent(event: DurableEventData) {
-        const done = await lock(`dispatchEvent:${event.type}:${event.eventId || "no-event-id"}`);
+        const done = await lock(`dispatchEvent:${event.type}:${event.durableEventId || "no-event-id"}`);
         // TODO detect if this event tries to dispatch again
         try {
             await dispatchEventToHandlers(event);

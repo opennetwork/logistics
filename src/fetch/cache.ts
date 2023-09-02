@@ -1,9 +1,17 @@
-import {getKeyValueStore, KeyValueStore} from "../data";
-import {DurableRequest, DurableRequestData, DurableResponseData} from "./types";
+import {
+    DurableRequest,
+    DurableRequestData,
+    DurableResponseData,
+    getKeyValueStore,
+    KeyValueStore,
+    getDurableRequestStore as getBaseRequestStore,
+    RequestQuery
+} from "../data";
 import {ok} from "../is";
 import {HeaderList} from "http-header-list";
 import {getOrigin} from "../listen";
 import {getConfig} from "../config";
+import {fromDurableRequest, fromDurableResponse, fromRequestResponse} from "../data/durable-request/from";
 
 export interface DurableCacheStorageConfig {
     getDurableCacheStorageOrigin?(): string
@@ -42,11 +50,7 @@ function getRequestQueryURL(requestQuery: RequestQuery, getOrigin: () => string)
     return requestQuery.url;
 }
 
-export interface RequestQueryInfo extends DurableRequestData {
 
-}
-
-export type RequestQuery = RequestQueryInfo | RequestInfo | URL
 
 // https://w3c.github.io/ServiceWorker/#query-cache
 function isQueryCacheMatch(requestQuery: RequestQuery | undefined, request: DurableRequest, options?: CacheQueryOptions) {
@@ -132,38 +136,13 @@ function getCacheURLString(string: string, options?: CacheQueryOptions) {
     return instance.toString();
 }
 
-function fromDurableRequest(durableRequest: DurableRequestData, getOrigin: () => string) {
-    const { url, ...init } = durableRequest;
-    return new Request(
-        new URL(url, getOrigin()),
-        init
-    );
-}
 
-function fromDurableResponse(durableResponse: DurableResponseData) {
-    const { body, ...init } = durableResponse;
-    return new Response(
-        body,
-        init
-    );
-}
 
 function getRequestQueryHeaders(requestQuery: RequestQuery) {
     if (typeof requestQuery === "string" || requestQuery instanceof URL) {
         return undefined
     }
     return new Headers(requestQuery.headers);
-}
-
-function getHeadersObject(headers?: Headers) {
-    const output: Record<string, string> = {};
-    if (!headers) {
-        return output;
-    }
-    headers.forEach((value, key) => {
-        output[key] = value;
-    })
-    return output;
 }
 
 function assertVaryValid(vary: string) {
@@ -260,35 +239,22 @@ export class DurableCache implements Cache {
         const requestStore = getDurableRequestStore(this.name);
 
         ok(!response.bodyUsed);
-
         assertVaryValid(response.headers.get("Vary"));
 
-        const clonedResponse = response.clone();
-
         const method = getRequestMethod();
-
         ok(method === "GET" || method === "HEAD", "Requests that aren't GET or HEAD will not be matchable")
-
-        const durableResponse: DurableResponseData = {
-            headers: getResponseHeadersObject(),
-            status: response.status,
-            statusText: response.statusText,
-            url: response.url,
-            // TODO investigate non string responses and storage
-            // we could just use something like
-            // await save(`fetch/cache/${durableRequestId}`, Buffer.from(await clonedResponse.arrayBuffer()))
-            body: await clonedResponse.text()
-        };
 
         const cacheUrl = getCacheURLString(url);
 
-        const durableRequest: DurableRequest = {
-            durableRequestId: `${method}:${cacheUrl}`,
+        const clonedRequest = new Request(cacheUrl, {
             method,
-            url: cacheUrl,
-            response: durableResponse,
-            createdAt: new Date().toISOString()
-        };
+            headers: getRequestQueryHeaders(requestQuery)
+        });
+
+        const durableRequest = await fromRequestResponse(
+            clonedRequest,
+            response
+        );
 
         await requestStore.set(durableRequest.durableRequestId, durableRequest);
 
@@ -297,14 +263,6 @@ export class DurableCache implements Cache {
                 return "GET";
             }
             return requestQuery.method;
-        }
-
-        function getResponseHeadersObject() {
-            const headers = new Headers(response.headers);
-            // Not sure if we ever get this header in node fetch
-            // https://developer.mozilla.org/en-US/docs/Web/API/Cache#cookies_and_cache_objects
-            headers.delete("Set-Cookie");
-            return getHeadersObject(headers);
         }
     }
 
@@ -318,15 +276,26 @@ export class DurableCache implements Cache {
 
 }
 
-function getDurableCacheStore<T>(prefix?: string) {
-    return getKeyValueStore<T>(`fetch:cache`, {
-        counter: false,
-        prefix
+const CACHE_STORE_NAME = "fetch:cache";
+
+function getDurableRequestStore(name: string) {
+    return getBaseRequestStore({
+        name: CACHE_STORE_NAME,
+        prefix: `${name}:request`,
     });
 }
 
-export function getDurableRequestStore(name: string) {
-    return getDurableCacheStore<DurableRequest>(`${name}:request`);
+interface DurableCacheReference {
+    cacheName: string;
+    createdAt: string;
+    lastOpenedAt: string;
+}
+
+function getDurableCacheReferenceStore() {
+    return getKeyValueStore<DurableCacheReference>(CACHE_STORE_NAME, {
+        prefix: "reference",
+        counter: false
+    });
 }
 
 async function firstNext<T>(iterable: AsyncIterable<T>): Promise<IteratorResult<T>> {
@@ -359,12 +328,6 @@ async function * matchDurableRequests(cacheName: string, requestQuery?: RequestQ
     }
 }
 
-interface DurableCacheReference {
-    cacheName: string;
-    createdAt: string;
-    lastOpenedAt: string;
-}
-
 export interface DurableCacheStorageOptions {
     url(): string;
 }
@@ -378,7 +341,7 @@ export class DurableCacheStorage implements CacheStorage {
     constructor(options: DurableCacheStorageOptions) {
         this.url = options.url
         this.caches = new Map();
-        this.store = getDurableCacheStore<DurableCacheReference>()
+        this.store = getDurableCacheReferenceStore();
     }
 
     async open(cacheName: string): Promise<DurableCache> {

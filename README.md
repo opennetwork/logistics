@@ -222,15 +222,40 @@ export interface DurableEventTypeData extends UnknownEvent {
 
 export interface DurableEventData extends Record<string, unknown>, DurableEventTypeData, Expiring {
     timeStamp?: number;
-    eventId?: string;
+    durableEventId?: string;
     schedule?: DurableEventSchedule;
     retain?: boolean;
     virtual?: boolean;
 }
 
 export interface DurableEvent extends DurableEventData {
-    eventId: string;
+    durableEventId: string
 }
+
+export interface DurableRequestData extends Pick<Request, "url" | "method">, Expiring {
+    headers?: Record<string, string>
+    body?: string;
+}
+
+export interface DurableResponseData extends Pick<Response, "url" | "status" | "statusText"> {
+    headers?: Record<string, string>
+    body?: string;
+}
+
+export interface DurableRequest extends DurableRequestData {
+    durableRequestId: string;
+    response?: DurableResponseData;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface RequestQueryInfo extends DurableRequestData {
+
+}
+
+export type RequestQuery = RequestQueryInfo | RequestInfo | URL
+
+export type PartialDurableRequest = DurableRequestData & Partial<DurableRequest>;
 
 export interface Expiring {
     expiresAt?: string;

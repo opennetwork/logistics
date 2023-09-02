@@ -13,6 +13,7 @@ export interface BackgroundInput extends Record<string, unknown> {
 export interface BackgroundQuery extends Record<string, unknown> {
     event?: string;
     eventId?: string;
+    durableEventId?: string;
     eventTimeStamp?: string | `${number}` | number;
     cron?: string;
     seed?: string;
@@ -71,12 +72,14 @@ async function backgroundScheduleWithOptions(input: BackgroundInput) {
         } else if (event) {
             const {
                 eventId,
+                durableEventId: givenDurableEventId,
                 eventTimeStamp: timeStamp
             } = input.query;
-            if (eventId) {
+            const durableEventId = givenDurableEventId || eventId;
+            if (durableEventId) {
                 options.event = {
                     type: event,
-                    eventId
+                    durableEventId
                 }
                 if (isNumberString(timeStamp)) {
                     options.event.timeStamp = +timeStamp;
