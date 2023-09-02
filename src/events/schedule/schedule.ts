@@ -13,6 +13,11 @@ export type ScheduledFunctionsRecord<F = ScheduledFn> = Record<string, F>;
 
 type ScheduledFunctionsConfig<F = ScheduledFn> = ScheduledOptions<F>[] | ScheduledFunctionsRecord<F>;
 
+export interface ScheduledFunctionOptionsInit extends Record<string, unknown> {
+    // true is not yet supported, these are config and convention driven event listeners
+    once?: false
+}
+
 export interface ScheduledOptions<F = ScheduledFn> {
     cron?: string;
     on?: string;
@@ -31,11 +36,25 @@ export function cron(cron: string, handler: ScheduledFn) {
     });
 }
 
-export function on(on: string, handler: ScheduledFn) {
+export function addEventListener(on: string, handler: ScheduledFn, options?: ScheduledFunctionOptionsInit) {
     return createScheduledFunction({
         on,
         handler
     });
+}
+
+export function removeEventListener(on: string, handler: ScheduledFn, options?: ScheduledFunctionOptionsInit) {
+    const index = SCHEDULED_FUNCTIONS.findIndex(value => (
+        value.on === on &&
+        value.handler === handler
+    ));
+    if (index > -1) {
+        SCHEDULED_FUNCTIONS.splice(index, 1);
+    }
+}
+
+export function on(on: string, handler: ScheduledFn, options?: ScheduledFunctionOptionsInit) {
+    return addEventListener(on, handler, options);
 }
 
 export function dispatcher(on: string, handler: DispatcherFn) {
