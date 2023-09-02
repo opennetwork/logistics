@@ -1,5 +1,5 @@
 import type {FastifyPluginAsync} from "fastify";
-import type {ReactOrderConfig} from "../react/server/paths/order/types";
+import type {ReactOrderConfig} from "../react/server";
 import type {ViewConfig} from "../view";
 import type {AuthenticationRoleConfig, KeyValueStoreConfig} from "../data";
 import type {ComponentConfig} from "../react/server/paths/config";
@@ -12,6 +12,7 @@ import type {MembershipStatusConfig} from "../data/membership/membership-status"
 import {SeedConfig} from "../data";
 import {ScheduledConfig} from "../events/schedule/schedule";
 import {VirtualEventConfig} from "../events/virtual/virtual";
+import {DurableCacheStorageConfig} from "../fetch/cache";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -32,7 +33,8 @@ export interface Config extends
     MembershipStatusConfig,
     SeedConfig,
     ScheduledConfig,
-    VirtualEventConfig {
+    VirtualEventConfig,
+    DurableCacheStorageConfig {
     name: string;
     version: string;
     root: string;

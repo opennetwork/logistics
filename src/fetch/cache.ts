@@ -2,6 +2,20 @@ import {getKeyValueStore, KeyValueStore} from "../data";
 import {DurableRequest, DurableRequestData, DurableResponseData} from "./types";
 import {ok} from "../is";
 import {HeaderList} from "http-header-list";
+import {getOrigin} from "../listen";
+import {getConfig} from "../config";
+
+export interface DurableCacheStorageConfig {
+    getDurableCacheStorageOrigin?(): string
+}
+
+function getDurableCacheStorageOrigin() {
+    const config = getConfig();
+    return (
+        config.getDurableCacheStorageOrigin?.() ??
+        getOrigin()
+    );
+}
 
 function getRequest(request: RequestQuery) {
     if (typeof request === "string" || request instanceof URL) {
@@ -171,12 +185,19 @@ export interface DurableCacheQueryOptions extends CacheQueryOptions {
 
 }
 
+export interface DurableCacheOptions {
+    name: string;
+    url(): string;
+}
+
 export class DurableCache implements Cache {
 
     name: string;
+    url: () => string;
 
-    constructor(cacheName: string) {
-        this.name = cacheName;
+    constructor({ name, url }: DurableCacheOptions) {
+        this.name = name;
+        this.url = url;
     }
 
     async add(info: RequestQuery, init?: Pick<RequestInit, "signal">): Promise<void> {
@@ -274,6 +295,8 @@ export class DurableCache implements Cache {
 
         function getResponseHeadersObject() {
             const headers = new Headers(response.headers);
+            // Not sure if we ever get this header in node fetch
+            // https://developer.mozilla.org/en-US/docs/Web/API/Cache#cookies_and_cache_objects
             headers.delete("Set-Cookie");
             return getHeadersObject(headers);
         }
@@ -336,12 +359,18 @@ interface DurableCacheReference {
     lastOpenedAt: string;
 }
 
+export interface DurableCacheStorageOptions {
+    url(): string;
+}
+
 export class DurableCacheStorage implements CacheStorage {
 
     store: KeyValueStore<DurableCacheReference>;
     caches: Map<string, DurableCache>;
+    url: () => string;
 
-    constructor() {
+    constructor(options: DurableCacheStorageOptions) {
+        this.url = options.url
         this.caches = new Map();
         this.store = getDurableCacheStore<DurableCacheReference>()
     }
@@ -359,7 +388,10 @@ export class DurableCacheStorage implements CacheStorage {
             lastOpenedAt
         };
         await this.store.set(cacheName, reference);
-        const cache = new DurableCache(cacheName);
+        const cache = new DurableCache({
+            name: cacheName,
+            url: this.url
+        });
         this.caches.set(cacheName, cache);
         return cache;
     }
@@ -403,4 +435,6 @@ export class DurableCacheStorage implements CacheStorage {
 
 }
 
-export const caches = new DurableCacheStorage();
+export const caches = new DurableCacheStorage({
+    url: getDurableCacheStorageOrigin
+});
