@@ -1,4 +1,4 @@
-import {caches} from "../fetch/cache";
+import {caches} from "../fetch";
 import {ok} from "../is";
 
 const cache = await caches.open("test");

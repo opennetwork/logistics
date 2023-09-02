@@ -11,4 +11,5 @@ export interface DurableResponseData extends Pick<Response, "url" | "status" | "
 export interface DurableRequest extends DurableRequestData {
     durableRequestId: string;
     response?: DurableResponseData;
+    createdAt: string;
 }

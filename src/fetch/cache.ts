@@ -17,19 +17,24 @@ function getDurableCacheStorageOrigin() {
     );
 }
 
-function getRequest(request: RequestQuery) {
+function getRequest(request: RequestQuery, getOrigin: () => string) {
     if (typeof request === "string" || request instanceof URL) {
-        return new Request(request);
+        return new Request(
+            new URL(
+                request,
+                getOrigin()
+            )
+        );
     }
     if (request instanceof Request) {
         return request;
     }
-    return fromDurableRequest(request);
+    return fromDurableRequest(request, getOrigin);
 }
 
-function getRequestQueryURL(requestQuery: RequestQuery) {
+function getRequestQueryURL(requestQuery: RequestQuery, getOrigin: () => string) {
     if (typeof requestQuery === "string") {
-        return requestQuery;
+        return new URL(requestQuery, getOrigin()).toString();
     }
     if (requestQuery instanceof URL) {
         return requestQuery.toString();
@@ -66,7 +71,7 @@ function isQueryCacheMatch(requestQuery: RequestQuery | undefined, request: Dura
         if (!requestQuery) {
             return true;
         }
-        const queryUrl = getRequestQueryURL(requestQuery);
+        const queryUrl = getRequestQueryURL(requestQuery, () => request.url);
         return getCacheURLString(queryUrl, options) === getCacheURLString(request.url, options)
     }
 
@@ -127,10 +132,10 @@ function getCacheURLString(string: string, options?: CacheQueryOptions) {
     return instance.toString();
 }
 
-function fromDurableRequest(durableRequest: DurableRequestData) {
+function fromDurableRequest(durableRequest: DurableRequestData, getOrigin: () => string) {
     const { url, ...init } = durableRequest;
     return new Request(
-        url,
+        new URL(url, getOrigin()),
         init
     );
 }
@@ -201,7 +206,7 @@ export class DurableCache implements Cache {
     }
 
     async add(info: RequestQuery, init?: Pick<RequestInit, "signal">): Promise<void> {
-        const request = getRequest(info);
+        const request = getRequest(info, this.url);
         const response = await fetch(request, init);
         return this.put(request, response);
     }
@@ -251,7 +256,7 @@ export class DurableCache implements Cache {
 
     // https://w3c.github.io/ServiceWorker/#cache-put
     async put(requestQuery: RequestInfo | URL, response: Response): Promise<void> {
-        const url = getRequestQueryURL(requestQuery);
+        const url = getRequestQueryURL(requestQuery, this.url);
         const requestStore = getDurableRequestStore(this.name);
 
         ok(!response.bodyUsed);
@@ -273,17 +278,18 @@ export class DurableCache implements Cache {
             // we could just use something like
             // await save(`fetch/cache/${durableRequestId}`, Buffer.from(await clonedResponse.arrayBuffer()))
             body: await clonedResponse.text()
-        }
-
-        const durableRequest: DurableRequest = {
-            durableRequestId: `${method}:${url}`,
-            method,
-            url,
-            response: durableResponse
         };
 
-        // TODO ... need to double check if put really means... delete anything matching the same request
-        await this.delete(fromDurableRequest(durableRequest));
+        const cacheUrl = getCacheURLString(url);
+
+        const durableRequest: DurableRequest = {
+            durableRequestId: `${method}:${cacheUrl}`,
+            method,
+            url: cacheUrl,
+            response: durableResponse,
+            createdAt: new Date().toISOString()
+        };
+
         await requestStore.set(durableRequest.durableRequestId, durableRequest);
 
         function getRequestMethod() {
@@ -305,7 +311,7 @@ export class DurableCache implements Cache {
     async keys(requestQuery?: RequestInfo | URL, options?: CacheQueryOptions): Promise<ReadonlyArray<Request>> {
         const requests: Request[] = [];
         for await (const durableRequest of matchDurableRequests(this.name, requestQuery, options)) {
-            requests.push(fromDurableRequest(durableRequest));
+            requests.push(fromDurableRequest(durableRequest, this.url));
         }
         return requests;
     }
