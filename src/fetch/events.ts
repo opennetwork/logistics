@@ -1,4 +1,4 @@
-import {setDurableRequest, DurableEventData, DurableRequestData} from "../data";
+import {setDurableRequest, DurableEventData, DurableRequestData, setDurableRequestForEvent} from "../data";
 import {on} from "../events";
 import {dispatcher} from "../events/schedule/schedule";
 import {defer} from "@virtualstate/promise";
@@ -110,10 +110,7 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
         });
         const response = await handled;
         const durableRequest = await fromRequestResponse(request, response);
-        await setDurableRequest({
-            ...durableRequest,
-            durableRequestId: `${event.type}:request:${event.durableEventId}`
-        });
+        await setDurableRequestForEvent(durableRequest, event);
     } catch (error) {
         if (!signal.aborted) {
             controller?.abort(error);

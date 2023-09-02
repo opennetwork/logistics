@@ -1,7 +1,7 @@
 import {v4} from "uuid";
 import {DurableRequest, PartialDurableRequest} from "./types";
 import {getDurableRequestStore} from "./store";
-import {DurableEvent} from "../durable-event";
+import {DurableEventData} from "../durable-event";
 import {getDurableRequestIdForEvent} from "./get-durable-request";
 
 
@@ -19,7 +19,7 @@ export async function setDurableRequest(data: PartialDurableRequest) {
     return durableRequest;
 }
 
-export function setDurableRequestForEvent(data: PartialDurableRequest, event: DurableEvent) {
+export function setDurableRequestForEvent(data: PartialDurableRequest, event: DurableEventData) {
     return setDurableRequest({
         ...data,
         durableRequestId: getDurableRequestIdForEvent(event)
