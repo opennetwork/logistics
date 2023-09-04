@@ -242,19 +242,28 @@ export class DurableCache implements Cache {
         const method = getRequestMethod();
         ok(method === "GET" || method === "HEAD", "Requests that aren't GET or HEAD will not be matchable")
 
-        const cacheUrl = getCacheURLString(url);
-
-        const clonedRequest = new Request(cacheUrl, {
+        const clonedRequest = new Request(url, {
             method,
             headers: getRequestQueryHeaders(requestQuery)
         });
 
-        const durableRequest = await fromRequestResponse(
+        const durableRequestData = await fromRequestResponse(
             clonedRequest,
             response
         );
 
-        await requestStore.set(durableRequest.durableRequestId, durableRequest);
+        const createdAt = new Date().toISOString();
+        const { search } = new URL(url);
+
+        const durableRequestId = search || "?";
+        const durableRequest: DurableRequest = {
+            ...durableRequestData,
+            durableRequestId,
+            createdAt,
+            updatedAt: createdAt
+        }
+
+        await requestStore.set(durableRequestId, durableRequest);
 
         function getRequestMethod() {
             if (typeof requestQuery === "string" || requestQuery instanceof URL) {

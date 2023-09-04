@@ -3,6 +3,7 @@ import {Expiring} from "../expiring";
 export interface DurableRequestData extends Pick<Request, "url" | "method">, Expiring {
     headers?: Record<string, string>
     body?: string;
+    response?: DurableResponseData;
 }
 
 export interface DurableResponseData extends Pick<Response, "url" | "status" | "statusText"> {
@@ -12,7 +13,6 @@ export interface DurableResponseData extends Pick<Response, "url" | "status" | "
 
 export interface DurableRequest extends DurableRequestData {
     durableRequestId: string;
-    response?: DurableResponseData;
     createdAt: string;
     updatedAt: string;
 }

@@ -1,4 +1,5 @@
 import {DurableRequest, DurableRequestData, DurableResponseData} from "./types";
+import {v4} from "uuid";
 
 export function fromDurableRequest(durableRequest: DurableRequestData, getOrigin?: () => string) {
     const { url, method, headers, body } = durableRequest;
@@ -24,7 +25,7 @@ export function fromDurableResponse(durableResponse: DurableResponseData) {
     );
 }
 
-export async function fromRequestResponse(request: Request, response: Response) {
+export async function fromRequestResponse(request: Request, response: Response): Promise<DurableRequestData> {
     const clonedResponse = response.clone();
 
     const durableResponse: DurableResponseData = {
@@ -39,17 +40,13 @@ export async function fromRequestResponse(request: Request, response: Response) 
         // await save(`fetch/cache/${durableRequestId}`, Buffer.from(await clonedResponse.arrayBuffer()))
         body: await clonedResponse.text()
     };
-
-    const createdAt = new Date().toISOString();
+    
     const { method, url } = request;
 
     return {
-        durableRequestId: `${method}:${url}`,
         method,
         url,
-        response: durableResponse,
-        createdAt,
-        updatedAt: createdAt
+        response: durableResponse
     };
 
     function getResponseHeadersObject() {
