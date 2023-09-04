@@ -89,7 +89,7 @@ function isQueryCacheMatch(requestQuery: RequestQuery | undefined, request: Dura
         const responseHeaders = new Headers(request.response.headers);
         const vary = responseHeaders.get("Vary");
 
-        if (vary) {
+        if (!vary) {
             return true;
         }
 
