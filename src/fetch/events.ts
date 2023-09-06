@@ -56,8 +56,8 @@ function createRespondWith() {
     }
 }
 
-function createWaitUntil() {
-    const promises: Promise<unknown>[] = [];
+export function createWaitUntil() {
+    let promises: Promise<unknown>[] = [];
 
     function waitUntil(promise: Promise<unknown>) {
         promises.push(
@@ -65,10 +65,14 @@ function createWaitUntil() {
         );
     }
 
-    async function wait() {
-        if (promises.length) {
-            await Promise.all(promises);
+    async function wait(): Promise<void> {
+        if (!promises.length) {
+            return;
         }
+        const current = promises;
+        promises = [];
+        await Promise.all(current);
+        return wait();
     }
 
     return {
