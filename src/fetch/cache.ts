@@ -93,18 +93,18 @@ function isQueryCacheMatch(requestQuery: RequestQuery | undefined, request: Dura
             return true;
         }
 
+        const requestHeaders = getRequestQueryHeaders(requestQuery);
+
+        if (!requestHeaders) {
+            // No headers no match, always matches
+            return true;
+        }
+
         const { list } = new HeaderList(vary);
 
         const values = list.map(({ value }) => value);
 
         ok(values.length, "Unexpected Vary list")
-
-        const requestHeaders = getRequestQueryHeaders(requestQuery);
-
-        if (!requestHeaders) {
-            // No headers no match, not gonna match
-            return false;
-        }
 
         for (const name of values) {
             if (name === "*") {
