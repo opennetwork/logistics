@@ -1,4 +1,4 @@
-import {DurableEventData, DurableRequest, DurableRequestData, setDurableRequestForEvent} from "../data";
+import {DurableBody, DurableEventData, DurableRequest, DurableRequestData, setDurableRequestForEvent} from "../data";
 import {dispatchEvent, on} from "../events";
 import {dispatcher} from "../events/schedule/schedule";
 import {defer} from "@virtualstate/promise";
@@ -136,13 +136,6 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
             waitUntil
         });
         const response = await handled;
-        if (isDurableFetchEventCache(event.cache)) {
-            const { name, always } = event.cache;
-            if (response.ok || always) {
-                const store = await caches.open(name);
-                await store.put(request, response);
-            }
-        }
         let durableEventDispatch: DurableEventData;
         if (event.dispatch) {
             durableEventDispatch = {
@@ -150,9 +143,26 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
                 ...event.dispatch
             };
         }
+        const isRetain = durableEventDispatch || (event.durableEventId && event.retain !== false);
+        let body: DurableBody;
+        const cache = isDurableFetchEventCache(event.cache) ? event.cache : (isRetain ? { name: FETCH } : undefined);
+        if (cache) {
+            const { name, always } = cache;
+            if (response.ok || always) {
+                const store = await caches.open(name);
+                await store.put(request, response);
+                body = {
+                    type: "cache",
+                    value: name,
+                    url: request.url
+                };
+            }
+        }
         let durableRequest: DurableRequest;
-        if (durableEventDispatch || (event.durableEventId && event.retain !== false)) {
-            const durableRequestData = await fromRequestResponse(request, response);
+        if (isRetain) {
+            const durableRequestData = await fromRequestResponse(request, response, {
+                body
+            });
             durableRequest = await setDurableRequestForEvent(durableRequestData, durableEventDispatch || event);
             if (durableEventDispatch) {
                 const { response, ...request } = durableRequest;

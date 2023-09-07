@@ -1,8 +1,9 @@
-import {DurableBody, DurableRequestData, DurableResponseData} from "./types";
+import {DurableBody, DurableBodyLike, DurableRequestData, DurableResponseData} from "./types";
 import {isDurableBody} from "./is";
 import {ok} from "../../is";
 import {getFile, readFile, save} from "../file";
 import {v4} from "uuid";
+import {caches} from "../../fetch";
 
 export async function fromMaybeDurableBody(body: unknown): Promise<RequestInit["body"]> {
     if (typeof body === "string") {
@@ -26,6 +27,14 @@ export async function fromMaybeDurableBody(body: unknown): Promise<RequestInit["
 export async function fromDurableBody(body: DurableBody): Promise<RequestInit["body"]> {
     if (body.type === "base64") {
         return Buffer.from(body.value, body.type);
+    }
+    if (body.type === "cache") {
+        const { url, value: cacheName } = body;
+        ok(url, "Expected url to be provided to resolve cache body");
+        const cache = await caches.open(cacheName);
+        const match = await cache.match(url);
+        ok(match, "Expected match from cache for body");
+        return match.blob();
     }
     ok(body.type === "file", `Unknown body type ${body.type}`);
     const file = await getFile(body.value);
@@ -63,27 +72,32 @@ export async function fromDurableResponse(durableResponse: DurableResponseData) 
 
 export interface FromRequestResponseOptions {
     fileName?: string;
+    body?: DurableBodyLike;
 }
 
 export async function fromRequestResponse(request: Request, response: Response, options?: FromRequestResponseOptions): Promise<DurableRequestData> {
     const clonedResponse = response.clone();
 
-    let body: DurableResponseData["body"];
+    let body: DurableBodyLike;
 
-    // TODO detect string based contentTypes
-    const contentType = response.headers.get("Content-Type");
-    if (contentType === "text/html" || contentType === "text/plain" || contentType?.startsWith("application/json") || contentType === "application/javascript") {
-        body = await clonedResponse.text();
+    if (options.body) {
+        body = options.body;
     } else {
-        // TODO warning, we might mislink some of these files...
-        const file = await save({
-            fileName: options?.fileName || v4(),
-            contentType
-        }, await clonedResponse.blob());
-        body = {
-            type: "file",
-            value: file.fileId
-        };
+        // TODO detect string based contentTypes
+        const contentType = response.headers.get("Content-Type");
+        if (contentType === "text/html" || contentType === "text/plain" || contentType?.startsWith("application/json") || contentType === "application/javascript") {
+            body = await clonedResponse.text();
+        } else {
+            // TODO warning, we might mislink some of these files...
+            const file = await save({
+                fileName: options?.fileName || v4(),
+                contentType
+            }, await clonedResponse.blob());
+            body = {
+                type: "file",
+                value: file.fileId
+            };
+        }
     }
 
     const durableResponse: DurableResponseData = {

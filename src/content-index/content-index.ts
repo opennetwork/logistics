@@ -58,7 +58,7 @@ export class DurableContentIndex {
                 type: "content",
                 id: contentDescription.id
             }
-        })
+        });
     }
 
     async delete(id: string) {

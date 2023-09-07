@@ -7,7 +7,8 @@ export function isDurableBody(value: unknown): value is DurableBody {
         typeof value.type === "string" &&
         (
             value.type === "file" ||
-            value.type === "base64"
+            value.type === "base64" ||
+            value.type === "cache"
         ) &&
         typeof value.value === "string"
     )
