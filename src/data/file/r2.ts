@@ -263,9 +263,7 @@ export async function readFileFromR2(file: FileData) {
     });
     const response = await client.send(command);
     const array = await response.Body.transformToByteArray();
-    return fromMaybeDurableBody(new Blob([array], {
-        type: file.contentType
-    }));
+    return Buffer.from(array);
 }
 
 export async function unlinkFromR2(file: FileData) {
