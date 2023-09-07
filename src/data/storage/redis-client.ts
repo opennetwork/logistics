@@ -140,6 +140,7 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
   }
 
   async function* scanValues(count = DEFAULT_SCAN_SIZE): AsyncIterable<T[]> {
+    let found = false;
     for await (const keys of scan(count)) {
       const values = await Promise.all(
           keys.map(get)
@@ -147,6 +148,7 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
       const filtered = values.filter(Boolean);
       if (filtered.length) {
         yield filtered;
+        found = true;
       }
     }
   }
@@ -171,8 +173,8 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
 
   async function keys(): Promise<string[]> {
     const keys: string[] = [];
-    for await (const keys of scan(DEFAULT_SCAN_SIZE)) {
-      keys.push(...keys);
+    for await (const scanned of scan(DEFAULT_SCAN_SIZE)) {
+      keys.push(...scanned);
     }
     return keys;
   }

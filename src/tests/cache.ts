@@ -5,16 +5,17 @@ import {v4} from "uuid";
 
 {
     const name = v4();
-    const cache = await caches.open("test");
+    const cache = await caches.open(name);
 
     let response;
     if (!(response = await cache.match("https://example.com"))) {
         response = await fetch("https://example.com");
         await cache.put(response.url, response);
     }
-    console.log(await response.text());
-
-    ok(await cache.match("https://example.com"));
+    ok(await response.text());
+    const match = await cache.match("https://example.com");
+    ok(match);
+    ok(await match.text());
 
     await caches.delete(name)
 }
