@@ -1,13 +1,22 @@
-import {DurableEventData, DurableRequestData, setDurableRequestForEvent} from "../data";
+import {DurableEventData, DurableRequest, DurableRequestData, setDurableRequestForEvent} from "../data";
 import {dispatchEvent, on} from "../events";
 import {dispatcher} from "../events/schedule/schedule";
 import {defer} from "@virtualstate/promise";
 import {isLike, isPromise, isSignalled, ok} from "../is";
-import {fromDurableRequest, fromRequestResponse} from "../data/durable-request/from";
+import {fromDurableRequest, fromRequestResponse} from "../data";
 import {v4} from "uuid";
+import {getConfig} from "../config";
 
 const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
+
+export interface FetchEventResponseFn {
+    (response: Response, request: Request, durableRequest?: DurableRequest): Promise<void | unknown> | void | unknown
+}
+
+export interface FetchEventConfig {
+    response?: FetchEventResponseFn | FetchEventResponseFn[];
+}
 
 export interface DurableFetchEventData extends DurableEventData {
     type: ScheduleFetchEventType;
@@ -120,12 +129,20 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
                 ...event.dispatch
             };
         }
-        if (durableEventDispatch || (event.durableEventId && (event.virtual || event.retain))) {
-            const durableRequest = await fromRequestResponse(request, response);
-            await setDurableRequestForEvent(durableRequest, durableEventDispatch || event);
+        let durableRequest: DurableRequest;
+        if (durableEventDispatch || (event.durableEventId && event.retain !== false)) {
+            const durableRequestData = await fromRequestResponse(request, response);
+            durableRequest = await setDurableRequestForEvent(durableRequestData, durableEventDispatch || event);
             if (durableEventDispatch) {
                 await dispatchEvent(durableEventDispatch);
             }
+        }
+        const { response: givenFns } = getConfig();
+        const responseFns = Array.isArray(givenFns) ? givenFns : (givenFns ? [givenFns] : []);
+        if (responseFns.length) {
+            await Promise.all(
+                responseFns.map(async (fn) => fn(response.clone(), request, durableRequest))
+            );
         }
     } catch (error) {
         if (!signal.aborted) {

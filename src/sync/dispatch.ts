@@ -1,8 +1,7 @@
 import {dispatcher} from "../events/schedule/schedule";
 import {isLike, isSignalled, ok} from "../is";
 import {createWaitUntil} from "../fetch";
-import {DurableEventData, UnknownEvent} from "../data";
-import {DispatchEvent} from "../events";
+import {DurableEventData} from "../data";
 import {deregisterSyncTag, getSyncTagRegistrationState, setSyncTagRegistrationState} from "./manager";
 
 export interface SyncDurableEventData extends DurableEventData {

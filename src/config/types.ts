@@ -12,7 +12,7 @@ import type {MembershipStatusConfig} from "../data/membership/membership-status"
 import {SeedConfig} from "../data";
 import {ScheduledConfig} from "../events/schedule/schedule";
 import {VirtualEventConfig} from "../events/virtual/virtual";
-import {DurableCacheStorageConfig} from "../fetch/cache";
+import {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -34,7 +34,8 @@ export interface Config extends
     SeedConfig,
     ScheduledConfig,
     VirtualEventConfig,
-    DurableCacheStorageConfig {
+    DurableCacheStorageConfig,
+    FetchEventConfig {
     name: string;
     version: string;
     root: string;

@@ -1,6 +1,7 @@
-import {DurableEventData, getKeyValueStore} from "../data";
+import {getKeyValueStore} from "../data";
 import {virtual} from "../events/virtual/virtual";
 import {ok} from "../is";
+import type {SyncDurableEventData} from "./dispatch";
 
 type SyncTagRegistrationState = "pending" | "waiting" | "firing" | "reregisteredWhileFiring";
 
@@ -84,7 +85,7 @@ export class DurableSyncManager {
 
 export const sync = new DurableSyncManager();
 
-export async function * generateVirtualSyncEvents(): AsyncIterable<DurableEventData> {
+export async function * generateVirtualSyncEvents(): AsyncIterable<SyncDurableEventData> {
     const store = getSyncTagStore();
     for await (const { tag, lastChance } of store) {
         yield {
