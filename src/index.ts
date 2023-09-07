@@ -15,3 +15,4 @@ export * from "./events";
 export * from "./branding";
 export * from "./fetch";
 export * from "./sync";
+export * from "./content-index";

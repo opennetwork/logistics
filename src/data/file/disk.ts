@@ -1,11 +1,11 @@
 import {FileData} from "./types";
-import {writeFile, mkdir} from "fs/promises";
+import {writeFile, mkdir, stat, readFile, unlink} from "fs/promises";
 import {dirname, join} from "node:path";
 import {getRemoteSourceKey, getRemoteSourcePrefix} from "./source";
 
-export async function saveToDisk(file: FileData, contents: Buffer | Blob): Promise<Partial<FileData>> {
+function getFullPath(file: FileData) {
     const path = getRemoteSourceKey(file.source, "store") ?? ".cache/.store";
-    let prefix = getRemoteSourcePrefix(file.source) ?? "";
+    let prefix = file.source ? getRemoteSourcePrefix(file.source) : "";
     if (prefix && !prefix.endsWith("/")) {
         prefix = `${prefix}/`;
     }
@@ -14,6 +14,11 @@ export async function saveToDisk(file: FileData, contents: Buffer | Blob): Promi
     if (!fullPath.startsWith("/")) {
         fullPath = join(process.cwd(), fullPath);
     }
+    return fullPath;
+}
+
+export async function saveToDisk(file: FileData, contents: Buffer | Blob): Promise<Partial<FileData>> {
+    const fullPath = getFullPath(file);
     const pathDirectory = dirname(fullPath);
     await mkdir(pathDirectory, {
         recursive: true
@@ -30,4 +35,31 @@ export async function saveToDisk(file: FileData, contents: Buffer | Blob): Promi
         syncedAt: new Date().toISOString(),
         url: `file://${fullPath}`
     };
+}
+
+async function isPathOnDisk(path: string) {
+    try {
+        const pathStat = await stat(path);
+        return pathStat.isFile();
+    } catch {
+        return false
+    }
+}
+
+export async function readFileFromDisk(file: FileData): Promise<Buffer | undefined> {
+    const fullPath = getFullPath(file);
+    const isOnDisk = await isPathOnDisk(fullPath);
+    if (!isOnDisk) {
+        return undefined;
+    }
+    return await readFile(fullPath);
+}
+
+export async function unlinkFromDisk(file: FileData) {
+    const fullPath = getFullPath(file);
+    const isOnDisk = await isPathOnDisk(fullPath);
+    if (!isOnDisk) {
+        return;
+    }
+    await unlink(fullPath);
 }

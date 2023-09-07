@@ -1,5 +1,5 @@
-import { getKeyValueStore } from "../storage";
-import {File, FileType} from "./types";
+import {getKeyValueStore, KeyValueStore} from "../storage";
+import {File, FileData, FileType} from "./types";
 import {ok} from "../../is";
 import {isRemoteFileSourceName} from "./source";
 
@@ -50,4 +50,17 @@ export function getNamedFileStore(name: string, prefix?: string) {
     counter: false,
     prefix
   });
+}
+
+export function resolveFileStore(file: FileData, givenStore?: KeyValueStore<File>) {
+  if (givenStore) {
+    return givenStore;
+  }
+  if (isNamedFileType(file.type)) {
+    const typedId = file[`${file.type}Id`];
+    if (typedId && typeof typedId === "string") {
+      return getNamedFileStore(file.type, typedId);
+    }
+  }
+  return getFileStore();
 }

@@ -9,6 +9,9 @@ import {join} from "node:path";
 
 export function joinMediaPrefix(key: string) {
     const prefix = getMediaPrefix();
+    if (!prefix) {
+        return key;
+    }
     return join(prefix, key);
 }
 

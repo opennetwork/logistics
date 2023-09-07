@@ -152,7 +152,9 @@ function createKeyValueStore<T>(
 
   async function clear(): Promise<void> {
     const store = await storage();
-    await store.clear();
+    for await (const [key] of store) {
+      await store.delete(key);
+    }
   }
 
   async function increment(key: string): Promise<number> {

@@ -1,17 +1,19 @@
 import {
     DurableRequest,
-    DurableRequestData,
-    DurableResponseData,
     getKeyValueStore,
     KeyValueStore,
     getDurableRequestStore as getBaseRequestStore,
-    RequestQuery
+    RequestQuery, getExpiringStore, deleteDurableRequestBody
 } from "../data";
 import {ok} from "../is";
 import {HeaderList} from "http-header-list";
 import {getOrigin} from "../listen";
 import {getConfig} from "../config";
-import {fromDurableRequest, fromDurableResponse, fromRequestResponse} from "../data/durable-request/from";
+import {fromDurableRequest, fromDurableResponse, fromRequestResponse} from "../data";
+import {Expiring} from "../data/expiring";
+import {join} from "node:path";
+import {v4} from "uuid";
+import {createHash} from "crypto";
 
 export interface DurableCacheStorageConfig {
     getDurableCacheStorageOrigin?(): string
@@ -25,7 +27,7 @@ function getDurableCacheStorageOrigin() {
     );
 }
 
-function getRequest(request: RequestQuery, getOrigin?: () => string) {
+async function getRequest(request: RequestQuery, getOrigin?: () => string) {
     if (typeof request === "string" || request instanceof URL) {
         return new Request(
             new URL(
@@ -172,6 +174,22 @@ export interface DurableCacheOptions {
     url(): string;
 }
 
+interface DurablePutOperation {
+    type: "put"
+    request: Request
+    response: Response
+}
+
+async function fetchPutOperation(info: RequestQuery, init?: Pick<RequestInit, "signal">, getOrigin?: () => string): Promise<DurablePutOperation> {
+    const request = await getRequest(info, getOrigin);
+    const response = await fetch(request, init);
+    return {
+        type: "put",
+        request,
+        response
+    }
+}
+
 export class DurableCache implements Cache {
 
     name: string;
@@ -183,8 +201,7 @@ export class DurableCache implements Cache {
     }
 
     async add(info: RequestQuery, init?: Pick<RequestInit, "signal">): Promise<void> {
-        const request = getRequest(info, this.url);
-        const response = await fetch(request, init);
+        const { request, response } = await fetchPutOperation(info, init, this.url);
         return this.put(request, response);
     }
 
@@ -192,10 +209,19 @@ export class DurableCache implements Cache {
         const controller = new AbortController();
         const { signal } = controller;
         try {
+            const operations = await Promise.all(
+                requests.map(
+                    request => fetchPutOperation(
+                        request,
+                        {
+                            signal
+                        },
+                        this.url
+                    )
+                )
+            );
             await Promise.all(
-                requests.map(request => this.add(request, {
-                    signal
-                }))
+                operations.map(({ request, response }) => this.put(request, response))
             );
         } catch (error) {
             if (!signal.aborted) {
@@ -211,10 +237,24 @@ export class DurableCache implements Cache {
 
     async delete(requestQuery: RequestQuery, options?: DurableCacheQueryOptions): Promise<boolean> {
         let deleted = false;
+        const stores = new Map<string, KeyValueStore<DurableRequest>>();
         for await (const durableRequest of matchDurableRequests(this.name, requestQuery, options, this.url)) {
-            const requestStore = getDurableRequestStore(this.name, getRequestQueryURL(durableRequest, this.url));
-            await requestStore.delete(durableRequest.durableRequestId);
+            const url = getRequestQueryURL(durableRequest, this.url);
+            const cacheUrl = getBaseCacheURLString(url);
+            const requestStore = stores.get(cacheUrl) ?? getDurableRequestStore(this.name, url);
+            stores.set(cacheUrl, requestStore);
+            await Promise.all([
+                requestStore.delete(durableRequest.durableRequestId),
+                await deleteDurableRequestBody(durableRequest)
+            ]);
             deleted = true;
+        }
+        const urlStore = getDurableURLStore(this.name);
+        for (const [url, store] of stores.entries()) {
+            const keys = await store.keys();
+            if (!keys.length) {
+                await urlStore.delete(url);
+            }
         }
         return deleted;
     }
@@ -234,7 +274,6 @@ export class DurableCache implements Cache {
     // https://w3c.github.io/ServiceWorker/#cache-put
     async put(requestQuery: RequestInfo | URL, response: Response): Promise<void> {
         const url = getRequestQueryURL(requestQuery, this.url);
-        const requestStore = getDurableRequestStore(this.name, url);
 
         ok(!response.bodyUsed);
         assertVaryValid(response.headers.get("Vary"));
@@ -246,16 +285,23 @@ export class DurableCache implements Cache {
             method,
             headers: getRequestQueryHeaders(requestQuery)
         });
+        const cacheUrl = getBaseCacheURLString(url);
+        const { search } = new URL(url);
+
+        const durableRequestIdHash = createHash("sha512");
+        durableRequestIdHash.update(search || "?");
+        const durableRequestId = durableRequestIdHash.digest().toString("hex");
 
         const durableRequestData = await fromRequestResponse(
             clonedRequest,
-            response
+            response,
+            {
+                fileName: join(CACHE_STORE_NAME, this.name, cacheUrl, durableRequestId)
+            }
         );
 
         const createdAt = new Date().toISOString();
-        const { search } = new URL(url);
 
-        const durableRequestId = search || "?";
         const durableRequest: DurableRequest = {
             ...durableRequestData,
             durableRequestId,
@@ -263,8 +309,15 @@ export class DurableCache implements Cache {
             updatedAt: createdAt
         }
 
-        await requestStore.set(durableRequestId, durableRequest);
 
+        const urlStore = getDurableURLStore(this.name);
+        const requestStore = getDurableRequestStore(this.name, cacheUrl);
+        await Promise.all([
+            urlStore.set(cacheUrl, {
+                url: cacheUrl
+            }),
+            requestStore.set(durableRequestId, durableRequest)
+        ]);
         function getRequestMethod() {
             if (typeof requestQuery === "string" || requestQuery instanceof URL) {
                 return "GET";
@@ -276,7 +329,7 @@ export class DurableCache implements Cache {
     async keys(requestQuery?: RequestInfo | URL, options?: CacheQueryOptions): Promise<ReadonlyArray<Request>> {
         const requests: Request[] = [];
         for await (const durableRequest of matchDurableRequests(this.name, requestQuery, options, this.url)) {
-            requests.push(fromDurableRequest(durableRequest, this.url));
+            requests.push(await fromDurableRequest(durableRequest, this.url));
         }
         return requests;
     }
@@ -284,26 +337,21 @@ export class DurableCache implements Cache {
 }
 
 const CACHE_STORE_NAME = "fetch:cache";
+const CACHE_REFERENCE_STORE_NAME = "fetch:cacheReference";
+const CACHE_URL_STORE_NAME = "fetch:cacheURL";
 
-function getDurableRequestPrefix(name: string) {
-    return `${name}:request`;
-}
-
-function getDurableRequestStore(name: string, url: string) {
-    const cacheUrl = getCacheURLString(url, {
+function getBaseCacheURLString(url: string) {
+    return getCacheURLString(url, {
         ignoreSearch: true
     })
-    // This allows narrowing in on a search ignored url directly
-    // All mutation should be made against this store
-    const prefix = getDurableRequestPrefix(name);
-    return getDurableRequestStoreWithPrefix(`${prefix}:${cacheUrl}`);
 }
 
-function getReadonlyDurableRequestStoreWithoutURL(name: string) {
-    // Note that this allows reading across multiple urls
-    // Only reads should be made against this store, unless full prefixed keys are used
-    const prefix = getDurableRequestPrefix(name);
-    return getDurableRequestStoreWithPrefix(prefix);
+function getDurableRequestStore(cacheName: string, url: string) {
+    return getDurableRequestStoreWithPrefix(`${cacheName}:request:${getBaseCacheURLString(url)}`);
+}
+
+function getDurableURLStore(cacheName: string) {
+    return getExpiringStore<DurableURLReference>(`${CACHE_URL_STORE_NAME}:${cacheName}`);
 }
 
 function getDurableRequestStoreWithPrefix(prefix: string) {
@@ -319,9 +367,12 @@ interface DurableCacheReference {
     lastOpenedAt: string;
 }
 
+interface DurableURLReference extends Expiring {
+    url: string;
+}
+
 function getDurableCacheReferenceStore() {
-    return getKeyValueStore<DurableCacheReference>(CACHE_STORE_NAME, {
-        prefix: "reference",
+    return getKeyValueStore<DurableCacheReference>(CACHE_REFERENCE_STORE_NAME, {
         counter: false
     });
 }
@@ -343,25 +394,33 @@ async function matchResponse(cacheName: string, requestQuery?: RequestQuery, opt
 async function * matchResponses(cacheName: string, requestQuery?: RequestQuery, options?: DurableCacheQueryOptions, getOrigin?: () => string) {
     for await (const { response } of matchDurableRequests(cacheName, requestQuery, options, getOrigin)) {
         if (response) {
-            yield fromDurableResponse(response);
+            yield await fromDurableResponse(response);
         }
     }
 }
 
 async function * matchDurableRequests(cacheName: string, requestQuery?: RequestQuery, options?: DurableCacheQueryOptions, getOrigin?: () => string) {
-    for await (const request of getStore()) {
-        if (isQueryCacheMatch(requestQuery, request, options)) {
+    if (requestQuery) {
+        for await (const request of generateDurableRequestsForUrl(
+            getRequestQueryURL(requestQuery, getOrigin)
+        )) {
+            if (isQueryCacheMatch(requestQuery, request, options)) {
+                yield request;
+            }
+        }
+
+    } else {
+        for (const url of await getDurableURLStore(cacheName).keys()) {
+            yield * generateDurableRequestsForUrl(url);
+        }
+    }
+
+    async function * generateDurableRequestsForUrl(url: string) {
+        for await (const request of getDurableRequestStore(cacheName, url)) {
             yield request;
         }
     }
 
-    function getStore() {
-        // Note that this is allowing matching across multiple url prefixes
-        if (!requestQuery) {
-            return getReadonlyDurableRequestStoreWithoutURL(cacheName);
-        }
-        return getDurableRequestStore(cacheName, getRequestQueryURL(requestQuery, getOrigin))
-    }
 }
 
 export interface DurableCacheStorageOptions {
@@ -416,11 +475,14 @@ export class DurableCacheStorage implements CacheStorage {
         if (!(await this.has(cacheName))) {
             return false;
         }
-        // open as we are wanting to clear it
-        const cache = await this.open(cacheName);
-        const keys = await cache.keys();
-        for (const key of keys) {
-            await cache.delete(key);
+        const store = getDurableURLStore(cacheName);
+        for (const url of await store.keys()) {
+            const requestStore = getDurableRequestStore(cacheName, url);
+            for await (const durableRequest of requestStore) {
+                await deleteDurableRequestBody(durableRequest);
+                await requestStore.delete(durableRequest.durableRequestId);
+            }
+            await store.delete(url);
         }
         await this.store.delete(cacheName);
         this.caches.delete(cacheName);

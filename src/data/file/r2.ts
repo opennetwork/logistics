@@ -7,6 +7,7 @@ import {getMediaPrefix, joinMediaPrefix} from "./prefix";
 import {v4} from "uuid";
 import {basename, extname} from "node:path";
 import mime from "mime";
+import {fromMaybeDurableBody} from "../durable-request";
 
 export const {
     R2_ACCESS_KEY_ID,
@@ -182,6 +183,12 @@ export interface R2SignedURL {
     fields?: Record<string, string>
 }
 
+function getKeyFromURLString(url: string) {
+    const { pathname } = new URL(url);
+    // Pathname starts with a slash, we want to skip it
+    return pathname.substring(1);
+}
+
 export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL> {
     const client = await getR2();
     let { key, method, extension, redirect, url: givenUrl, ...signedUrlOptions } = options;
@@ -191,9 +198,8 @@ export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL>
     let bucket = R2_BUCKET;
     if (!key) {
         if (givenUrl) {
-            const { pathname } = new URL(givenUrl);
             // Pathname starts with a slash, we want to skip it
-            key = pathname.substring(1);
+            key = getKeyFromURLString(givenUrl);
         } else {
             let name = v4();
             if (extension) {
@@ -241,4 +247,38 @@ export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL>
             url: await get(client, command, signedUrlOptions)
         };
     }
+}
+
+export async function readFileFromR2(file: FileData) {
+    const isOnR2 = await isExistingInR2(file);
+    if (!isOnR2) {
+        return undefined;
+    }
+    const client = await getR2();
+    const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+    const key = getKeyFromURLString(file.url);
+    const command = new GetObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: key
+    });
+    const response = await client.send(command);
+    const array = await response.Body.transformToByteArray();
+    return fromMaybeDurableBody(new Blob([array], {
+        type: file.contentType
+    }));
+}
+
+export async function unlinkFromR2(file: FileData) {
+    const isOnR2 = await isExistingInR2(file);
+    if (!isOnR2) {
+        return;
+    }
+    const client = await getR2();
+    const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+    const key = getKeyFromURLString(file.url);
+    const command = new DeleteObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: key
+    });
+    await client.send(command);
 }

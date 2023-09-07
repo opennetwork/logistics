@@ -23,12 +23,12 @@ export interface KeyValueStoreWithCounter<T> extends KeyValueStore<T> {
 
 export function getKeyValueStore<T>(
   name: string,
-  options: KeyValueStoreOptions & { counter: false }
-): KeyValueStore<T>;
-export function getKeyValueStore<T>(
-  name: string,
-  options?: KeyValueStoreOptions
+  options: KeyValueStoreOptions & { counter: true }
 ): KeyValueStoreWithCounter<T>;
+export function getKeyValueStore<T>(
+    name: string,
+    options?: KeyValueStoreOptions
+): KeyValueStore<T>;
 export function getKeyValueStore<T>(
   name: string,
   options?: KeyValueStoreOptions
@@ -39,7 +39,7 @@ export function getKeyValueStore<T>(
   }
   const store = getBaseKeyValueStore<T>(name, options);
   const counters =
-    options?.counter !== false
+    options?.counter === true
       ? {
           store: getCounterStore(name),
           global: getGlobalCounterStore(),

@@ -6,6 +6,7 @@ import {isLike, isPromise, isSignalled, ok} from "../is";
 import {fromDurableRequest, fromRequestResponse} from "../data";
 import {v4} from "uuid";
 import {getConfig} from "../config";
+import {caches} from "./cache";
 
 const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
@@ -18,10 +19,16 @@ export interface FetchEventConfig {
     response?: FetchEventResponseFn | FetchEventResponseFn[];
 }
 
+export interface DurableFetchEventCache {
+    name: string;
+    always?: boolean;
+}
+
 export interface DurableFetchEventData extends DurableEventData {
     type: ScheduleFetchEventType;
     request: DurableRequestData;
     dispatch?: DurableEventData;
+    cache?: string | DurableFetchEventCache;
 }
 
 export interface FetchEvent extends Omit<DurableFetchEventData, "request"> {
@@ -29,6 +36,13 @@ export interface FetchEvent extends Omit<DurableFetchEventData, "request"> {
     request: Request;
     respondWith(response: Response | Promise<Response>): void;
     waitUntil(promise: Promise<void | unknown>): void;
+}
+
+function isDurableFetchEventCache(value: unknown): value is DurableFetchEventCache {
+    return !!(
+        isLike<DurableFetchEventCache>(value) &&
+        typeof value.name === "string"
+    );
 }
 
 function isFetchEvent(event: unknown): event is FetchEvent {
@@ -111,7 +125,7 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
         wait,
         waitUntil
     } = createWaitUntil();
-    const request = fromDurableRequest(event.request);
+    const request = await fromDurableRequest(event.request);
     try {
         await dispatch({
             ...event,
@@ -122,6 +136,13 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
             waitUntil
         });
         const response = await handled;
+        if (isDurableFetchEventCache(event.cache)) {
+            const { name, always } = event.cache;
+            if (response.ok || always) {
+                const store = await caches.open(name);
+                await store.put(request, response);
+            }
+        }
         let durableEventDispatch: DurableEventData;
         if (event.dispatch) {
             durableEventDispatch = {
@@ -134,7 +155,12 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
             const durableRequestData = await fromRequestResponse(request, response);
             durableRequest = await setDurableRequestForEvent(durableRequestData, durableEventDispatch || event);
             if (durableEventDispatch) {
-                await dispatchEvent(durableEventDispatch);
+                const { response, ...request } = durableRequest;
+                await dispatchEvent({
+                    ...durableEventDispatch,
+                    request,
+                    response
+                });
             }
         }
         const { response: givenFns } = getConfig();
