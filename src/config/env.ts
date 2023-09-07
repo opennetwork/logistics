@@ -25,5 +25,6 @@ export const {
     R2_BUCKET,
     R2_ENDPOINT,
     R2_REGION,
-    MEDIA_DEFAULT_BUCKET
+    MEDIA_DEFAULT_BUCKET,
+    CONTENT_INDEX_DEFER_ICONS
 } = process.env;

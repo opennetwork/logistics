@@ -2,6 +2,7 @@ import {getKeyValueStore} from "../data";
 import {dispatchEvent} from "../events";
 import {ok} from "../is";
 import {caches} from "../fetch";
+import {CONTENT_INDEX_DEFER_ICONS} from "../config";
 
 export type ContentCategory = "" | "homepage" | "article" | "video" | "audio";
 
@@ -38,7 +39,7 @@ export class DurableContentIndex {
         ok(contentDescription.url, "url should not be empty");
         const store = getContentIndexStore();
 
-        if (contentDescription.icons?.length) {
+        if (!CONTENT_INDEX_DEFER_ICONS && contentDescription.icons?.length) {
             const cache = await caches.open(STORE_NAME);
             // Fetch icons _before_ storing, indicates that all the resources are accessible
             await cache.addAll(contentDescription.icons.map(({ src }) => src));
