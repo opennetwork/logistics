@@ -70,7 +70,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
         // TODO detect if this event tries to dispatch again
         try {
             await dispatchEventToHandlers(event);
-            if (!event.retain) {
+            if (!event.retain && !event.virtual) {
                 await deleteDurableEvent(event);
             }
         } finally {

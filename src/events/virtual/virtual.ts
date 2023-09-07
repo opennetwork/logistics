@@ -17,14 +17,35 @@ export interface VirtualEventConfig {
     events?: VirtualEventSource;
 }
 
+export const VIRTUAL_FUNCTIONS = new Set<VirtualEventFn>();
+
+export function virtual(fn: VirtualEventFn) {
+    return createVirtualFunction(fn);
+}
+
+export function createVirtualFunction(fn: VirtualEventFn) {
+    VIRTUAL_FUNCTIONS.add(fn);
+    return () => {
+        VIRTUAL_FUNCTIONS.delete(fn);
+    };
+}
+
 export async function *generateVirtualEvents() {
     const { events } = getConfig();
 
-    if (!events) return;
+    const fnsSnapshot = [...VIRTUAL_FUNCTIONS];
+    let sources: (VirtualEventSource | VirtualEventSource[]) = fnsSnapshot;
+
+    if (events) {
+        sources = [
+            events,
+            fnsSnapshot
+        ];
+    }
 
     const seen = new WeakSet<DurableEventData>();
 
-    for await (const events of generate()) {
+    for await (const events of generate(sources)) {
         const yieldingEvents = events.filter(event => !seen.has(event));
         if (!yieldingEvents.length) continue;
         for (const event of yieldingEvents) {
@@ -43,7 +64,7 @@ export async function *generateVirtualEvents() {
         }
     }
 
-    function generate() {
+    function generate(events: VirtualEventSource | VirtualEventSource[]) {
         if (isVirtualEventFn(events)) {
             return functionSource(events);
         }
@@ -96,8 +117,8 @@ export async function *generateVirtualEvents() {
         return isIterable(value);
     }
 
-    async function *arraySource(events: VirtualEventFn[]): AsyncIterable<DurableEventData[]> {
-        for await (const allEvents of union([...new Set(events)].map(functionSource))) {
+    async function *arraySource(events: VirtualEventSource[]): AsyncIterable<DurableEventData[]> {
+        for await (const allEvents of union([...new Set(events)].map(generate))) {
             const yieldingEvents = allEvents
                 .filter(Boolean)
                 .flatMap<DurableEventData>(events => events.filter(event => !seen.has(event)))
