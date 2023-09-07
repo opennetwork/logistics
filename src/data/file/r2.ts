@@ -8,22 +8,31 @@ import {v4} from "uuid";
 import {basename, extname} from "node:path";
 import mime from "mime";
 import {fromMaybeDurableBody} from "../durable-request";
-
-export const {
+import {
     R2_ACCESS_KEY_ID,
     R2_ACCESS_KEY_SECRET,
+    R2_ENDPOINT,
     R2_BUCKET,
-    R2_ENDPOINT
-} = process.env
+    R2_REGION,
+    AWS_ACCESS_KEY_ID,
+    AWS_ACCESS_KEY_SECRET,
+    AWS_DEFAULT_REGION,
+    AWS_REGION,
+    S3_BUCKET,
+    S3_ENDPOINT,
+    MEDIA_DEFAULT_BUCKET
+} from "../../config";
 
-export const r2Config: S3ClientConfig = {
+export const MEDIA_BUCKET = MEDIA_DEFAULT_BUCKET || R2_BUCKET || S3_BUCKET;
+
+export const r2Config = {
     credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID,
-        secretAccessKey: R2_ACCESS_KEY_SECRET,
+        accessKeyId: R2_ACCESS_KEY_ID || AWS_ACCESS_KEY_ID,
+        secretAccessKey: R2_ACCESS_KEY_SECRET || AWS_ACCESS_KEY_SECRET,
     },
-    endpoint: R2_ENDPOINT,
-    region: "auto"
-}
+    endpoint: R2_ENDPOINT || S3_ENDPOINT,
+    region: R2_REGION || AWS_REGION || AWS_DEFAULT_REGION || "auto"
+} as const;
 
 let r2Client: ClientType | undefined = undefined;
 
@@ -37,10 +46,18 @@ export async function getR2() {
 
 export function isR2() {
     return (
-        R2_ACCESS_KEY_ID &&
-        R2_ACCESS_KEY_SECRET &&
-        R2_BUCKET &&
-        R2_ENDPOINT
+        (
+            R2_ACCESS_KEY_ID &&
+            R2_ACCESS_KEY_SECRET &&
+            MEDIA_BUCKET &&
+            R2_ENDPOINT
+        ) ||
+        (
+            AWS_ACCESS_KEY_ID &&
+            AWS_ACCESS_KEY_SECRET &&
+            S3_ENDPOINT &&
+            MEDIA_BUCKET
+        )
     )
 }
 
@@ -61,7 +78,7 @@ export async function isExistingInR2(file: FileData) {
     const {HeadObjectCommand} = await import("@aws-sdk/client-s3");
     const headCommand = new HeadObjectCommand({
         Key: key,
-        Bucket: R2_BUCKET,
+        Bucket: MEDIA_BUCKET,
     });
     try {
         await client.send(headCommand);
@@ -96,7 +113,7 @@ export async function saveToR2(file: FileData, contents: Buffer | Blob): Promise
 
     const url = new URL(
         `/${key}`,
-        R2_ENDPOINT
+        R2_ENDPOINT || S3_ENDPOINT
     ).toString();
 
     if (await isExistingInR2(file)) {
@@ -117,7 +134,7 @@ export async function saveToR2(file: FileData, contents: Buffer | Blob): Promise
 
     const command = new PutObjectCommand({
         Key: key,
-        Bucket: R2_BUCKET,
+        Bucket: MEDIA_BUCKET,
         Body: buffer,
         ContentType: file.contentType,
         ContentMD5: checksum.MD5
@@ -195,7 +212,7 @@ export async function getSigned(options: SignedUrlOptions): Promise<R2SignedURL>
     if (!method) {
         method = "get";
     }
-    let bucket = R2_BUCKET;
+    let bucket = MEDIA_BUCKET;
     if (!key) {
         if (givenUrl) {
             // Pathname starts with a slash, we want to skip it
@@ -258,7 +275,7 @@ export async function readFileFromR2(file: FileData) {
     const { GetObjectCommand } = await import("@aws-sdk/client-s3");
     const key = getKeyFromURLString(file.url);
     const command = new GetObjectCommand({
-        Bucket: R2_BUCKET,
+        Bucket: MEDIA_BUCKET,
         Key: key
     });
     const response = await client.send(command);
@@ -275,7 +292,7 @@ export async function unlinkFromR2(file: FileData) {
     const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
     const key = getKeyFromURLString(file.url);
     const command = new DeleteObjectCommand({
-        Bucket: R2_BUCKET,
+        Bucket: MEDIA_BUCKET,
         Key: key
     });
     await client.send(command);

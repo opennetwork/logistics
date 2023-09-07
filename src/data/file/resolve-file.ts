@@ -1,11 +1,11 @@
 import {File, ResolvedFile} from "./types";
 import {join} from "node:path";
 import {getRemoteSourceKey} from "./source";
-import {R2_ACCESS_KEY_ID, R2_ACCESS_KEY_SECRET, R2_BUCKET, r2Config} from "./r2";
+import {isR2, MEDIA_BUCKET} from "./r2";
 import {getSignedUrl} from "./r2";
 
 import {ok, isNumberString} from "../../is";
-import {getOrigin} from "../../listen/config";
+import {getOrigin} from "../../listen";
 import {packageIdentifier} from "../../package";
 import {getExpiresAt} from "../expiring-kv";
 
@@ -253,9 +253,9 @@ export async function getResolvedUrl(file: File, options?: ResolveFileOptions) {
     async function getR2URL(url: string) {
         const { pathname } = new URL(url);
         let key = pathname.replace(/^\//, "");
-        if (key.startsWith(`${R2_BUCKET}/`)) {
+        if (key.startsWith(`${MEDIA_BUCKET}/`)) {
             // TODO remove, this was a bug 👀
-            key = key.replace(`${R2_BUCKET}/`, "")
+            key = key.replace(`${MEDIA_BUCKET}/`, "")
         }
         // Specify a custom expiry for the presigned URL, in seconds
         const expiresIn = getExpiresInSeconds(options.expiresInSeconds);
@@ -282,7 +282,7 @@ export async function getResolvedUrl(file: File, options?: ResolveFileOptions) {
             return `file://${file.fileName}`;
         }
         if (file.synced === "r2") {
-            if (!(R2_ACCESS_KEY_ID && R2_ACCESS_KEY_SECRET)) {
+            if (!isR2()) {
                 // Cannot get key if no key or secret
                 return undefined;
             }
