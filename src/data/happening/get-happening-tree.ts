@@ -4,6 +4,11 @@ import {ok} from "../../is";
 import {Attendee, getAttendee} from "../attendee";
 import {getPartner, Partner} from "../partner";
 import {getOrganisation, Organisation} from "../organisation";
+import {getConfig} from "../../config";
+
+export interface HappeningTreeConfig {
+    getHappeningTree?<T extends HappeningData = Happening, K extends keyof T = keyof T>(happeningId: string, context: GetHappeningTreeContext<T, K>): Promise<HappeningTree | undefined>
+}
 
 export interface GetHappeningTreeContext<T extends HappeningData = Happening, K extends keyof T = keyof T> {
     trees: Map<string, HappeningTree>;
@@ -75,6 +80,13 @@ export async function getTopHappeningTree(happeningId: string): Promise<Happenin
 }
 
 export async function getHappeningTree<T extends HappeningData = Happening, K extends keyof T = keyof T>(happeningId: string, context = createGetHappeningTreeContext<T, K>()): Promise<HappeningTree> {
+    const config = getConfig();
+    if (config.getHappeningTree) {
+        const tree = await config.getHappeningTree(happeningId, context);
+        ok(tree, `Expected happening ${happeningId} to exist`);
+        return tree;
+    }
+
     const existing = context.trees.get(happeningId);
     if (existing) return existing;
 

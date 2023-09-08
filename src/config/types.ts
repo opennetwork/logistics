@@ -9,7 +9,7 @@ import type {LayoutConfig} from "../react/server";
 import type {SetMembershipConfig} from "../data";
 import type {MembershipViewComponentConfig} from "../react/server/paths/membership/view";
 import type {MembershipStatusConfig} from "../data/membership/membership-status";
-import {SeedConfig} from "../data";
+import {AppointmentTreeConfig, HappeningTreeConfig, SeedConfig} from "../data";
 import {ScheduledConfig} from "../events/schedule/schedule";
 import {VirtualEventConfig} from "../events/virtual/virtual";
 import {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
@@ -37,7 +37,9 @@ export interface Config extends
     VirtualEventConfig,
     DurableCacheStorageConfig,
     FetchEventConfig,
-    ContentIndexConfig {
+    ContentIndexConfig,
+    AppointmentTreeConfig,
+    HappeningTreeConfig {
     name: string;
     version: string;
     root: string;
