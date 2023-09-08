@@ -1,8 +1,8 @@
 import {getKeyValueStore} from "../data";
 import {dispatchEvent} from "../events";
-import {ok} from "../is";
+import {isPromise, ok} from "../is";
 import {caches} from "../fetch";
-import {CONTENT_INDEX_DEFER_ICONS} from "../config";
+import {CONTENT_INDEX_DEFER_ICONS, getConfig} from "../config";
 
 export type ContentCategory = "" | "homepage" | "article" | "video" | "audio";
 
@@ -20,6 +20,16 @@ export interface ContentDescription {
     url: string;
     category?: ContentCategory;
     icons?: ContentDescriptionImageResource[];
+}
+
+export type ContentIndexInitValue = ContentDescription[] | ContentDescription | undefined;
+export interface ContentIndexInitFn {
+    (): ContentIndexInitValue | Promise<ContentIndexInitValue>
+}
+export type ContentIndexInit = ContentIndexInitValue | ContentIndexInitFn
+
+export interface ContentIndexConfig {
+    index?: ContentIndexInit;
 }
 
 const STORE_NAME = "contentIndex";
@@ -77,7 +87,19 @@ export class DurableContentIndex {
 
     async getAll() {
         const store = getContentIndexStore();
-        return await store.values();
+        const { index } = getConfig();
+        const stored = await store.values();
+        const value = (
+            isContentIndexInitFn(index) ?
+                await index() :
+                index
+        );
+        if (!value) return stored;
+        return stored.concat(value);
+
+        function isContentIndexInitFn(value: unknown): value is ContentIndexInitFn {
+            return typeof value === "function";
+        }
     }
 
 }

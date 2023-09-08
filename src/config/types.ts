@@ -13,6 +13,7 @@ import {SeedConfig} from "../data";
 import {ScheduledConfig} from "../events/schedule/schedule";
 import {VirtualEventConfig} from "../events/virtual/virtual";
 import {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
+import {ContentIndexConfig} from "../content-index";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -35,7 +36,8 @@ export interface Config extends
     ScheduledConfig,
     VirtualEventConfig,
     DurableCacheStorageConfig,
-    FetchEventConfig {
+    FetchEventConfig,
+    ContentIndexConfig {
     name: string;
     version: string;
     root: string;
