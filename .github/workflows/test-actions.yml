@@ -59,8 +59,10 @@ jobs:
           PORT: 3400
       - name: test:bun require.cache
         run: |
-          bun example.js
-          bun example.mjs
+          node example.js # no error
+          THROW_ON_BUG=1 node example.js # no error
+          bun example.js # no error
+          THROW_ON_BUG=1 bun example.js # this throws an error
       - name: test:bun with PORT
         run: yarn test:bun
         env:
