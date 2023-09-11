@@ -49,7 +49,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - uses: antongolub/action-setup-bun@v1
       - run: |
-          bun install
+          yarn install
       - run: yarn build
       # yarn coverage === c8 + yarn test:node
       - run: yarn coverage
