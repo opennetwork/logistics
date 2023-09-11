@@ -14,6 +14,7 @@ import {ScheduledConfig} from "../events/schedule/schedule";
 import {VirtualEventConfig} from "../events/virtual/virtual";
 import {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
 import {ContentIndexConfig} from "../content-index";
+import {DispatchEventConfig} from "../events";
 
 export interface LogisticsConfig {
     routes?: FastifyPluginAsync
@@ -39,7 +40,8 @@ export interface Config extends
     FetchEventConfig,
     ContentIndexConfig,
     AppointmentTreeConfig,
-    HappeningTreeConfig {
+    HappeningTreeConfig,
+    DispatchEventConfig {
     name: string;
     version: string;
     root: string;

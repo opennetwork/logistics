@@ -1,5 +1,11 @@
 import {addDurableEvent, deleteDurableEvent, DurableEventData, getDurableEvent} from "../../data";
 import {deleteDispatchQStash, dispatchQStash, isQStash} from "./qstash";
+import {getConfig} from "../../config";
+
+
+export interface DispatchEventConfig {
+    dispatchEvent?(event: DurableEventData): void | unknown | Promise<void | unknown>
+}
 
 const {
     DURABLE_EVENTS_IMMEDIATE
@@ -20,7 +26,10 @@ export async function dispatchEvent(event: DurableEventData) {
         }
     }
 
-    if (isQStash()) {
+    const config = getConfig();
+    if (config.dispatchEvent) {
+        await config.dispatchEvent(durable);
+    } else if (isQStash()) {
         await dispatchQStash(durable);
     } else if (DURABLE_EVENTS_IMMEDIATE || durable.schedule?.immediate) {
         const { background } = await import("../../background");
