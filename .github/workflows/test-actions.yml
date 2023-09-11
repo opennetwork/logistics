@@ -57,6 +57,10 @@ jobs:
         run: yarn test:node
         env:
           PORT: 3400
+      - name: test:bun require.cache
+        run: |
+          bun example.js
+          bun example.mjs
       - name: test:bun with PORT
         run: yarn test:bun
         env:
