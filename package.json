@@ -203,7 +203,6 @@
     "why-is-node-still-running": "^1.0.0"
   },
   "scripts": {
-    "test:all": "yarn test:node",
     "build": "rm -rf esnext && tsc",
     "build:watch": "tsc-watch --onSuccess \"yarn postbuild\"",
     "prebuild": "node scripts/pre-build.js",

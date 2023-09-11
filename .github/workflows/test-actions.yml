@@ -50,7 +50,6 @@ jobs:
       - uses: antongolub/action-setup-bun@v1
       - run: |
           yarn install
-          bun install
       - run: yarn build
       # yarn coverage === c8 + yarn test:node
       - run: yarn coverage
