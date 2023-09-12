@@ -1,4 +1,4 @@
-import fastify, {FastifyInstance} from "fastify";
+import fastify, {FastifyInstance, FastifyPluginAsync} from "fastify";
 import { routes } from "./routes";
 import { setupSwagger } from "./swagger";
 import blippPlugin from "fastify-blipp";
@@ -36,6 +36,11 @@ import rawBody from "fastify-raw-body";
 
 const { pathname } = new URL(import.meta.url);
 const directory = dirname(pathname);
+
+export interface FastifyConfig {
+    routes?: FastifyPluginAsync
+    defaultRoutes?: FastifyPluginAsync;
+}
 
 export async function createFastifyApplication() {
     const { COOKIE_SECRET } = process.env;
@@ -103,13 +108,14 @@ export async function createFastifyApplication() {
 
     await setupSwagger(app);
 
-    const { routes: providedRoutes } = getConfig();
+    const { routes: providedRoutes, defaultRoutes } = getConfig();
 
     if (providedRoutes) {
         await register(providedRoutes);
     }
 
-    await register(routes);
+    // Allow removing default routes with config
+    await register(defaultRoutes ?? routes);
 
     return app;
 }

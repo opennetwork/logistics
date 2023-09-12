@@ -1,4 +1,3 @@
-import type {FastifyPluginAsync} from "fastify";
 import type {ReactOrderConfig} from "../react/server";
 import type {ViewConfig} from "../view";
 import type {AuthenticationRoleConfig, KeyValueStoreConfig} from "../data";
@@ -15,9 +14,10 @@ import {VirtualEventConfig} from "../events/virtual/virtual";
 import {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
 import {ContentIndexConfig} from "../content-index";
 import {DispatchEventConfig} from "../events";
+import {FastifyConfig} from "../listen";
 
 export interface LogisticsConfig {
-    routes?: FastifyPluginAsync
+
 }
 
 export interface Config extends
@@ -41,7 +41,8 @@ export interface Config extends
     ContentIndexConfig,
     AppointmentTreeConfig,
     HappeningTreeConfig,
-    DispatchEventConfig {
+    DispatchEventConfig,
+    FastifyConfig {
     name: string;
     version: string;
     root: string;
