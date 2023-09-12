@@ -38,7 +38,7 @@ export const REACT_CLIENT_DIRECTORY = join(DIRECTORY, "../react/client");
 
 export const ROOT_PUBLIC_PATH = join(root, "./public")
 
-export async function fileRoutes(fastify: FastifyInstance) {
+export async function viewFileRoutes(fastify: FastifyInstance) {
   await fastify.register(etag);
   await fastify.addHook("onRequest", (request, response, done) => {
     response.header("Cache-Control", "max-age=1800"); // Give it something
@@ -72,7 +72,7 @@ export async function styleRoutes(fastify: FastifyInstance) {
 
 export async function viewRoutes(fastify: FastifyInstance) {
 
-  fastify.register(fileRoutes);
+  fastify.register(viewFileRoutes);
   fastify.register(styleRoutes);
 
   function createPathHandler(

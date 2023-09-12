@@ -21,6 +21,26 @@ import {membershipRoutes} from "./membership";
 import {serviceRoutes} from "./service";
 import {brandingRoutes} from "./branding";
 
+export {
+    systemLogRoutes,
+    partnerRoutes,
+    productRoutes,
+    offerRoutes,
+    orderRoutes,
+    orderItemRoutes,
+    fileRoutes,
+    paymentMethodRoutes,
+    userCredentialRoutes,
+    appointmentRoutes,
+    changeRoutes,
+    membershipRoutes,
+    serviceRoutes,
+    brandingRoutes,
+    authenticationRoutes,
+    backgroundRoutes,
+    // viewRoutes, // Already exported elsewhere
+}
+
 export async function routes(fastify: FastifyInstance) {
 
     async function apiRoutes(fastify: FastifyInstance) {
