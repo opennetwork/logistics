@@ -24,6 +24,7 @@ jobs:
       PRODUCT_REMOTE_TOKEN: ${{ secrets.PRODUCT_REMOTE_TOKEN }}
       PRODUCTFILE_REMOTE_URL: ${{ secrets.PRODUCTFILE_REMOTE_URL }}
       PRODUCTFILE_REMOTE_TOKEN: ${{ secrets.PRODUCTFILE_REMOTE_TOKEN }}
+      LISTEN_HOST: localhost
     services:
       # Label used to access the service container
       redis:
