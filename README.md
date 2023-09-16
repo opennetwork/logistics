@@ -12,7 +12,23 @@
 
 [//]: # (badges)
 
-### Client's TypeScript Interface
+### Client
+
+```typescript
+import { Client } from "@opennetwork/logistics/client";
+
+const client = new Client({
+    url: process.env.API_URL || "http://localhost:3000"
+});
+
+const products = await client.listProducts();
+
+console.log({ products });
+```
+
+
+
+<details><summary>Client TypeScript Types</summary>
 
 [//]: # (typescript client)
 
@@ -955,6 +971,7 @@ export interface Task extends TaskData {
 
 [//]: # (typescript client)
 
+</details>
 
 ### Local Development
 
