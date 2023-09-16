@@ -1,6 +1,6 @@
 {
   "name": "@opennetwork/logistics",
-  "version": "1.0.0-alpha.135",
+  "version": "1.0.0-alpha.136",
   "main": "./esnext/index.js",
   "module": "./esnext/index.js",
   "types": "./esnext/index.d.ts",
@@ -218,6 +218,7 @@
     "test:bun": "export $(cat .env | xargs) && TESTING=1 OTEL_SERVICE_NAME=logistics-tests bun esnext/tests/index.js",
     "coverage": "export $(cat .env | xargs) && TESTING=1 OTEL_SERVICE_NAME=logistics-tests c8 node esnext/tests/index.js && yarn postbuild",
     "start": "node --enable-source-maps esnext/listen/main.js",
+    "start:bun": "bun esnext/listen/main.js",
     "start:nodemon": "nodemon --enable-source-maps esnext/listen/main.js",
     "quick": "yarn build && yarn start",
     "local": "yarn build && yarn seed && yarn start",
