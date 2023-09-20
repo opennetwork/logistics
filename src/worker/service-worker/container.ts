@@ -100,8 +100,10 @@ export class DurableServiceWorkerRegistration {
     index = index;
     sync = sync;
 
+    private readonly durable: DurableServiceWorkerRegistrationData
 
     constructor(data: DurableServiceWorkerRegistrationData) {
+        this.durable = data;
         if (
             data.registrationState === "activating" ||
             data.registrationState === "activated" ||
@@ -113,6 +115,22 @@ export class DurableServiceWorkerRegistration {
         } else /* if (data.registrationState === "pending" || data.registrationState === "installing") */ {
             this.installing = new DurableServiceWorker(data);
         }
+    }
+
+    async getNotifications(): Promise<Notification[]> {
+        return [];
+    }
+
+    async showNotification(title: string, options?: NotificationOptions) {
+        // TODO
+    }
+
+    async unregister() {
+        await deregisterServiceWorker(this.durable.serviceWorkerId);
+    }
+
+    async update() {
+        // TODO
     }
 
 }
