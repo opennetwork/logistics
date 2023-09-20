@@ -8214,6 +8214,11 @@ pngjs@^3.3.3:
   resolved "https://registry.yarnpkg.com/pngjs/-/pngjs-3.4.0.tgz#99ca7d725965fb655814eaf65f38f12bbdbf555f"
   integrity sha512-NCrCHhWmnQklfH4MtJMRjZ2a8c80qXeMlQMv2uVp9ISJMTt562SbGd6n2oq0PaPgKm7Z6pL9E2UlLIhC+SHL3w==
 
+poolifier@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/poolifier/-/poolifier-2.7.0.tgz#7115805ce36d491d285a7502b91d9235bb0e7218"
+  integrity sha512-nCfq3L1a6O43P9NfFto/dNmzhiG/vCknNmEtHr4shpFZZ1Z1G8grOhhxv4Dc0GQX8POavUO/VDKKGl4AA4oZzw==
+
 postcss-import@^15.1.0:
   version "15.1.0"
   resolved "https://registry.yarnpkg.com/postcss-import/-/postcss-import-15.1.0.tgz#41c64ed8cc0e23735a9698b3249ffdbf704adc70"

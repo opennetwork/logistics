@@ -15,6 +15,7 @@ import {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
 import {ContentIndexConfig} from "../content-index";
 import {DispatchEventConfig} from "../events";
 import {FastifyConfig} from "../listen";
+import {WorkerPoolConfig} from "../worker/pool";
 
 export interface LogisticsConfig {
 
@@ -42,7 +43,8 @@ export interface Config extends
     AppointmentTreeConfig,
     HappeningTreeConfig,
     DispatchEventConfig,
-    FastifyConfig {
+    FastifyConfig,
+    WorkerPoolConfig {
     name: string;
     version: string;
     root: string;
