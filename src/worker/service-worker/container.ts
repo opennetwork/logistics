@@ -1,13 +1,15 @@
-import {getKeyValueStore} from "../../data";
+import {DurableEvent, DurableEventData, getKeyValueStore} from "../../data";
 import {virtual} from "../../events/virtual/virtual";
-import {ok} from "../../is";
+import {isLike, ok} from "../../is";
 import {createHash} from "crypto";
 import {index} from "../../content-index";
 import {sync} from "../../sync";
+import {addEventListener} from "../../events/schedule/schedule";
+import {dispatchEvent} from "../../events";
 
-type DurableServiceWorkerRegistrationState = "pending" | "installing" | "installed" | "activating" | "activated" | "reregisteredWhileActivating";
+export type DurableServiceWorkerRegistrationState = "pending" | "installing" | "installed" | "activating" | "activated" | "reregisteredWhileActivating";
 
-interface DurableServiceWorkerRegistrationData {
+export interface DurableServiceWorkerRegistrationData {
     serviceWorkerId: string;
     registrationState: DurableServiceWorkerRegistrationState;
     registrationStateAt: string;
@@ -51,10 +53,15 @@ export async function deregisterServiceWorker(serviceWorkerId: string) {
     await store.delete(serviceWorkerId);
 }
 
-export async function getDurableServiceWorkerRegistration(serviceWorkerId: string, options?: DurableServiceWorkerRegistrationOptions) {
+export async function getDurableServiceWorkerRegistrationData(serviceWorkerId: string, options?: DurableServiceWorkerRegistrationOptions) {
     const store = getServiceWorkerRegistrationStore();
     const registration = await store.get(serviceWorkerId);
     ok(registration, "Service worker not registered");
+    return registration;
+}
+
+export async function getDurableServiceWorkerRegistration(serviceWorkerId: string, options?: DurableServiceWorkerRegistrationOptions) {
+    const registration = await getDurableServiceWorkerRegistrationData(serviceWorkerId);
     return new DurableServiceWorkerRegistration(registration, options);
 }
 
@@ -102,6 +109,31 @@ export interface DurableServiceWorkerRegistrationOptions {
     isCurrentGlobalScope?: boolean
 }
 
+const DURABLE_SERVICE_WORKER_REGISTRATION_UPDATE = "serviceWorker:registration:update" as const;
+
+interface DurableServiceWorkerUpdateEvent extends DurableEventData {
+    type: typeof DURABLE_SERVICE_WORKER_REGISTRATION_UPDATE;
+    update: DurableServiceWorkerRegistrationData;
+}
+
+function isDurableServiceWorkerUpdateEvent(event: DurableEventData): event is DurableServiceWorkerUpdateEvent {
+    return !!(
+        isLike<DurableServiceWorkerUpdateEvent>(event) &&
+        event.type === DURABLE_SERVICE_WORKER_REGISTRATION_UPDATE &&
+        event.update?.serviceWorkerId
+    )
+}
+
+export function dispatchDurableServiceWorkerRegistrationUpdate(update: DurableServiceWorkerRegistrationData, data?: Partial<DurableEventData>) {
+    const event: DurableServiceWorkerUpdateEvent = {
+        virtual: true,
+        ...data,
+        type: DURABLE_SERVICE_WORKER_REGISTRATION_UPDATE,
+        update,
+    };
+    return dispatchEvent(event);
+}
+
 export class DurableServiceWorkerRegistration {
 
     active?: DurableServiceWorker;
@@ -111,12 +143,29 @@ export class DurableServiceWorkerRegistration {
     index = index;
     sync = sync;
 
-    public readonly durable: DurableServiceWorkerRegistrationData;
+    public durable: DurableServiceWorkerRegistrationData;
     public readonly isCurrentGlobalScope: boolean;
 
+    private unregisterListener;
+
     constructor(data: DurableServiceWorkerRegistrationData,{ isCurrentGlobalScope }: DurableServiceWorkerRegistrationOptions = {}) {
-        this.durable = data;
         this.isCurrentGlobalScope = !!isCurrentGlobalScope;
+        this.#onDurableData(data);
+        if (this.isCurrentGlobalScope) {
+            this.unregisterListener = addEventListener(DURABLE_SERVICE_WORKER_REGISTRATION_UPDATE, this.#onDurableDataEvent);
+        }
+    }
+
+    #onDurableDataEvent = (event: DurableEvent) => {
+        ok(isDurableServiceWorkerUpdateEvent(event));
+        this.#onDurableData(event.update);
+    }
+
+    #onDurableData = (data: DurableServiceWorkerRegistrationData) => {
+        this.durable = data;
+        this.waiting = undefined;
+        this.active = undefined;
+        this.installing = undefined;
         if (
             data.registrationState === "activating" ||
             data.registrationState === "activated" ||
