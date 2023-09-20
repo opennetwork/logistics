@@ -51,6 +51,13 @@ export async function deregisterServiceWorker(serviceWorkerId: string) {
     await store.delete(serviceWorkerId);
 }
 
+export async function getDurableServiceWorkerRegistration(serviceWorkerId: string, options?: DurableServiceWorkerRegistrationOptions) {
+    const store = getServiceWorkerRegistrationStore();
+    const registration = await store.get(serviceWorkerId);
+    ok(registration, "Service worker not registered");
+    return new DurableServiceWorkerRegistration(registration, options);
+}
+
 const SERVICE_WORKER_STATES = [
     "parsed",
     "installing",
@@ -91,6 +98,10 @@ export class DurableServiceWorker {
 
 }
 
+export interface DurableServiceWorkerRegistrationOptions {
+    isCurrentGlobalScope?: boolean
+}
+
 export class DurableServiceWorkerRegistration {
 
     active?: DurableServiceWorker;
@@ -100,10 +111,12 @@ export class DurableServiceWorkerRegistration {
     index = index;
     sync = sync;
 
-    private readonly durable: DurableServiceWorkerRegistrationData
+    public readonly durable: DurableServiceWorkerRegistrationData;
+    public readonly isCurrentGlobalScope: boolean;
 
-    constructor(data: DurableServiceWorkerRegistrationData) {
+    constructor(data: DurableServiceWorkerRegistrationData,{ isCurrentGlobalScope }: DurableServiceWorkerRegistrationOptions = {}) {
         this.durable = data;
+        this.isCurrentGlobalScope = !!isCurrentGlobalScope;
         if (
             data.registrationState === "activating" ||
             data.registrationState === "activated" ||
@@ -186,12 +199,9 @@ export class DurableServiceWorkerContainer {
     }
 
     async getRegistration(clientUrl?: string) {
-        const store = getServiceWorkerRegistrationStore();
         ok(clientUrl, "Default client url not supported, please provide a client url to get");
         const serviceWorkerId = getServiceWorkerId(clientUrl);
-        const registration = await store.get(serviceWorkerId);
-        ok(registration, "Service worker not registered");
-        return new DurableServiceWorkerRegistration(registration);
+        return c(serviceWorkerId);
     }
 
     async getRegistrations() {

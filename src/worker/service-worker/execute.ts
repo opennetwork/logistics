@@ -12,5 +12,5 @@ export function getServiceWorkerWorkerPool() {
 
 export async function executeServiceWorkerWorker(data: ServiceWorkerWorkerData) {
     const pool = getServiceWorkerWorkerPool();
-    await pool.execute(data);
+    const worker = await pool.execute(data);
 }
