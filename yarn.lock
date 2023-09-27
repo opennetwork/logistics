@@ -4022,10 +4022,15 @@
     abort-controller "^3.0.0"
     uuid "^8.3.2"
 
-"@virtualstate/promise@^1.1.5", "@virtualstate/promise@^1.1.6", "@virtualstate/promise@^1.3.3":
+"@virtualstate/promise@^1.1.5", "@virtualstate/promise@^1.1.6":
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/@virtualstate/promise/-/promise-1.3.4.tgz#5f8820cb574c647c9d6ecb36c946eb2572e3f7be"
   integrity sha512-isZzYFJitHv826K8yyBD5bp8+hsPn3iUM5R7eexzGPttIR7A04ZQnRvnlh7ZoSklzZ1/bbRsVwwpUxAb49N7QA==
+
+"@virtualstate/promise@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@virtualstate/promise/-/promise-1.4.0.tgz#36af5075082a1570a522df41a4ded1760336a081"
+  integrity sha512-CUS50DBOl2MWIYBEzw6v9Ug2Qpqg0NuNqVJjPmxnhQYmAIIQqCGB+oPutKELcKurzDZ8f+u4cA0Q7fqTiMMXzA==
 
 "@virtualstate/union@^2.46.0", "@virtualstate/union@^2.48.1":
   version "2.48.1"

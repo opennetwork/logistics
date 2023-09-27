@@ -55,7 +55,7 @@ export class DurableSyncManager {
         const store = getSyncTagStore();
         const existing = await store.get(tag);
         const isFiring = existing?.registrationState === "firing"
-        if (!existing || !isFiring) {
+        if (existing && !isFiring) {
             return;
         }
         let registrationState: SyncTagRegistrationState = "pending";

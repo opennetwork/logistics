@@ -1,4 +1,3 @@
-import { ThreadWorker } from "poolifier";
 import {
     dispatchDurableServiceWorkerRegistrationUpdate,
     DurableServiceWorkerRegistrationData,
@@ -14,19 +13,12 @@ import {serviceWorker} from "./container";
 import {getOrigin} from "../../listen";
 import {addEventListener, removeEventListener} from "../../events/schedule/schedule";
 import {dispatchEvent} from "../../events";
-import {dispatchScheduledDurableEvents} from "../../events/schedule/dispatch-scheduled";
 
 export interface ServiceWorkerWorkerData {
     serviceWorkerId: string;
 }
 
-class ServiceWorkerWorker extends ThreadWorker<ServiceWorkerWorkerData> {
-    constructor() {
-        super(data => onServiceWorkerWorkerData(this, data));
-    }
-}
-
-async function onServiceWorkerWorkerData(worker: ServiceWorkerWorker, data: ServiceWorkerWorkerData): Promise<void> {
+export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): Promise<void> {
     const registration = await getDurableServiceWorkerRegistration(data.serviceWorkerId, {
         isCurrentGlobalScope: true
     });
@@ -43,29 +35,30 @@ async function onServiceWorkerWorkerData(worker: ServiceWorkerWorker, data: Serv
         addEventListener,
         removeEventListener
     });
-    if (registration.durable.registrationState === "pending") {
+    console.log({ registration });
+    if (registration.durable.registrationState === "pending" || registration.durable.registrationState === "installing") {
         try {
+            console.log("Installing service worker");
             await setRegistrationStatus( "installing");
             await dispatchEvent({
                 type: "install",
                 virtual: true
             });
+            console.log("Installed service worker");
             await setRegistrationStatus( "installed");
-        } catch {
+        } catch (error) {
+            console.error("Error installing service worker", error);
             await setRegistrationStatus( "pending");
         }
     }
-    if (registration.durable.registrationState === "installed" || registration.durable.registrationState === "reregisteredWhileActivating") {
+    if (registration.durable.registrationState === "installed" || registration.durable.registrationState === "activating") {
         try {
             await setRegistrationStatus( "activating");
             await dispatchEvent({
                 type: "activate",
                 virtual: true
             });
-            const { registrationState } = await getDurableServiceWorkerRegistrationData(registration.durable.serviceWorkerId);
-            if (registrationState !== "reregisteredWhileActivating") {
-                await setRegistrationStatus( "activated");
-            }
+            await setRegistrationStatus( "activated");
         } catch {
             await setRegistrationStatus("installed");
         }
@@ -80,9 +73,12 @@ async function onServiceWorkerWorkerData(worker: ServiceWorkerWorker, data: Serv
             virtual: true
         });
     }
+    console.log({ registration });
 
     async function setRegistrationStatus(status: DurableServiceWorkerRegistrationState) {
         const next = await setServiceWorkerRegistrationState(registration.durable.serviceWorkerId, status);
+        // TODO change to an event
+        await registration.update();
         return dispatchRegistrationUpdate(next);
     }
 
@@ -95,5 +91,3 @@ async function onServiceWorkerWorkerData(worker: ServiceWorkerWorker, data: Serv
         );
     }
 }
-
-export default new ServiceWorkerWorker();

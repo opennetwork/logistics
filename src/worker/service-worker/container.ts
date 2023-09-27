@@ -7,7 +7,7 @@ import {sync} from "../../sync";
 import {addEventListener} from "../../events/schedule/schedule";
 import {dispatchEvent} from "../../events";
 
-export type DurableServiceWorkerRegistrationState = "pending" | "installing" | "installed" | "activating" | "activated" | "reregisteredWhileActivating";
+export type DurableServiceWorkerRegistrationState = "pending" | "installing" | "installed" | "activating" | "activated";
 
 export interface DurableServiceWorkerRegistrationData {
     serviceWorkerId: string;
@@ -20,7 +20,7 @@ export interface DurableServiceWorkerRegistrationData {
     options?: RegistrationOptions;
 }
 
-const STORE_NAME = "syncTag";
+const STORE_NAME = "serviceWorker";
 
 function getServiceWorkerRegistrationStore() {
     return getKeyValueStore<DurableServiceWorkerRegistrationData>(STORE_NAME, {
@@ -49,7 +49,7 @@ export async function setServiceWorkerRegistrationState(serviceWorkerId: string,
 }
 
 export async function deregisterServiceWorker(serviceWorkerId: string) {
-    const store = await getServiceWorkerRegistrationStore();
+    const store = getServiceWorkerRegistrationStore();
     await store.delete(serviceWorkerId);
 }
 
@@ -81,9 +81,6 @@ function getServiceWorkerState(state: DurableServiceWorkerRegistrationState): Se
     if (isServiceWorkerState(state)) {
         return state;
     }
-    if (state === "reregisteredWhileActivating") {
-        return "activating";
-    }
     return "parsed";
 }
 
@@ -99,7 +96,7 @@ export class DurableServiceWorker {
 
     postMessage(message: unknown, transfer: Transferable[]): Promise<void>;
     postMessage(message: unknown, options?: StructuredSerializeOptions, transfer?: Transferable[]): Promise<void>;
-    async postMessage(message, ...args: unknown[]) {
+    async postMessage(message: unknown, ...args: unknown[]) {
         // TODO :)
     }
 
@@ -168,8 +165,7 @@ export class DurableServiceWorkerRegistration {
         this.installing = undefined;
         if (
             data.registrationState === "activating" ||
-            data.registrationState === "activated" ||
-            data.registrationState === "reregisteredWhileActivating"
+            data.registrationState === "activated"
         ) {
             this.active = new DurableServiceWorker(data);
         } else if (data.registrationState === "installed") {
@@ -188,11 +184,19 @@ export class DurableServiceWorkerRegistration {
     }
 
     async unregister() {
+        this.unregisterListener?.();
+        this.unregisterListener = undefined;
         await deregisterServiceWorker(this.durable.serviceWorkerId);
     }
 
+    async update(): Promise<void>
+    async update(): Promise<void>
     async update() {
-        // TODO
+        // TODO this shouldn't be the thing updating this state...
+        // Just happens to be a good place for it, but we will also be changing this _after_ we do the normal update
+        // operation if it can be done
+        const data = await getDurableServiceWorkerRegistrationData(this.durable.serviceWorkerId);
+        this.#onDurableData(data);
     }
 
 }
@@ -213,7 +217,7 @@ function getServiceWorkerId(url: string) {
         serviceWorkerIdHash.update(SERVICE_WORKER_PARTITION);
     }
     serviceWorkerIdHash.update(url);
-    return serviceWorkerIdHash.digest().toString("utf-8");
+    return serviceWorkerIdHash.digest().toString("hex");
 }
 
 export class DurableServiceWorkerContainer {
@@ -224,20 +228,19 @@ export class DurableServiceWorkerContainer {
         const store = getServiceWorkerRegistrationStore();
         const serviceWorkerId = getServiceWorkerId(instance.toString());
         const existing = await store.get(serviceWorkerId);
-        const isActivating = existing?.registrationState === "activating"
-        if (!existing || !isActivating) {
-            return;
-        }
-        let registrationState: DurableServiceWorkerRegistrationState = "pending";
-        if (isActivating) {
-            registrationState = "reregisteredWhileActivating";
+        if (existing) {
+            const instance = new DurableServiceWorkerRegistration(existing);
+            if (existing.registrationState === "activating") {
+                // TODO
+            }
+            return instance;
         }
         const registeredAt = new Date().toISOString();
         const registration: DurableServiceWorkerRegistrationData = {
             serviceWorkerId,
             createdAt: existing?.createdAt || registeredAt,
             registeredAt,
-            registrationState,
+            registrationState: "pending",
             registrationStateAt: registeredAt,
             initialUrl: url.toString(),
             url: instance.toString(),
@@ -250,13 +253,15 @@ export class DurableServiceWorkerContainer {
     async getRegistration(clientUrl?: string) {
         ok(clientUrl, "Default client url not supported, please provide a client url to get");
         const serviceWorkerId = getServiceWorkerId(clientUrl);
-        return c(serviceWorkerId);
+        return getDurableServiceWorkerRegistration(serviceWorkerId);
     }
 
     async getRegistrations() {
         const store = getServiceWorkerRegistrationStore();
-        const registrations = await store.values();
-        return registrations.map(registration => new DurableServiceWorkerRegistration(registration));
+        const serviceWorkerIds = await store.keys();
+        return await Promise.all(
+            serviceWorkerIds.map(serviceWorkerId => getDurableServiceWorkerRegistration(serviceWorkerId))
+        );
     }
 
     [Symbol.asyncIterator]() {
@@ -267,7 +272,7 @@ export class DurableServiceWorkerContainer {
 
 export const serviceWorker = new DurableServiceWorkerContainer();
 
-export async function * generateVirtualServiceWorkerEvents(): AsyncIterable<unknown> {
+export async function * generateVirtualServiceWorkerEvents() {
     // const store = getServiceWorkerRegistrationStore();
     // for await (const { serviceWorkerId } of store) {
     //     // TODO Generate per service worker some events :)

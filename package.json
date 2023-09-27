@@ -105,7 +105,7 @@
     "@upstash/qstash": "^0.3.6",
     "@upstash/redis": "^1.20.4",
     "@vercel/kv": "^0.1.1",
-    "@virtualstate/promise": "^1.3.3",
+    "@virtualstate/promise": "^1.4.0",
     "@virtualstate/union": "^2.46.0",
     "abort-controller": "^3.0.0",
     "accepts": "^1.3.8",
