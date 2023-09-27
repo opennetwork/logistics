@@ -17,16 +17,16 @@ try {
 
   const products = await listProducts();
 
-  // if (products.length < 3 || !process.env.IS_LOCAL) {
-  //   await import("./client");
-  //   console.log("after client");
-  //   await import("./remote");
-  //   console.log("after remote");
-  // }
-  // await import("./scenarios");
-  // await import("./storage");
-  // await import("./schedule");
-  // await import("./cache");
+  if (products.length < 3 || !process.env.IS_LOCAL) {
+    await import("./client");
+    console.log("after client");
+    await import("./remote");
+    console.log("after remote");
+  }
+  await import("./scenarios");
+  await import("./storage");
+  await import("./schedule");
+  await import("./cache");
   await import("./worker");
 
   // Ensure any data clients are closed
