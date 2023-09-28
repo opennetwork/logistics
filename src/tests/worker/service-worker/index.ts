@@ -1,6 +1,9 @@
 import {DurableServiceWorkerRegistration, serviceWorker} from "../../../worker/service-worker/container";
 import {dirname, join} from "node:path";
 import {executeServiceWorkerWorker, executeServiceWorkerWorkerMessage} from "../../../worker/service-worker/execute";
+import {v4} from "uuid";
+import {caches} from "../../../fetch";
+import {ok} from "../../../is";
 
 export {};
 
@@ -21,20 +24,30 @@ async function waitForServiceWorker(registration: DurableServiceWorkerRegistrati
 
 
 {
-    try {
+    const registration = await serviceWorker.register(worker);
+    const url = "https://example.com";
+    const cache = await caches.open(v4());
+    ok(!await cache.match(url));
 
+    // Fetch event is a void execute
+    await executeServiceWorkerWorkerMessage({
+        serviceWorkerId: registration.durable.serviceWorkerId,
+        event: {
+            type: "fetch",
+            request: {
+                url
+            },
+            cache: cache.name,
+            virtual: true
+        }
+    })
 
-        const registration = await serviceWorker.register(worker);
+    // Once fetched, we will have a match
+    const match = await cache.match(url);
+    ok(match);
+    console.log(await match.text());
 
-        console.log({
-            executed: await executeServiceWorkerWorkerMessage(registration.durable)
-        });
+    await caches.delete(cache.name);
 
-        console.log("Finished service worker");
-    } catch (error) {
-        console.log("Error service worker");
-        console.dir(error);
-    }
-
-
+    console.log("Finished service worker");
 }

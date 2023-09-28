@@ -24,14 +24,8 @@ function assertPushAsyncIterableIterator<T>(iterator: AsyncIterableIterator<T>):
 export async function executeServiceWorkerWorkerMessage(data?: ServiceWorkerWorkerData): Promise<unknown> {
     const iterator = executeServiceWorkerWorker(data)[Symbol.asyncIterator]();
     const next = await iterator.next();
-
     await iterator.return?.();
-
-    if (next.done) {
-        throw new Error("Worker completed before returning first message");
-    }
-
-    return next.value;
+    return next.value; // Could be void :)
 }
 
 export interface Pushable<T, R> {

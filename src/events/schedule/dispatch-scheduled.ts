@@ -47,7 +47,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
     }
 
     async function dispatchScheduledEvent(event: DurableEventData) {
-        if (event.durableEventId) {
+        if (event.durableEventId || event.virtual) {
             const schedule = (await getDurableEvent(event)) ?? (event.virtual ? event : undefined);
             if (!isMatchingSchedule(schedule)) {
                 return;

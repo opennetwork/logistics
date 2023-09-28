@@ -1,5 +1,6 @@
 import {
     dispatchDurableServiceWorkerRegistrationUpdate,
+    DurableServiceWorkerRegistration,
     DurableServiceWorkerRegistrationData,
     DurableServiceWorkerRegistrationState,
     getDurableServiceWorkerRegistration,
@@ -13,16 +14,20 @@ import {serviceWorker} from "./container";
 import {getOrigin} from "../../listen";
 import {addEventListener, removeEventListener} from "../../events/schedule/schedule";
 import {dispatchEvent} from "../../events";
+import "../../fetch/dispatch";
+import {DurableEventData} from "../../data";
 
 export interface ServiceWorkerWorkerData {
     serviceWorkerId: string;
+    event?: DurableEventData;
 }
 
-export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): Promise<void> {
+export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): Promise<DurableServiceWorkerRegistration> {
     const registration = await getDurableServiceWorkerRegistration(data.serviceWorkerId, {
         isCurrentGlobalScope: true
     });
     const { protocol, origin } = new URL(registration.durable.url);
+
     Object.assign(globalThis, {
         registration,
         caches,
@@ -35,7 +40,9 @@ export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): 
         addEventListener,
         removeEventListener
     });
-    console.log({ registration });
+
+    await import(registration.durable.url);
+
     if (registration.durable.registrationState === "pending" || registration.durable.registrationState === "installing") {
         try {
             console.log("Installing service worker");
@@ -63,17 +70,19 @@ export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): 
             await setRegistrationStatus("installed");
         }
     }
+    console.log(registration.durable.registrationState);
     if (registration.durable.registrationState === "activated") {
         await dispatchEvent({
             type: "activated",
             virtual: true
         });
-        await dispatchEvent({
-            type: "virtual",
-            virtual: true
-        });
+
+        if (data.event) {
+            await dispatchEvent(data.event);
+        }
     }
-    console.log({ registration });
+
+    return registration;
 
     async function setRegistrationStatus(status: DurableServiceWorkerRegistrationState) {
         const next = await setServiceWorkerRegistrationState(registration.durable.serviceWorkerId, status);

@@ -3,15 +3,14 @@ import type {FetchEvent} from "../../../fetch";
 
 declare var self: DurableServiceWorkerScope;
 
+console.log("in test service worker");
+
 self.addEventListener("fetch", event => {
-    console.log("Fetch event", event);
     event.respondWith(onFetchEvent(event));
 });
 
 
 async function onFetchEvent(event: FetchEvent): Promise<Response> {
-
     console.log(event.request.url);
-
-    return new Response("Hello");
+    return fetch(event.request);
 }

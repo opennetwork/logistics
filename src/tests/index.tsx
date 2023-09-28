@@ -5,6 +5,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import why from "why-is-node-still-running";
+import {isRedis} from "../data";
 
 const {isRedisMemory, listProducts, seed, startRedisMemory, stopData, stopRedisMemory} = await import("../data");
 
@@ -27,7 +28,12 @@ try {
   await import("./storage");
   await import("./schedule");
   await import("./cache");
-  await import("./worker");
+
+  // Redis is a stable store... need to replace the default local
+  // store for workers, but that is a later task
+  if (isRedis()) {
+    await import("./worker");
+  }
 
   // Ensure any data clients are closed
   await stopData();

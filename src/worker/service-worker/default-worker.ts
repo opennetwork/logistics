@@ -4,6 +4,7 @@ import {WORKER_BREAK, WORKER_INITIATED, WORKER_TERMINATE} from "./constants";
 import {parentPort} from "node:worker_threads";
 import {onServiceWorkerWorkerData, ServiceWorkerWorkerData} from "./worker";
 import { ok } from "../../is";
+import {dispatchEvent} from "../../events";
 
 console.log("Default worker!");
 
@@ -27,6 +28,8 @@ try {
 
     parentPort.postMessage(WORKER_INITIATED);
 
+    let registration;
+
     for await (const message of messages) {
         if (message === WORKER_BREAK) {
             continue;
@@ -36,9 +39,17 @@ try {
 
         ok<ServiceWorkerWorkerData>(message);
         ok(message.serviceWorkerId);
-        await onServiceWorkerWorkerData(message);
 
-        parentPort.postMessage(message.serviceWorkerId);
+        if (!registration) {
+            registration = await onServiceWorkerWorkerData(message);
+        } else {
+            ok(message.serviceWorkerId === registration.durable.serviceWorkerId);
+            if (message.event) {
+                await dispatchEvent(message.event);
+            }
+        }
+
+        parentPort.postMessage(WORKER_BREAK);
     }
 
     parentPort.postMessage(WORKER_TERMINATE);
