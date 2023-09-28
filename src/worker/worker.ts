@@ -12,8 +12,11 @@ async function getDefaultNodeWorker(url: string, options: WorkerOptions): Promis
         stdin: false,
         ...options,
     });
-    worker.stdout.pipe(process.stdout);
-    worker.stderr.pipe(process.stderr);
+    // stdout is not available in bun
+    if (worker.stdout) {
+        worker.stdout.pipe(process.stdout);
+        worker.stderr.pipe(process.stderr);
+    }
     return worker;
 };
 
