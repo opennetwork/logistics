@@ -2,7 +2,11 @@ import {getKeyValueStore} from "../data";
 import {ok} from "../is";
 import {SyncTag, SyncTagRegistrationState} from "../sync";
 
-export interface PeriodicSyncTag extends SyncTag {
+export interface PeriodicSyncOptions {
+    minInterval?: number;
+}
+
+export interface PeriodicSyncTag extends SyncTag, PeriodicSyncOptions {
 
 }
 
@@ -40,7 +44,7 @@ export async function deregisterPeriodicSyncTag(tag: string) {
 }
 
 export class DurablePeriodicSyncManager {
-    async register(tag: string) {
+    async register(tag: string, options?: PeriodicSyncOptions) {
         const store = getPeriodicSyncTagStore();
         const existing = await store.get(tag);
         const isFiring = existing?.registrationState === "firing"
@@ -57,7 +61,8 @@ export class DurablePeriodicSyncManager {
             createdAt: existing?.createdAt || registeredAt,
             registeredAt,
             registrationState,
-            registrationStateAt: registeredAt
+            registrationStateAt: registeredAt,
+            ...options
         });
     }
 
