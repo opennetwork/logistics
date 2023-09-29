@@ -10,6 +10,7 @@ import {
 import {caches} from "../../fetch";
 import {index} from "../../content-index";
 import {sync} from "../../sync";
+import {periodicSync} from "../../periodic-sync";
 import {serviceWorker} from "./container";
 import {getOrigin} from "../../listen";
 import {addEventListener, removeEventListener} from "../../events/schedule/schedule";
@@ -33,6 +34,7 @@ export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): 
         caches,
         index,
         sync,
+        periodicSync,
         serviceWorker,
         self: globalThis,
         isSecureContext: protocol === "https:",

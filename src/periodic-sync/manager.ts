@@ -1,39 +1,28 @@
 import {getKeyValueStore} from "../data";
-import {virtual} from "../events/virtual/virtual";
 import {ok} from "../is";
-import type {SyncDurableEventData} from "./dispatch";
+import {SyncTag, SyncTagRegistrationState} from "../sync";
 
-export type SyncTagRegistrationState = "pending" | "waiting" | "firing" | "reregisteredWhileFiring";
+export interface PeriodicSyncTag extends SyncTag {
 
-export interface SyncTag {
-    tag: string;
-    registrationState: SyncTagRegistrationState;
-    registrationStateAt: string;
-    createdAt: string;
-    registeredAt: string;
-    /**
-     * false if the user agent will retry this sync event if it fails, or true if no further attempts will be made after the current attempt.
-     */
-    lastChance?: boolean;
 }
 
 const STORE_NAME = "syncTag";
 
-export function getSyncTagStore() {
-    return getKeyValueStore<SyncTag>(STORE_NAME, {
+function getPeriodicSyncTagStore() {
+    return getKeyValueStore<PeriodicSyncTag>(STORE_NAME, {
         counter: false
     })
 }
 
-export async function getSyncTagRegistrationState(tag: string) {
-    const store = getSyncTagStore();
+export async function getPeriodicSyncTagRegistrationState(tag: string) {
+    const store = getPeriodicSyncTagStore();
     const existing = await store.get(tag);
     ok(existing, "Expected to find registered sync tag");
     return existing.registrationState;
 }
 
-export async function setSyncTagRegistrationState(tag: string, registrationState: SyncTagRegistrationState) {
-    const store = getSyncTagStore();
+export async function setPeriodicSyncTagRegistrationState(tag: string, registrationState: SyncTagRegistrationState) {
+    const store = getPeriodicSyncTagStore();
     const existing = await store.get(tag);
     ok(existing, "Expected to find registered sync tag");
     const next: SyncTag = {
@@ -45,14 +34,14 @@ export async function setSyncTagRegistrationState(tag: string, registrationState
     return next;
 }
 
-export async function deregisterSyncTag(tag: string) {
-    const store = await getSyncTagStore();
+export async function deregisterPeriodicSyncTag(tag: string) {
+    const store = await getPeriodicSyncTagStore();
     await store.delete(tag);
 }
 
-export class DurableSyncManager {
+export class DurablePeriodicSyncManager {
     async register(tag: string) {
-        const store = getSyncTagStore();
+        const store = getPeriodicSyncTagStore();
         const existing = await store.get(tag);
         const isFiring = existing?.registrationState === "firing"
         if (existing && !isFiring) {
@@ -73,14 +62,10 @@ export class DurableSyncManager {
     }
 
     async getTags() {
-        const store = getSyncTagStore();
+        const store = getPeriodicSyncTagStore();
         return await store.keys();
-    }
-
-    [Symbol.asyncIterator]() {
-        const store = getSyncTagStore();
-        return store[Symbol.asyncIterator]();
     }
 }
 
-export const sync = new DurableSyncManager();
+export const periodicSync = new DurablePeriodicSyncManager();
+

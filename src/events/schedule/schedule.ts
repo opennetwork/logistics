@@ -5,8 +5,12 @@ export interface ScheduledFn {
     (event: DurableEventData): Promise<void> | void;
 }
 
+export interface DispatchEventFn {
+    (event: DurableEventData): Promise<void>
+}
+
 export interface DispatcherFn {
-    (event: DurableEventData, dispatch: (event: DurableEventData) => Promise<void>): Promise<void> | void;
+    (event: DurableEventData, dispatch: DispatchEventFn): Promise<void> | void;
 }
 
 export type ScheduledFunctionsRecord<F = ScheduledFn> = Record<string, F>;
