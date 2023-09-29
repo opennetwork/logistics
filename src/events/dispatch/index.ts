@@ -9,19 +9,32 @@ type DispatchEventType = typeof DISPATCH;
 
 export interface DispatchEvent extends DurableEventData {
     type: DispatchEventType;
-    dispatch: DurableEventData;
+    dispatch: DurableEventData | DurableEventData[];
 }
 
 export function isDispatchEvent(event?: UnknownEvent): event is DispatchEvent {
     return !!(
         isLike<Partial<DispatchEvent>>(event) &&
         event.type === "dispatch" &&
-        event.dispatch?.type
+        event.dispatch
     );
 }
 
 export async function onDispatchEvent(event: UnknownEvent) {
     if (!isDispatchEvent(event)) return;
+    if (Array.isArray(event.dispatch)) {
+        // Allows parallel dispatch with one main event
+        // If serial dispatches are wanted this can be done with just multiple
+        // immediate dispatches using `dispatchEvent` directly
+        //
+        // Parallel dispatch is useful in a service worker with many fetch events
+        // at once, say for `.addAll(urls)`
+        await Promise.all(event.dispatch.map(dispatch => ({
+            ...event,
+            dispatch
+        })));
+        return;
+    }
     if (event.dispatch.type === "dispatch") {
         // This is to prevent infinite loops
         console.warn("dispatch cannot be used to dispatch additional events");
@@ -29,14 +42,9 @@ export async function onDispatchEvent(event: UnknownEvent) {
     }
     const dispatching: DurableEventData = {
         ...event.dispatch,
-        // Dispatched events are virtual, no need to delete, mark as retain
-        retain: true,
+        // Dispatched events are all virtual
         virtual: true,
     };
-    // If the instance has no id, give it one
-    if (!dispatching.durableEventId) {
-        dispatching.durableEventId = v4();
-    }
     await dispatchScheduledDurableEvents({
         event: dispatching
     });
