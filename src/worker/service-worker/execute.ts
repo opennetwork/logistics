@@ -1,6 +1,6 @@
 import {ServiceWorkerWorkerData} from "./worker";
 import {getWorkerPoolForImportURL} from "../pool";
-import {SHARE_ENV} from "node:worker_threads";
+import {SHARE_ENV, WorkerOptions} from "node:worker_threads";
 import {getNodeWorkerForImportURL} from "../worker";
 import {Push} from "@virtualstate/promise";
 import {PushAsyncIterableIterator} from "@virtualstate/promise/src/push";
@@ -8,9 +8,9 @@ import {isLike, ok} from "../../is";
 import {WORKER_BREAK, WORKER_INITIATED, WORKER_MESSAGE, WORKER_TERMINATE} from "./constants";
 import {anAsyncThing, TheAsyncThing} from "@virtualstate/promise/the-thing";
 
-export function getServiceWorkerWorkerWorker() {
+export function getServiceWorkerWorkerWorker(options?: WorkerOptions) {
     return getNodeWorkerForImportURL("./default-worker.js", import.meta.url, {
-
+        ...options
     });
 }
 
@@ -35,7 +35,14 @@ export interface Pushable<T, R> {
 
 export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>> {
     console.log("Getting worker");
-    const worker = await getServiceWorkerWorkerWorker();
+    const { MessageChannel } = await import("node:worker_threads");
+    const { port1, port2 } = new MessageChannel();
+    const worker = await getServiceWorkerWorkerWorker({
+        workerData: port2,
+        transferList: [
+            port2
+        ]
+    });
 
     console.log("Waiting for initiation of worker");
     await onInitiated();
@@ -50,11 +57,14 @@ export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>>
         const messages = new Push<R>();
 
         function pushClose() {
-            worker.off("message", onMessage);
+            port2.off("message", onMessage);
             messages.close();
+            port2.close();
+            port1.close();
         }
 
         function onMessage(message: unknown) {
+            console.log("Message from worker", message);
             if (message === WORKER_TERMINATE) {
                 pushClose();
                 return close();
@@ -66,7 +76,7 @@ export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>>
             messages.push(message);
         }
         console.log("Listening on worker message");
-        worker.on("message", onMessage);
+        port1.on("message", onMessage);
 
         console.log("Posting worker message");
         worker.postMessage(data);
@@ -95,10 +105,19 @@ export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>>
 
     function onInitiated() {
         return new Promise<void>(resolve => {
+            port1.on("message", onMessage)
             worker.on("message", onMessage)
+            console.log("Listening on initiation worker message");
+
+            const interval = setInterval(() => {
+                console.log("Parent interval")
+            }, 250);
+
             function onMessage(message: unknown) {
+                console.log("message received", message);
                 if (message !== WORKER_INITIATED) return;
-                worker.off("message", onMessage);
+                port1.off("message", onMessage);
+                clearInterval(interval);
                 resolve();
             }
         })

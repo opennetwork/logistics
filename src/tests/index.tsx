@@ -7,6 +7,8 @@ dotenv.config();
 import why from "why-is-node-still-running";
 import {isRedis} from "../data";
 
+declare var Bun: unknown;
+
 const {isRedisMemory, listProducts, seed, startRedisMemory, stopData, stopRedisMemory} = await import("../data");
 
 try {
@@ -31,7 +33,7 @@ try {
 
   // Redis is a stable store... need to replace the default local
   // store for workers, but that is a later task
-  if (isRedis()) {
+  if (isRedis() && typeof Bun === "undefined") {
     await import("./worker");
   }
 

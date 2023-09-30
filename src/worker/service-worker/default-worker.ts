@@ -1,7 +1,7 @@
 import { DurableServiceWorkerScope } from "./types";
 import { Push } from "@virtualstate/promise";
 import {WORKER_BREAK, WORKER_INITIATED, WORKER_TERMINATE} from "./constants";
-import {parentPort} from "node:worker_threads";
+import {parentPort, workerData} from "node:worker_threads";
 import {onServiceWorkerWorkerData, ServiceWorkerWorkerData} from "./worker";
 import { ok } from "../../is";
 import {dispatchEvent} from "../../events";
@@ -12,25 +12,43 @@ try {
 
     const messages = new Push();
 
+    let receivedMessage = false;
+
     async function cleanup() {
         parentPort.off("message", onMessage);
         messages.close();
     }
 
-    function onMessage(message: unknown) {
+    function onMessage(message: string) {
+        receivedMessage = true;
+        console.log("Message for worker", message);
         if (!messages.open || message === WORKER_TERMINATE) {
             return cleanup();
         }
         messages.push(message);
     }
     parentPort.on("message", onMessage);
+    console.log("Listening for messages inside worker");
 
 
-    parentPort.postMessage(WORKER_INITIATED);
+    workerData.postMessage(WORKER_INITIATED);
+    console.log("Initiated inside worker");
+
+    let initiatedCount = 0;
+    const initiatedInterval = setInterval(() => {
+        if (receivedMessage) {
+            clearInterval(initiatedInterval);
+            return;
+        }
+        workerData.postMessage(WORKER_INITIATED);
+        console.log("Initiated inside worker", initiatedCount++);
+    }, 500)
 
     let registration;
 
+    console.log("Waiting for messages inside worker");
     for await (const message of messages) {
+        console.log("Received worker message", message);
         if (message === WORKER_BREAK) {
             continue;
         }
@@ -49,10 +67,10 @@ try {
             }
         }
 
-        parentPort.postMessage(WORKER_BREAK);
+        workerData.postMessage(WORKER_BREAK);
     }
 
-    parentPort.postMessage(WORKER_TERMINATE);
+    workerData.postMessage(WORKER_TERMINATE);
 
 
 

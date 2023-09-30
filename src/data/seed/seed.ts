@@ -23,10 +23,10 @@ export async function seed(options?: SeedOptions) {
     ...givenSeeds
   }
   const value = seeds[name];
-  ok(
-    value,
-    `Expected seed name ${name} to be available, seeds: ${Object.keys(seeds)}`
-  );
+  if (!value) {
+    console.warn(`Expected seed name ${name} to be available, seeds: ${Object.keys(seeds)}`);
+    return;
+  }
   await value.seed({
     ...options,
     seed: name,
