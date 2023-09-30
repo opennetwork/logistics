@@ -1,7 +1,7 @@
 import {DurableEvent, DurableEventData, getKeyValueStore} from "../../data";
 import {virtual} from "../../events/virtual/virtual";
 import {isLike, ok} from "../../is";
-import {createHash} from "crypto";
+import {createHash} from "node:crypto";
 import {index} from "../../content-index";
 import {sync} from "../../sync";
 import {addEventListener} from "../../events/schedule/schedule";

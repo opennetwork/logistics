@@ -1,6 +1,5 @@
 import {KeyValueStore, KeyValueStoreOptions} from "./types";
 import { getBaseKeyValueStore } from "./kv-base";
-import { ok } from "../../is";
 import {getConfig} from "../../config";
 
 export const GLOBAL_STORE_NAME = "global";

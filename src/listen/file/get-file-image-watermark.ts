@@ -3,7 +3,6 @@ import {join} from "node:path";
 import {root} from "../../package";
 import {readFile} from "node:fs/promises";
 import {DOMParser, XMLSerializer} from "xmldom";
-import sharp from "sharp";
 
 export async function getFileImageWatermarkRoutes(fastify: FastifyInstance) {
 
@@ -102,6 +101,7 @@ export async function getFileImageWatermarkRoutes(fastify: FastifyInstance) {
                 schema,
                 async handler(request, response) {
                     const svg = await getSvg(request.query);
+                    const { default: sharp } = await import("sharp");
                     const output = await sharp(Buffer.from(svg))
                         .png()
                         .toBuffer();
