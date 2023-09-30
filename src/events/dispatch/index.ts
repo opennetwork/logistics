@@ -1,8 +1,6 @@
 import {on} from "../schedule";
-import {dispatchScheduledDurableEvents} from "../schedule/dispatch-scheduled";
-import {DurableEventData, UnknownEvent} from "../../data";
+import type {DurableEventData, UnknownEvent} from "../../data";
 import {isLike} from "../../is";
-import {v4} from "uuid";
 
 const DISPATCH = "dispatch" as const;
 type DispatchEventType = typeof DISPATCH;
@@ -45,6 +43,7 @@ export async function onDispatchEvent(event: UnknownEvent) {
         // Dispatched events are all virtual
         virtual: true,
     };
+    const {dispatchScheduledDurableEvents} = await import("../schedule/dispatch-scheduled");
     await dispatchScheduledDurableEvents({
         event: dispatching
     });

@@ -1,4 +1,4 @@
-import {cron, dispatchEvent, on} from "../../events/schedule";
+import {cron, dispatchEvent, on} from "../../index";
 import {v4} from "uuid";
 import {spy} from "sinon";
 import {dispatchScheduledDurableEvents} from "../../events/schedule/dispatch-scheduled";

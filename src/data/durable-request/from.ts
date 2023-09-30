@@ -3,7 +3,6 @@ import {isDurableBody} from "./is";
 import {ok} from "../../is";
 import {getFile, readFile, save} from "../file";
 import {v4} from "uuid";
-import {caches} from "../../fetch";
 
 export async function fromMaybeDurableBody(body: unknown): Promise<RequestInit["body"]> {
     if (typeof body === "string") {
@@ -31,6 +30,7 @@ export async function fromDurableBody(body: DurableBody): Promise<RequestInit["b
     if (body.type === "cache") {
         const { url, value: cacheName } = body;
         ok(url, "Expected url to be provided to resolve cache body");
+        const { caches } = await import("../../fetch");
         const cache = await caches.open(cacheName);
         const match = await cache.match(url);
         ok(match, "Expected match from cache for body");

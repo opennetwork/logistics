@@ -8,14 +8,14 @@ import type {LayoutConfig} from "../react/server";
 import type {SetMembershipConfig} from "../data";
 import type {MembershipViewComponentConfig} from "../react/server/paths/membership/view";
 import type {MembershipStatusConfig} from "../data/membership/membership-status";
-import {AppointmentTreeConfig, HappeningTreeConfig, SeedConfig} from "../data";
-import {ScheduledConfig} from "../events/schedule/schedule";
-import {VirtualEventConfig} from "../events/virtual/virtual";
-import {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
-import {ContentIndexConfig} from "../content-index";
-import {DispatchEventConfig} from "../events";
-import {FastifyConfig} from "../listen";
-import {WorkerPoolConfig} from "../worker/pool";
+import type {AppointmentTreeConfig, HappeningTreeConfig, SeedConfig} from "../data";
+import type {ScheduledConfig} from "../events/schedule/schedule";
+import type {VirtualEventConfig} from "../events/virtual/virtual";
+import type {DurableCacheStorageConfig, FetchEventConfig} from "../fetch";
+import type {ContentIndexConfig} from "../content-index";
+import type {DispatchEventConfig} from "../events";
+import type {FastifyConfig} from "../listen";
+import type {WorkerPoolConfig} from "../worker/pool";
 
 export interface LogisticsConfig {
 

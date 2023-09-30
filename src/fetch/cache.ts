@@ -7,12 +7,11 @@ import {
 } from "../data";
 import {ok} from "../is";
 import {HeaderList} from "http-header-list";
-import {getOrigin} from "../listen";
+import {getOrigin} from "../listen/config";
 import {getConfig} from "../config";
 import {fromDurableRequest, fromDurableResponse, fromRequestResponse} from "../data";
 import {Expiring} from "../data/expiring";
 import {join} from "node:path";
-import {v4} from "uuid";
 import {createHash} from "crypto";
 
 export interface DurableCacheStorageConfig {

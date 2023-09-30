@@ -1,4 +1,4 @@
-import {DurableEventData} from "../../data";
+import type {DurableEventData} from "../../data";
 import {getConfig} from "../../config";
 
 export interface ScheduledFn {

@@ -11,9 +11,9 @@ import {
 import {dispatcher} from "../events/schedule/schedule";
 import {v4} from "uuid";
 import {caches} from "./cache";
-import {dispatchEvent} from "../events";
+import {dispatchEvent} from "../events/schedule/event";
 import {getConfig} from "../config";
-import {DurableFetchEventCache, DurableFetchEventData, FETCH} from "./events";
+import type {DurableFetchEventCache, DurableFetchEventData} from "./events";
 
 export function isDurableFetchEventCache(value: unknown): value is DurableFetchEventCache {
     return !!(
@@ -67,13 +67,13 @@ export function createWaitUntil() {
 function isDurableFetchEventData(event?: DurableEventData): event is DurableFetchEventData {
     return !!(
         isLike<DurableFetchEventData>(event) &&
-        event.type === FETCH &&
+        event.type === "fetch" &&
         event.request &&
         event.request.url
     );
 }
 
-export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dispatch) => {
+export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, dispatch) => {
     const { signal, controller } = getSignal();
     ok(isDurableFetchEventData(event));
     const {
@@ -105,7 +105,7 @@ export const removeFetchDispatcherFunction = dispatcher(FETCH, async (event, dis
         const isRetain = durableEventDispatch || (event.durableEventId && event.retain !== false);
         let body: DurableBody;
         const givenCache = typeof event.cache === "string" ? { name: event.cache } : isDurableFetchEventCache(event.cache) ? event.cache : undefined;
-        const cache =  givenCache ?? (isRetain ? { name: FETCH } : undefined);
+        const cache =  givenCache ?? (isRetain ? { name: "fetch" } : undefined);
         if (cache) {
             const { name, always } = cache;
             if (response.ok || always) {

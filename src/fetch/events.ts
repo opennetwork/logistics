@@ -1,6 +1,7 @@
 import {DurableEventData, DurableRequest, DurableRequestData} from "../data";
 import {on} from "../events";
 import {isLike, ok} from "../is";
+
 export const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
 
