@@ -48,6 +48,7 @@ function assertDispatchEvent(value: unknown): asserts value is DispatchEventSche
 export async function submit(request: FastifyRequest) {
     const data = request.body;
     assertDispatchEvent(data);
+    ok(!Array.isArray(data.dispatch));
     let dispatching: DurableEventData = {
         ...data.dispatch
     }

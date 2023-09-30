@@ -34,9 +34,12 @@ export interface Pushable<T, R> {
 }
 
 export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>> {
+    console.log("Getting worker");
     const worker = await getServiceWorkerWorkerWorker();
 
+    console.log("Waiting for initiation of worker");
     await onInitiated();
+    console.log("Initiated worker");
 
     return {
         push,
@@ -62,16 +65,21 @@ export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>>
             ok<R>(message);
             messages.push(message);
         }
+        console.log("Listening on worker message");
         worker.on("message", onMessage);
 
+        console.log("Posting worker message");
         worker.postMessage(data);
+        console.log("Posted worker message");
 
         return anAsyncThing(onMessages());
 
         async function *onMessages() {
+            console.log("Waiting on worker messages");
             try {
                 yield * messages;
             } finally {
+                console.log("Finished listening to worker messages");
                 pushClose();
             }
         }

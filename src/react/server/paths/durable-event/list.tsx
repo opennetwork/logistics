@@ -48,7 +48,7 @@ export function ListDurableEvents() {
             <div className="flex flex-col divide-y">
                 {events.map(event => (
                     <div key={event.durableEventId} className="flex flex-row justify-between">
-                        <div>{event.dispatch.type}</div>
+                        <div>{Array.isArray(event.dispatch) ? "Multiple events" : event.dispatch.type}</div>
                         {
                             !isUnauthenticated ? (
                                 <form action={path} method="POST">
