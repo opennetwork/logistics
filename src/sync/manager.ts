@@ -46,7 +46,7 @@ export async function setSyncTagRegistrationState(tag: string, registrationState
 }
 
 export async function deregisterSyncTag(tag: string) {
-    const store = await getSyncTagStore();
+    const store = getSyncTagStore();
     await store.delete(tag);
 }
 

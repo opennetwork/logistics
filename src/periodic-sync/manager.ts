@@ -39,7 +39,7 @@ export async function setPeriodicSyncTagRegistrationState(tag: string, registrat
 }
 
 export async function deregisterPeriodicSyncTag(tag: string) {
-    const store = await getPeriodicSyncTagStore();
+    const store = getPeriodicSyncTagStore();
     await store.delete(tag);
 }
 
@@ -69,6 +69,10 @@ export class DurablePeriodicSyncManager {
     async getTags() {
         const store = getPeriodicSyncTagStore();
         return await store.keys();
+    }
+
+    async unregister(tag: string) {
+        await deregisterPeriodicSyncTag(tag);
     }
 }
 
