@@ -41,6 +41,12 @@
       ],
       "scheduled": [
         "./esnext/scheduled.d.ts"
+      ],
+      "events/virtual": [
+        "./esnext/events/virtual/index.d.ts"
+      ],
+      "events/virtual/virtual": [
+        "./esnext/events/virtual/virtual.d.ts"
       ]
     }
   },
@@ -57,7 +63,9 @@
     "./react/views": "./esnext/react/server/paths/index.js",
     "./react/views/*": "./esnext/react/server/paths/*/index.js",
     "./authentication": "./esnext/authentication/index.js",
-    "./scheduled": "./esnext/scheduled.js"
+    "./scheduled": "./esnext/scheduled.js",
+    "./events/virtual": "./esnext/events/virtual/index.js",
+    "./events/virtual/virtual": "./esnext/events/virtual/virtual.js"
   },
   "repository": {
     "type": "git",
