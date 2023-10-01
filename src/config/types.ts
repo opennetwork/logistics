@@ -16,6 +16,7 @@ import type {ContentIndexConfig} from "../content-index";
 import type {DispatchEventConfig} from "../events";
 import type {FastifyConfig} from "../listen";
 import type {WorkerPoolConfig} from "../worker/pool";
+import type {PeriodicSyncScheduleConfig} from "../periodic-sync/schedule";
 
 export interface LogisticsConfig {
 
@@ -44,7 +45,8 @@ export interface Config extends
     HappeningTreeConfig,
     DispatchEventConfig,
     FastifyConfig,
-    WorkerPoolConfig {
+    WorkerPoolConfig,
+    PeriodicSyncScheduleConfig {
     name: string;
     version: string;
     root: string;

@@ -131,4 +131,5 @@ export async function deleteDispatchQStash(event: DurableEventData) {
         }
     )
     ok(response.ok, "Could not delete dispatch QStash message");
+    await store.delete(SCHEDULE_KEY);
 }

@@ -60,3 +60,19 @@ export function isSignalled(event: unknown): event is Signalled {
       typeof event.signal.aborted === "boolean"
   )
 }
+
+export function isMatchingObjects(a?: unknown, b?: unknown): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    if (typeof a !== "object" || typeof b !== "object") return false;
+    const aEntries = Object.entries(a);
+    const bMap = new Map(Object.entries(b));
+    if (aEntries.length !== bMap.size) return false;
+    return aEntries.every(([key, value]) => {
+        const otherValue = bMap.get(key);
+        if (typeof value === "object") {
+            return isMatchingObjects(value, otherValue);
+        }
+        return value === otherValue;
+    })
+}

@@ -12,7 +12,8 @@ import { Expiring } from "./expiring";
 export const EXPIRING_KEYS = new Set<`${string}|${string}`>();
 
 export const MINUTE_MS = 60 * 1000;
-export const DAY_MS = 24 * 60 * MINUTE_MS;
+export const HOUR_MS = MINUTE_MS * 60;
+export const DAY_MS = 24 * HOUR_MS;
 export const MONTH_MS = 31 * DAY_MS;
 export const DEFAULT_EXPIRES_IN_MS = 7 * DAY_MS;
 

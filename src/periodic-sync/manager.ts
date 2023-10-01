@@ -18,22 +18,26 @@ function getPeriodicSyncTagStore() {
     })
 }
 
-export async function getPeriodicSyncTagRegistrationState(tag: string) {
+export async function getPeriodicSyncTagRegistration(tag: string) {
     const store = getPeriodicSyncTagStore();
     const existing = await store.get(tag);
     ok(existing, "Expected to find registered sync tag");
+    return existing;
+}
+
+export async function getPeriodicSyncTagRegistrationState(tag: string) {
+    const existing = await getPeriodicSyncTagRegistration(tag);
     return existing.registrationState;
 }
 
 export async function setPeriodicSyncTagRegistrationState(tag: string, registrationState: SyncTagRegistrationState) {
-    const store = getPeriodicSyncTagStore();
-    const existing = await store.get(tag);
-    ok(existing, "Expected to find registered sync tag");
+    const existing = await getPeriodicSyncTagRegistration(tag);
     const next: SyncTag = {
         ...existing,
         registrationState,
         registrationStateAt: new Date().toISOString()
     };
+    const store = getPeriodicSyncTagStore();
     await store.set(tag, next);
     return next;
 }
