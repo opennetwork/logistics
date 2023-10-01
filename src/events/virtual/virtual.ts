@@ -31,6 +31,10 @@ export function createVirtualFunction(fn: VirtualEventFn) {
 }
 
 export async function *generateVirtualEvents() {
+
+    // Ensure all virtual functions are loaded
+    await import("../../virtual");
+
     const { events } = getConfig();
 
     const fnsSnapshot = [...VIRTUAL_FUNCTIONS];
