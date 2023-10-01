@@ -80,6 +80,7 @@ export interface AppointmentData extends HappeningData {
   attendedAt?: string;
   status?: AppointmentStatus;
   history?: AppointmentHistoryItem[];
+  locationId?: string;
 }
 
 export interface Appointment extends AppointmentData {

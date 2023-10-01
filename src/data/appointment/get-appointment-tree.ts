@@ -13,6 +13,8 @@ export interface AppointmentTreeConfig {
 export interface AppointmentTree extends HappeningTree, Pick<Appointment, "status" | "statusAt" | "history"> {
     location?: Location;
     appointment?: Appointment;
+    updatedAt: string;
+    createdAt: string;
 }
 
 export async function getAppointmentTree(appointmentId: string): Promise<AppointmentTree> {
@@ -37,6 +39,8 @@ export async function getAppointmentTree(appointmentId: string): Promise<Appoint
         appointment,
         status,
         statusAt,
+        createdAt: appointment.createdAt,
+        updatedAt: appointment.updatedAt,
         history,
         location,
     }
