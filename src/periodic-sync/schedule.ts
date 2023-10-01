@@ -15,6 +15,7 @@ export interface GetPeriodicSyncScheduleFn {
 
 export interface PeriodicSyncScheduleConfig {
     getPeriodicSyncSchedule?: GetPeriodicSyncScheduleFn;
+    getCronExpressionFromInterval?(interval: number): string | undefined;
 }
 
 export async function getPeriodicSyncSchedule(manager?: DurablePeriodicSyncManager) {
@@ -28,6 +29,10 @@ export async function getPeriodicSyncSchedule(manager?: DurablePeriodicSyncManag
 }
 
 function getCronExpressionFromInterval(interval: number) {
+    const config = getConfig();
+    if (config.getCronExpressionFromInterval) {
+        return config.getCronExpressionFromInterval(interval);
+    }
     if (interval < HOUR_MS) {
         return "0,15,30,45 * * * *";
     }
