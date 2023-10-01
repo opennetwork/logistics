@@ -4,16 +4,17 @@ import {DurableEventSchedule, getDurableEvent} from "../data";
 import {isMatchingObjects} from "../is";
 import {getPeriodicSyncSchedule} from "./schedule";
 
-export const removePeriodicSyncVirtualFunction = virtual(async function * () {
+async function * generatePeriodicSyncVirtualEvents() {
     const schedules = await getPeriodicSyncSchedule();
     const type = "periodicsync"
     const existingTags = await listDurableEventIds({
         type
     });
     const tags = schedules.map(({ tag }) => tag);
-    const notMatching = existingTags.filter(tag => !tags.includes(tag));
+    const tagsToDelete = existingTags.filter(tag => !tags.includes(tag));
     const { deleteDispatchEvent } = await import("../events");
-    for (const tag of notMatching) {
+    console.log({ tagsToDelete, schedules, existingTags })
+    for (const tag of tagsToDelete) {
         const existing = await getDurableEvent({
             type,
             durableEventId: tag
@@ -43,7 +44,9 @@ export const removePeriodicSyncVirtualFunction = virtual(async function * () {
             dispatch
         };
     }
-})
+}
+
+export const removePeriodicSyncVirtualFunction = virtual(generatePeriodicSyncVirtualEvents);
 
 export function isMatchingDurableEventSchedule(a: DurableEventSchedule, b: DurableEventSchedule) {
     return isMatchingObjects(a, b);

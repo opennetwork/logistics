@@ -28,14 +28,14 @@ export async function getPeriodicSyncSchedule(manager?: DurablePeriodicSyncManag
 }
 
 function getCronExpressionFromInterval(interval: number) {
-    if (interval <= MINUTE_MS) {
-        return "0 * * * *";
-    }
-    if (interval <= HOUR_MS) {
-        return "0 0 * * *";
+    if (interval < HOUR_MS) {
+        return "0,15,30,45 * * * *";
     }
     if (interval <= DAY_MS) {
-        return "0 0 0 * *";
+        return "0 0 * * *";
+    }
+    if (interval <= MONTH_MS) {
+        return "0 0 1 * *";
     }
     return undefined;
 }
