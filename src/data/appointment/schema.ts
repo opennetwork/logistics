@@ -59,7 +59,11 @@ export const appointmentData = {
       type: "string",
       nullable: true,
       enum: statusEnum
-    }
+    },
+    locationId: {
+      type: "string",
+      nullable: true
+    },
   }
 } as const;
 
