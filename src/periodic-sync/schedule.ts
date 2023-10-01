@@ -52,12 +52,10 @@ export async function getDefaultDurableEventScheduleForPeriodicSyncTag(tag: stri
             immediate: true
         };
     }
-    if (minInterval <= MONTH_MS) {
-        const cron = getCronExpressionFromInterval(minInterval);
-        if (cron) {
-            return {
-                cron
-            }
+    const cron = getCronExpressionFromInterval(minInterval);
+    if (cron) {
+        return {
+            cron
         }
     }
     const createdAtTime = new Date(createdAt).getTime();
