@@ -3,7 +3,7 @@ import {createAppointmentHappeningTreeContext} from "./create-appointment-happen
 import {Appointment} from "./types";
 import {getAppointment} from "./get-appointment";
 import {ok} from "../../is";
-import {Location} from "../location";
+import {getLocation, Location} from "../location";
 import {getConfig} from "../../config";
 
 export interface AppointmentTreeConfig {
@@ -12,6 +12,7 @@ export interface AppointmentTreeConfig {
 
 export interface AppointmentTree extends HappeningTree, Pick<Appointment, "status" | "statusAt" | "history"> {
     location?: Location;
+    appointment?: Appointment;
 }
 
 export async function getAppointmentTree(appointmentId: string): Promise<AppointmentTree> {
@@ -30,10 +31,13 @@ export async function getAppointmentTree(appointmentId: string): Promise<Appoint
     });
     const tree = await getHappeningTree(appointmentId, context);
     const { status, statusAt, history} = appointment;
+    const location = appointment.locationId ? await getLocation(appointment.locationId) : undefined;
     return {
         ...tree,
+        appointment,
         status,
         statusAt,
-        history
+        history,
+        location,
     }
 }
