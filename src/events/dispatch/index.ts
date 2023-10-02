@@ -1,6 +1,7 @@
 import {on} from "../schedule";
 import type {DurableEventData, UnknownEvent} from "../../data";
 import {isLike} from "../../is";
+import {addDurableEvent, getDurableEvent} from "../../data";
 
 const DISPATCH = "dispatch" as const;
 type DispatchEventType = typeof DISPATCH;
@@ -38,11 +39,12 @@ export async function onDispatchEvent(event: UnknownEvent) {
         console.warn("dispatch cannot be used to dispatch additional events");
         return;
     }
-    const dispatching: DurableEventData = {
-        ...event.dispatch,
-        // Dispatched events are all virtual
-        virtual: true,
+    let dispatching: DurableEventData = {
+        ...event.dispatch
     };
+    if (!dispatching.durableEventId) {
+        dispatching.virtual = true;
+    }
     const {dispatchScheduledDurableEvents} = await import("../schedule/dispatch-scheduled");
     await dispatchScheduledDurableEvents({
         event: dispatching
