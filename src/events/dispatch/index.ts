@@ -1,7 +1,6 @@
-import {on} from "../schedule";
+import {on, dispatchEvent} from "../schedule";
 import type {DurableEventData, UnknownEvent} from "../../data";
 import {isLike} from "../../is";
-import {addDurableEvent, getDurableEvent} from "../../data";
 
 const DISPATCH = "dispatch" as const;
 type DispatchEventType = typeof DISPATCH;
@@ -45,10 +44,12 @@ export async function onDispatchEvent(event: UnknownEvent) {
     if (!dispatching.durableEventId) {
         dispatching.virtual = true;
     }
-    const {dispatchScheduledDurableEvents} = await import("../schedule/dispatch-scheduled");
-    await dispatchScheduledDurableEvents({
-        event: dispatching
-    });
+    if (!dispatching.virtual && !dispatching.schedule) {
+        dispatching.schedule = {
+            immediate: true
+        };
+    }
+    await dispatchEvent(dispatching);
 }
 
 export const removeDispatchScheduledFunction = on(DISPATCH, onDispatchEvent);

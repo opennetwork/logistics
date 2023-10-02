@@ -11,7 +11,8 @@ export async function * generateVirtualSyncEvents(): AsyncIterable<SyncDurableEv
             durableEventId: `${store.name}:${tag}`,
             type: "sync",
             tag,
-            lastChance
+            lastChance,
+            virtual: true
         };
 
         if (lastChance) {
