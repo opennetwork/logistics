@@ -38,12 +38,10 @@ async function * generatePeriodicSyncVirtualEvents() {
             // Ensure we delete the old schedule before defining a new one
             // This shouldn't happen often if periodicSync is staying the same
             await deleteDispatchEvent(existing);
-        } else {
-            dispatch = await addDurableEvent(dispatch);
         }
         yield {
             type: "dispatch",
-            dispatch
+            dispatch: await addDurableEvent(dispatch)
         };
     }
 }
