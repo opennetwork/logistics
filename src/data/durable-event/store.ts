@@ -3,6 +3,6 @@ import {DurableEvent, DurableEventTypeData} from "./types";
 
 export function getDurableEventStore({ type }: DurableEventTypeData) {
     return getHappeningStore<DurableEvent>(`event:${type}`, {
-        counter: true // free event counter
+        counter: false
     });
 }

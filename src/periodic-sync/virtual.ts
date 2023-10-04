@@ -24,24 +24,14 @@ async function * generatePeriodicSyncVirtualEvents() {
         }
     }
     for (const { tag, schedule } of schedules) {
-        let dispatch: DurableEventData = {
-            durableEventId: tag,
-            type,
-            tag,
-            schedule
-        };
-        const existing = await getDurableEvent(dispatch)
-        if (existing) {
-            if (isMatchingDurableEventSchedule(existing.schedule, dispatch.schedule)) {
-                continue;
-            }
-            // Ensure we delete the old schedule before defining a new one
-            // This shouldn't happen often if periodicSync is staying the same
-            await deleteDispatchEvent(existing);
-        }
         yield {
             type: "dispatch",
-            dispatch: await addDurableEvent(dispatch)
+            dispatch: await addDurableEvent({
+                durableEventId: tag,
+                type,
+                tag,
+                schedule
+            })
         };
     }
 }

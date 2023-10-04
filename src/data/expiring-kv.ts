@@ -1,4 +1,4 @@
-import {KeyValueStore} from "./types";
+import {KeyValueStore, MetaKeyValueStore, MetaRecord} from "./types";
 import { getKeyValueStore, KeyValueStoreOptions } from "./storage";
 import {
     getRedisPrefixedKey,
@@ -6,6 +6,7 @@ import {
     getGlobalRedisClient
 } from "./storage";
 import { Expiring } from "./expiring";
+import {createMetaStore} from "./storage/kv-base";
 
 // Added to only where redis is not in use
 // Allows just for IDE based debugging
@@ -92,6 +93,14 @@ export function getExpiringStore<T extends Expiring>(
             }
             return value;
         },
+        meta<M = MetaRecord>(key?: string): MetaKeyValueStore<M> {
+            return createMetaStore<M>(
+                getExpiringStore,
+                name,
+                key,
+                options
+            );
+        }
     };
 
     function isExpired(expiresInMs: number) {

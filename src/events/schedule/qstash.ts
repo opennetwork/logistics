@@ -3,6 +3,7 @@ import {BackgroundQuery} from "../../background";
 import {DurableEventData, getDurableEventStore} from "../../data";
 import {ok} from "../../is";
 import {TESTING} from "../../config";
+import * as process from "process";
 
 export function isQStash() {
     if (TESTING && !process.env.QSTASH_TESTING) {
@@ -14,7 +15,7 @@ export function isQStash() {
 const SCHEDULE_KEY = "schedule";
 
 interface ScheduleMeta {
-    messageId: string;
+    messageId?: string;
     scheduleId?: string;
     createdAt: string;
 }
@@ -25,63 +26,133 @@ function getMetaStore(event: DurableEventData) {
     return getDurableEventStore(event).meta<ScheduleMeta>(event.durableEventId);
 }
 
+function isQStashV1() {
+    const { QSTASH_URL } = process.env;
+    if (!QSTASH_URL) return false;
+    const url = new URL(QSTASH_URL);
+    if (!url.pathname.endsWith("/")) {
+        url.pathname = `${url.pathname}/`;
+    }
+    return url.pathname === "/v1/publish/"
+}
+
+function getQStashURL() {
+    const { QSTASH_URL } = process.env;
+    const baseUrl = new URL(QSTASH_URL || "https://qstash.upstash.io/v2");
+    if (!baseUrl.pathname.endsWith("/")) {
+        baseUrl.pathname = baseUrl.pathname.substring(0, baseUrl.pathname.length - 1);
+    }
+    ok(baseUrl.pathname.endsWith("/v2"), "Expected v2 qstash API");
+    return baseUrl;
+}
+
+function getQStashDurableEventSchedule(event: DurableEventData) {
+    const { cron, after, delay, before, timezone } = event.schedule ?? {};
+    if (cron) {
+        return {
+            cron
+        }
+    }
+    if (after) {
+        return {
+            after,
+            timezone
+        }
+    }
+    if (delay) {
+        return {
+            delay
+        }
+    }
+    if (before) {
+        throw new Error("Not implemented in QStash Schedule, please raise a ticket in this implementing module");
+    }
+
+    const {QSTASH_DELAY} = process.env;
+    if (QSTASH_DELAY) {
+        return {
+            delay: QSTASH_DELAY
+        }
+    }
+
+    return undefined;
+
+}
+
 export async function dispatchQStash(event: DurableEventData) {
+    if (isQStashV1()) {
+        const v1 = await import("./qstash.v1");
+        return v1.dispatchQStash(event);
+    }
+
+    const baseUrl = getQStashURL();
+
+    const {
+        QSTASH_EVENT_URL,
+        QSTASH_TOKEN,
+        QSTASH_RETRIES,
+        QSTASH_CRON_RETRIES
+    } = process.env;
+
     const store = getMetaStore(event);
 
     if (await store.has(SCHEDULE_KEY)) {
         await deleteDispatchQStash(event);
     }
 
-    const { schedule } = event;
-    const {
-        QSTASH_URL,
-        QSTASH_EVENT_URL,
-        QSTASH_TOKEN,
-        QSTASH_RETRIES,
-        QSTASH_CRON_RETRIES,
-        QSTASH_DELAY
-    } = process.env;
     ok(QSTASH_TOKEN, "Expected QSTASH_TOKEN");
     const targetUrl = new URL(
         QSTASH_EVENT_URL || "/api/event",
         getOrigin()
     );
-    const baseUrl = new URL(QSTASH_URL || "https://qstash.upstash.io/v1/publish/");
-    if (!baseUrl.pathname.endsWith("/")) {
-        baseUrl.pathname = `${baseUrl.pathname}/`;
-    }
-    const url = new URL(
-        `${baseUrl.pathname}${targetUrl.toString()}`,
-        baseUrl.origin
-    );
+    const url = new URL(baseUrl.origin);
     const headers = new Headers({
         Authorization: `Bearer ${QSTASH_TOKEN}`,
         "Content-Type": "application/json"
     });
-    if (schedule?.cron) {
-        // https://upstash.com/docs/qstash/features/schedules
-        // It can take up to 60 seconds for the schedule to be loaded on an active node and triggered for the first time.
-        headers.set("Upstash-Cron", schedule.cron);
-        if (QSTASH_CRON_RETRIES) {
-            headers.set("Upstash-Retries", QSTASH_CRON_RETRIES);
-        }
-    }
+
+    let isSingleMessage = true;
+
+    const schedule = getQStashDurableEventSchedule(event);
+
     if (schedule?.after) {
         // https://upstash.com/docs/qstash/features/delay#absolute-delay
         // The format is a unix timestamp in seconds, based on the UTC timezone.
         const seconds = new Date(schedule.after).getTime() / 1000;
         const rounded = Math.round(seconds);
         headers.set("Upstash-Not-Before", rounded.toString());
+    } else {
+        if (schedule?.cron) {
+            // https://upstash.com/docs/qstash/features/schedules
+            // It can take up to 60 seconds for the schedule to be loaded on an active node and triggered for the first time.
+            headers.set("Upstash-Cron", schedule.cron);
+            if (QSTASH_CRON_RETRIES) {
+                headers.set("Upstash-Retries", QSTASH_CRON_RETRIES);
+            }
+            isSingleMessage = false;
+        } else if (!headers.has("Upstash-Not-Before") && schedule?.delay) {
+            // https://upstash.com/docs/qstash/features/delay#relative-delay
+            // Upstash-Delay will get overridden by Upstash-Not-Before header when both are used together.
+            // Allows for a default delay
+            if (typeof schedule.delay === "string") {
+                headers.set("Upstash-Delay", schedule.delay);
+            } else {
+                headers.set("Upstash-Delay", `${schedule.delay}ms`);
+            }
+            isSingleMessage = false;
+        }
     }
+
     if (!headers.has("Upstash-Retries") && QSTASH_RETRIES) {
         headers.set("Upstash-Retries", QSTASH_RETRIES);
     }
-    if (!headers.has("Upstash-Not-Before") && QSTASH_DELAY) {
-        // https://upstash.com/docs/qstash/features/delay#relative-delay
-        // Upstash-Delay will get overridden by Upstash-Not-Before header when both are used together.
-        // Allows for a default delay
-        headers.set("Upstash-Delay", QSTASH_DELAY);
+
+    if (isSingleMessage) {
+        url.pathname = `${baseUrl.pathname}/publish/${targetUrl.toString()}`
+    } else {
+        url.pathname = `${baseUrl.pathname}/schedules/${targetUrl.toString()}`
     }
+
     const background: BackgroundQuery = {
         event: event.type,
         eventId: event.durableEventId,
@@ -96,31 +167,39 @@ export async function dispatchQStash(event: DurableEventData) {
         }
     );
     ok(response.ok, "Could not dispatch QStash message");
-    const { messageId, scheduleId }: { messageId: string, scheduleId?: string } = await response.json();
-    console.log(`Dispatched QStash ${messageId} ${scheduleId || "No Schedule"}`)
-    return { messageId, scheduleId };
+    const { messageId, scheduleId }: Partial<ScheduleMeta> = await response.json();
+    const data = {
+        messageId,
+        scheduleId,
+        createdAt: new Date().toISOString()
+    };
+    if (messageId) {
+        console.log("Dispatched QStash message", messageId);
+    } else {
+        console.log("Dispatched QStash schedule", scheduleId);
+        await store.set(SCHEDULE_KEY, data);
+    }
+    return data;
 }
 
 export async function deleteDispatchQStash(event: DurableEventData) {
+    if (isQStashV1()) {
+        const v1 = await import("./qstash.v1");
+        return v1.deleteDispatchQStash(event);
+    }
+
     const store = getMetaStore(event);
     const schedule = await store.get(SCHEDULE_KEY);
-    if (!schedule) {
+    if (!schedule?.scheduleId) {
         return;
     }
+    const baseUrl = getQStashURL();
     const {
-        QSTASH_URL,
-        QSTASH_MESSAGES_URL,
         QSTASH_TOKEN
     } = process.env;
     ok(QSTASH_TOKEN, "Expected QSTASH_TOKEN");
-    const baseUrl = new URL(QSTASH_MESSAGES_URL || "/v1/messages/", QSTASH_URL || "https://qstash.upstash.io");
-    if (!baseUrl.pathname.endsWith("/")) {
-        baseUrl.pathname = `${baseUrl.pathname}/`;
-    }
-    const url = new URL(
-        `${baseUrl.pathname}${schedule.messageId}`,
-        baseUrl
-    );
+    const url = new URL(baseUrl);
+    url.pathname = `${baseUrl.pathname}/schedules/${schedule.scheduleId}`
     const response = await fetch(
         url.toString(),
         {
@@ -130,6 +209,8 @@ export async function deleteDispatchQStash(event: DurableEventData) {
             }
         }
     )
-    ok(response.ok, "Could not delete dispatch QStash message");
+    if (response.status !== 404) {
+        ok(response.ok, "Could not delete dispatch QStash message");
+    }
     await store.delete(SCHEDULE_KEY);
 }

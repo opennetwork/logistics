@@ -53,7 +53,7 @@ export async function dispatchEvent(event: DurableEventData) {
 }
 
 export async function deleteDispatchEvent(event: DurableEventData) {
-    const {deleteDispatchQStash, isQStash} = await import("./qstash");
+    const {deleteDispatchQStash, isQStash} = await import("./qstash.v1");
     if (isQStash()) {
         await deleteDispatchQStash(event);
     }

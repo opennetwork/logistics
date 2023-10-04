@@ -8,6 +8,7 @@ export interface DurableEventSchedule {
     before?: string;
     immediate?: boolean;
     cron?: string;
+    delay?: number | string;
 }
 
 export interface UnknownEvent {

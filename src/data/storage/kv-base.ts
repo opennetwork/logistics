@@ -80,17 +80,26 @@ export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOpt
     return kv;
 
     function meta<M>(key?: string): MetaKeyValueStore<M> {
-      return getBaseKeyValueStore(
-          `${name}::${META_STORE_PREFIX}`,
-          {
-            ...options,
-            prefix: [options?.prefix, key]
-                .filter(Boolean)
-                .join(":")
-          }
+      return createMetaStore<M>(
+          getBaseKeyValueStore,
+          name,
+          key,
+          options
       )
     }
   }
+}
+
+export function createMetaStore<M>(fn: (name: string, options: KeyValueStoreOptions) => MetaKeyValueStore<M>, name: string, key?: string, options?: KeyValueStoreOptions) {
+  return fn(
+      `${name}::${META_STORE_PREFIX}`,
+      {
+        ...options,
+        prefix: [options?.prefix, key]
+            .filter(Boolean)
+            .join(":")
+      }
+  )
 }
 
 function createKeyValueStore<T>(
