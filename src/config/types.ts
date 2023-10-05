@@ -17,6 +17,7 @@ import type {DispatchEventConfig} from "../events";
 import type {FastifyConfig} from "../listen";
 import type {WorkerPoolConfig} from "../worker/pool";
 import type {PeriodicSyncScheduleConfig} from "../periodic-sync/schedule";
+import {EventScheduleConfig} from "../events/schedule/update";
 
 export interface LogisticsConfig {
 
@@ -46,7 +47,8 @@ export interface Config extends
     DispatchEventConfig,
     FastifyConfig,
     WorkerPoolConfig,
-    PeriodicSyncScheduleConfig {
+    PeriodicSyncScheduleConfig,
+    EventScheduleConfig {
     name: string;
     version: string;
     root: string;

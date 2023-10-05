@@ -1,5 +1,6 @@
 import {addDurableEvent, deleteDurableEvent, DurableEventData, getDurableEvent} from "../../data";
 import {getConfig} from "../../config";
+import {dispatchDefaultSchedule, dispatchSchedule, isDurableEventDefaultSchedule} from "./update";
 
 export interface DispatchEventConfig {
     dispatchEvent?(event: DurableEventData): void | unknown | Promise<void | unknown>
@@ -25,28 +26,17 @@ export async function dispatchEvent(event: DurableEventData) {
     }
 
     const config = getConfig();
-    const {dispatchQStash, isQStash} = await import("./qstash");
     if (config.dispatchEvent) {
         await config.dispatchEvent(durable);
-    } else if (event.virtual) {
+    } else if (durable.virtual) {
         const {dispatchScheduledDurableEvents} = await import("./dispatch-scheduled");
         await dispatchScheduledDurableEvents({
             event
         });
-    } else if (isQStash()) {
-        await dispatchQStash(durable);
-    } else if (DURABLE_EVENTS_IMMEDIATE || durable.schedule?.immediate) {
-        const { background } = await import("../../background");
-        // Note that background is locking, so if an event is already running
-        // with the same type, it will wait until all prior immediate events are
-        // completed
-        await background({
-            query: {
-                event: durable.type,
-                eventId: durable.durableEventId
-            },
-            quiet: true
-        });
+    } else if (durable.schedule) {
+        await dispatchSchedule(durable);
+    } else if (isDurableEventDefaultSchedule()) {
+        await dispatchDefaultSchedule(durable);
     }
 
     return durable;

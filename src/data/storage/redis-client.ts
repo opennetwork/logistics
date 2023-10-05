@@ -3,6 +3,7 @@ import { ok, isNumberString } from "../../is";
 import type { Redis as RedisClientType } from "ioredis";
 import type { RedisClient } from "./redis-types";
 import {getRedisPrefix, getRedisPrefixedKey, getRedisUrl} from "./redis-client-helpers";
+import {addKeyValueStoreIndex, deleteKeyValueStoreIndex} from "./store-index";
 
 export { RedisClient }
 
@@ -74,6 +75,14 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
 
   const isCounter = name.endsWith("Counter");
 
+  async function postSet() {
+    await addKeyValueStoreIndex(name);
+  }
+
+  async function noValuesAvailable() {
+    await deleteKeyValueStoreIndex(name);
+  }
+
   function parseValue(value: unknown): T | undefined {
     if (isCounter) {
       return parseCounterValue(value);
@@ -129,6 +138,7 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
     client = client ?? await connect();
     const json = JSON.stringify(value);
     await client.set(getKey(key), json);
+    await postSet();
   }
 
   async function values(): Promise<T[]> {
@@ -140,7 +150,6 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
   }
 
   async function* scanValues(count = DEFAULT_SCAN_SIZE): AsyncIterable<T[]> {
-    let found = false;
     for await (const keys of scan(count)) {
       const values = await Promise.all(
           keys.map(get)
@@ -148,7 +157,6 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
       const filtered = values.filter(Boolean);
       if (filtered.length) {
         yield filtered;
-        found = true;
       }
     }
   }
@@ -180,8 +188,16 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
   }
 
   async function clear(): Promise<void> {
+    let deleted = false;
     for await (const keys of scan(DEFAULT_SCAN_SIZE)) {
       await Promise.all(keys.map(deleteFn));
+      if (keys.length) {
+        deleted = true;
+      }
+    }
+    // If we deleted none, scan would have already called noValuesAvailable
+    if (deleted) {
+      await noValuesAvailable();
     }
   }
 
@@ -189,14 +205,19 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
     client = client ?? await connect();
     const prefix = getPrefix();
     let cursor = "0";
+    let found = false;
     do {
       const reply = await client.scan(cursor, "MATCH", `${prefix}*`, "COUNT", count);
       cursor = reply[0];
       if (reply[1].length) {
-        yield reply[1].map(key => key.substring(prefix.length));
+        const values = reply[1].map(key => key.substring(prefix.length));
+        found = found || !!values.length;
+        yield values;
       }
     } while (cursor !== "0");
-
+    if (!found) {
+      await noValuesAvailable();
+    }
   }
 
   async function increment(key: string): Promise<number> {
@@ -204,6 +225,7 @@ export function createRedisKeyValueStore<T>(name: string, options?: KeyValueStor
     ok(isCounter, "Expected increment to be used with a counter store only");
     await connect();
     const returnedValue = await client.incr(getKey(key));
+    await postSet();
     ok(
         isNumberString(returnedValue),
         "Expected redis to return number when incrementing"

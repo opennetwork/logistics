@@ -8,7 +8,7 @@ type EventLike = DurableEventData | Iterable<DurableEventData>;
 type AsyncEventLike = EventLike | Promise<EventLike> | AsyncIterable<EventLike>;
 
 export interface VirtualEventFn {
-    (): AsyncEventLike
+    (): AsyncEventLike | void | Promise<void>
 }
 
 export type VirtualEventSource = VirtualEventFn | VirtualEventFn[] | Record<string, VirtualEventFn>;
@@ -99,6 +99,9 @@ export async function *generateVirtualEvents() {
         let result = fn();
         if (isPromise(result)) {
             result = await result;
+        }
+        if (!result) {
+            return;
         }
         if (isDurableEventDataArray(result)) {
             return yield result;

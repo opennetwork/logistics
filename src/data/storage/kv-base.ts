@@ -7,6 +7,7 @@ import { createRedisKeyValueStore } from "./redis-client";
 import {isLike, ok} from "../../is";
 import {isRedis} from "./redis-client-helpers";
 import {getConfig} from "../../config";
+import {addKeyValueStoreIndex, deleteKeyValueStoreIndex} from "./store-index";
 
 const DATABASE_VERSION = 1;
 
@@ -90,6 +91,10 @@ export function getBaseKeyValueStore<T>(name: string, options?: KeyValueStoreOpt
   }
 }
 
+export function isMetaStoreName(name: string) {
+  return name.includes(`::${META_STORE_PREFIX}`);
+}
+
 export function createMetaStore<M>(fn: (name: string, options: KeyValueStoreOptions) => MetaKeyValueStore<M>, name: string, key?: string, options?: KeyValueStoreOptions) {
   return fn(
       `${name}::${META_STORE_PREFIX}`,
@@ -109,6 +114,14 @@ function createKeyValueStore<T>(
 ): KeyValueStore<T> {
   const isCounter = name.endsWith("Counter");
 
+  async function postSet() {
+    await addKeyValueStoreIndex(name);
+  }
+
+  async function noValuesAvailable() {
+    await deleteKeyValueStoreIndex(name);
+  }
+
   async function get(key: string): Promise<T | undefined> {
     const store = await storage();
     return store.get(key);
@@ -120,6 +133,7 @@ function createKeyValueStore<T>(
     }
     const store = await storage();
     await store.set(key, value);
+    await postSet();
   }
 
   async function values(): Promise<T[]> {
@@ -128,13 +142,21 @@ function createKeyValueStore<T>(
     for await (const [, value] of store) {
       values.push(value);
     }
+    if (!values.length) {
+      await noValuesAvailable();
+    }
     return values;
   }
 
   async function* asyncIterable(): AsyncIterable<T> {
     const store = await storage();
+    let hasValue = false;
     for await (const [, value] of store) {
       yield value;
+      hasValue = true
+    }
+    if (!hasValue) {
+      await noValuesAvailable();
     }
   }
 
@@ -156,6 +178,9 @@ function createKeyValueStore<T>(
         keys.push(key);
       }
     }
+    if (!keys.length) {
+      await noValuesAvailable();
+    }
     return keys;
   }
 
@@ -164,6 +189,7 @@ function createKeyValueStore<T>(
     for await (const [key] of store) {
       await store.delete(key);
     }
+    await noValuesAvailable();
   }
 
   async function increment(key: string): Promise<number> {
