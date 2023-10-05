@@ -15,21 +15,21 @@
     "@jridgewell/gen-mapping" "^0.3.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
-"@authsignal/browser@^0.1.7":
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/@authsignal/browser/-/browser-0.1.8.tgz#fb0ec3bc2e6d33b9c9584bf063776791bc9be7c5"
-  integrity sha512-D4+rQCyYGIML3S+TEKHnZ1QyqHnFlI/qGvaIkmBo0/z1Khee4aCJocq72C2ZInJ+qwKew+o/l075bwcTdglboA==
+"@authsignal/browser@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@authsignal/browser/-/browser-0.3.1.tgz#e0c4ced6ac743eab0056f10613f42417c34baae4"
+  integrity sha512-9R82DkMPS9hF75vkYA/Twm2wscQ1dQfgE3B4eiW02c8/c86yHwg6VgK/zRm3gMMuZjbTAm8JoEaX/fzoeo5+/w==
   dependencies:
     "@fingerprintjs/fingerprintjs" "^3.3.6"
-    "@simplewebauthn/browser" "^7.2.0"
+    "@simplewebauthn/browser" "^8.2.1"
     a11y-dialog "^7.5.2"
     ky "^0.33.3"
     uuid "^9.0.0"
 
-"@authsignal/node@^0.0.43":
-  version "0.0.43"
-  resolved "https://registry.yarnpkg.com/@authsignal/node/-/node-0.0.43.tgz#5a388945c85a8e35e763483f36f5e6725f5b4ee6"
-  integrity sha512-oK7Ua1BUV7Y+lZhiUBjuCV0kqsGMI7whxIAcpA8hr+K6ItR84lGhYu319B0ii26jGqMG/t+iyrhNiif9A5TDpg==
+"@authsignal/node@^0.0.48":
+  version "0.0.48"
+  resolved "https://registry.yarnpkg.com/@authsignal/node/-/node-0.0.48.tgz#b36d71962588ae2f96d08c31499e900ef45417f4"
+  integrity sha512-SzX75Qo27gY6rKC6jT/W5/M4T9JEW2ANlYjf8MRXaOlGPjOM6tNSLBDM6bvJSdgM7iSZYJ8vKnCqANhmNffHag==
   dependencies:
     axios "^0.27.2"
     jsonwebtoken "^8.5.1"
@@ -2729,6 +2729,13 @@
   dependencies:
     "@simplewebauthn/typescript-types" "^7.4.0"
 
+"@simplewebauthn/browser@^8.2.1":
+  version "8.3.1"
+  resolved "https://registry.yarnpkg.com/@simplewebauthn/browser/-/browser-8.3.1.tgz#f5c1aed6313d61944a9e13f16ae4495750bddf93"
+  integrity sha512-bMW7oOkxX4ydRAkkPtJ1do2k9yOoIGc/hZYebcuEOVdJoC6wwVpu97mYY7Mz8B9hLlcaR5WFgBsLl5tSJVzm8A==
+  dependencies:
+    "@simplewebauthn/typescript-types" "^8.0.0"
+
 "@simplewebauthn/iso-webcrypto@^7.4.0":
   version "7.4.0"
   resolved "https://registry.yarnpkg.com/@simplewebauthn/iso-webcrypto/-/iso-webcrypto-7.4.0.tgz#f994132bd7bbcb762fc08021566971aad9005500"
@@ -2760,6 +2767,11 @@
   version "7.4.0"
   resolved "https://registry.yarnpkg.com/@simplewebauthn/typescript-types/-/typescript-types-7.4.0.tgz#1f5d55e187cbd30727a75543caf1bade747625ce"
   integrity sha512-8/ZjHeUPe210Bt5oyaOIGx4h8lHdsQs19BiOT44gi/jBEgK7uBGA0Fy7NRsyh777al3m6WM0mBf0UR7xd4R7WQ==
+
+"@simplewebauthn/typescript-types@^8.0.0":
+  version "8.0.0"
+  resolved "https://registry.yarnpkg.com/@simplewebauthn/typescript-types/-/typescript-types-8.0.0.tgz#1698a7228aba880c5c1deba1f13a4f9fd8851cb3"
+  integrity sha512-d7Izb2H+LZJteXMkS8DmpAarD6mZdpIOu/av/yH4/u/3Pd6DKFLyBM3j8BMmUvUqpzvJvHARNrRfQYto58mtTQ==
 
 "@sinonjs/commons@^1.7.0":
   version "1.8.6"
