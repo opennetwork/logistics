@@ -5,6 +5,9 @@ import {parentPort, workerData} from "node:worker_threads";
 import {onServiceWorkerWorkerData, ServiceWorkerWorkerData} from "./worker";
 import { ok } from "../../is";
 import {dispatchEvent} from "../../events";
+import {DurableEventData} from "../../data";
+import {createRespondWith, DurableFetchEventData, isDurableFetchEventData} from "../../fetch";
+import {dispatchWorkerEvent} from "./dispatch";
 
 console.log("Default worker!");
 
@@ -53,8 +56,6 @@ try {
             continue;
         }
 
-        console.log({ message });
-
         ok<ServiceWorkerWorkerData>(message);
         ok(message.serviceWorkerId);
 
@@ -63,10 +64,11 @@ try {
         } else {
             ok(message.serviceWorkerId === registration.durable.serviceWorkerId);
             if (message.event) {
-                await dispatchEvent(message.event);
+                await dispatchWorkerEvent(message.event, message);
             }
         }
 
+        console.log("Breaking worker!");
         workerData.postMessage(WORKER_BREAK);
     }
 
@@ -77,3 +79,4 @@ try {
 } catch (error) {
     console.error("Error in worker", error)
 }
+

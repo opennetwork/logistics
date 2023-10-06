@@ -4,6 +4,10 @@ import {executeServiceWorkerWorker, executeServiceWorkerWorkerMessage} from "../
 import {v4} from "uuid";
 import {caches} from "../../../fetch";
 import {ok} from "../../../is";
+import {
+    executeServiceWorkerFetch,
+    registerServiceWorkerFetch
+} from "../../../worker/service-worker/execute-fetch";
 
 export {};
 
@@ -50,4 +54,28 @@ async function waitForServiceWorker(registration: DurableServiceWorkerRegistrati
     await caches.delete(cache.name);
 
     console.log("Finished service worker");
+}
+
+{
+    const registration = await serviceWorker.register(worker);
+    const url = "https://example.com";
+
+    const response = await executeServiceWorkerFetch(registration.durable.serviceWorkerId, {
+        url
+    })
+
+    console.log(response.status);
+    console.log(await response.text());
+}
+
+{
+    const fetch = await registerServiceWorkerFetch(worker);
+
+    {
+        const response = await fetch("https://example.com");
+        ok(response.ok);
+        console.log(await response.text());
+    }
+
+
 }

@@ -252,7 +252,9 @@ export interface DurableEvent extends DurableEventData {
 
 export type DurableBodyLike = string | DurableBody;
 
-export interface DurableRequestData extends Pick<Request, "url" | "method">, Expiring {
+export interface DurableRequestData extends Expiring {
+    url: string;
+    method?: string;
     headers?: Record<string, string>
     body?: DurableBodyLike;
     response?: DurableResponseData;

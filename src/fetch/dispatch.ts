@@ -1,4 +1,4 @@
-import {defer, Promise} from "@virtualstate/promise";
+import {defer} from "@virtualstate/promise";
 import {isLike, isPromise, isSignalled, ok, Signalled} from "../is";
 import {
     DurableBody,
@@ -124,7 +124,7 @@ function createSignal(event?: unknown): Signalled & Partial<InternalSignalled> {
 }
 
 
-function isDurableFetchEventData(event?: DurableEventData): event is DurableFetchEventData {
+export function isDurableFetchEventData(event?: DurableEventData): event is DurableFetchEventData {
     return !!(
         isLike<DurableFetchEventData>(event) &&
         event.type === "fetch" &&
@@ -193,6 +193,11 @@ export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, d
         wait,
         waitUntil
     } = createWaitUntil(event);
+    console.log({
+        promise,
+        handled,
+        respondWith
+    })
     const request = await fromDurableRequest(event.request);
     try {
         await dispatch({
@@ -218,9 +223,11 @@ export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, d
             await wait?.();
         }
     } catch (error) {
+        console.error(error)
         if (!signal.aborted) {
             controller?.abort(error);
         }
+        throw await Promise.reject(error);
     } finally {
         if (!signal.aborted) {
             await wait?.();

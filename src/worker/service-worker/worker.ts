@@ -17,10 +17,14 @@ import {addEventListener, removeEventListener} from "../../events/schedule/sched
 import {dispatchEvent} from "../../events";
 import "../../fetch/dispatch";
 import {DurableEventData} from "../../data";
+import {MessagePort as NodeMessagePort, MessageChannel as NodeMessageChannel } from "node:worker_threads";
+import {dispatchWorkerEvent} from "./dispatch";
 
 export interface ServiceWorkerWorkerData {
     serviceWorkerId: string;
     event?: DurableEventData;
+    port?: NodeMessagePort;
+    channel?: NodeMessageChannel;
 }
 
 export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): Promise<DurableServiceWorkerRegistration> {
@@ -80,7 +84,7 @@ export async function onServiceWorkerWorkerData(data: ServiceWorkerWorkerData): 
         });
 
         if (data.event) {
-            await dispatchEvent(data.event);
+            await dispatchWorkerEvent(data.event, data);
         }
     }
 

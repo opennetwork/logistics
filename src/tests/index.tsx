@@ -16,20 +16,20 @@ try {
     await startRedisMemory()
   }
 
-  await seed();
-
-  const products = await listProducts();
-
-  if (products.length < 3 || !process.env.IS_LOCAL) {
-    await import("./client");
-    console.log("after client");
-    await import("./remote");
-    console.log("after remote");
-  }
-  await import("./scenarios");
-  await import("./storage");
-  await import("./schedule");
-  await import("./cache");
+  // await seed();
+  //
+  // const products = await listProducts();
+  //
+  // if (products.length < 3 || !process.env.IS_LOCAL) {
+  //   await import("./client");
+  //   console.log("after client");
+  //   await import("./remote");
+  //   console.log("after remote");
+  // }
+  // await import("./scenarios");
+  // await import("./storage");
+  // await import("./schedule");
+  // await import("./cache");
 
   // Redis is a stable store... need to replace the default local
   // store for workers, but that is a later task

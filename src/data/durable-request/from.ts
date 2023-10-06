@@ -1,10 +1,17 @@
 import {DurableBody, DurableBodyLike, DurableRequestData, DurableResponseData} from "./types";
 import {isDurableBody} from "./is";
-import {ok} from "../../is";
+import {isLike, ok} from "../../is";
 import {getFile, readFile, save} from "../file";
 import {v4} from "uuid";
 
-export async function fromMaybeDurableBody(body: unknown): Promise<RequestInit["body"]> {
+function isReadableStreamLike(body: unknown): body is ReadableStream {
+    return (
+        isLike<ReadableStream>(body) &&
+        typeof body.getReader === "function"
+    );
+}
+
+export async function fromMaybeDurableBody(body: unknown): Promise<BodyInit> {
     if (typeof body === "string") {
         return body;
     }
@@ -19,6 +26,9 @@ export async function fromMaybeDurableBody(body: unknown): Promise<RequestInit["
     }
     if (isDurableBody(body)) {
         return fromDurableBody(body);
+    }
+    if (isReadableStreamLike(body)) {
+        return body;
     }
     throw new Error("Unknown body type");
 }
@@ -44,7 +54,7 @@ export async function fromDurableBody(body: DurableBody): Promise<RequestInit["b
     return found;
 }
 
-export async function fromDurableRequest(durableRequest: DurableRequestData, getOrigin?: () => string) {
+export async function fromDurableRequest(durableRequest: Request | DurableRequestData, getOrigin?: () => string) {
     const { url, method, headers, body: givenBody } = durableRequest;
     const body = await fromMaybeDurableBody(givenBody);
     return new Request(
@@ -57,7 +67,7 @@ export async function fromDurableRequest(durableRequest: DurableRequestData, get
     );
 }
 
-export async function fromDurableResponse(durableResponse: DurableResponseData) {
+export async function fromDurableResponse(durableResponse: Omit<DurableResponseData, "body"> & { body?: BodyInit | DurableBodyLike }) {
     const { body: givenBody, statusText, status, headers } = durableResponse;
     const body = await fromMaybeDurableBody(givenBody);
     return new Response(
@@ -75,58 +85,76 @@ export interface FromRequestResponseOptions {
     body?: DurableBodyLike;
 }
 
-export async function fromRequestResponse(request: Request, response: Response, options?: FromRequestResponseOptions): Promise<DurableRequestData> {
-    const clonedResponse = response.clone();
 
-    let body: DurableBodyLike;
+export function getFetchHeadersObject(fetchHeaders: Headers) {
+    const headers = new Headers(fetchHeaders);
+    // Not sure if we ever get this header in node fetch
+    // https://developer.mozilla.org/en-US/docs/Web/API/Cache#cookies_and_cache_objects
+    // Maybe these headers were constructed by a user though
+    headers.delete("Set-Cookie");
+    return getHeadersObject(headers);
+}
 
-    if (options.body) {
-        body = options.body;
-    } else {
-        // TODO detect string based contentTypes
-        const contentType = response.headers.get("Content-Type");
-        if (contentType === "text/html" || contentType === "text/plain" || contentType?.startsWith("application/json") || contentType === "application/javascript") {
-            body = await clonedResponse.text();
-        } else {
-            // TODO warning, we might mislink some of these files...
-            const file = await save({
-                fileName: options?.fileName || v4(),
-                contentType
-            }, await clonedResponse.blob());
-            body = {
-                type: "file",
-                value: file.fileId
-            };
-        }
+export function fromRequestWithoutBody(request: Request): DurableRequestData {
+    return {
+        url: request.url,
+        method: request.method,
+        headers: getFetchHeadersObject(request.headers),
+        body: undefined
     }
+}
 
-    const durableResponse: DurableResponseData = {
-        headers: getResponseHeadersObject(),
+export async function fromRequest(request: Request, options?: FromRequestResponseOptions) {
+    return {
+        ...fromRequestWithoutBody(request),
+        body: await fromBody(request, options)
+    }
+}
+
+export function fromRequestResponseWithoutBody(request: Pick<DurableRequestData, "url">, response: Response): DurableResponseData {
+    return {
+        headers: getFetchHeadersObject(response.headers),
         status: response.status,
         statusText: response.statusText,
         // response.url is empty if it was constructed manually
         // Should be same value anyway...
         url: response.url || request.url,
-        body
+        body: undefined
     };
+}
 
-    const { method, url } = request;
-
-    return {
-        method,
-        url,
-        response: durableResponse
-    };
-
-    function getResponseHeadersObject() {
-        const headers = new Headers(response.headers);
-        // Not sure if we ever get this header in node fetch
-        // https://developer.mozilla.org/en-US/docs/Web/API/Cache#cookies_and_cache_objects
-        // Maybe these headers were constructed by a user though
-        headers.delete("Set-Cookie");
-        return getHeadersObject(headers);
+async function fromBody(input: Request | Response, options?: FromRequestResponseOptions): Promise<DurableBodyLike | undefined> {
+    if (options?.body) {
+        return options.body;
     }
 
+    // TODO detect string based contentTypes
+    const contentType = input.headers.get("Content-Type");
+    const cloned = input.clone();
+    if (contentType === "text/html" || contentType === "text/plain" || contentType?.startsWith("application/json") || contentType === "application/javascript") {
+        return cloned.text();
+    }
+
+    // TODO warning, we might mislink some of these files...
+    const file = await save({
+        fileName: options?.fileName || v4(),
+        contentType
+    }, await cloned.blob());
+    return {
+        type: "file",
+        value: file.fileId
+    };
+}
+
+export async function fromRequestResponse(request: Request, response: Response, options?: FromRequestResponseOptions): Promise<DurableRequestData> {
+    const durableResponse: DurableResponseData = {
+        ...fromRequestResponseWithoutBody(request, response),
+        body: await fromBody(response, options)
+    };
+    return {
+        ...fromRequestWithoutBody(request),
+        response: durableResponse
+    };
 }
 
 function getHeadersObject(headers?: Headers) {

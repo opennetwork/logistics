@@ -11,6 +11,6 @@ self.addEventListener("fetch", event => {
 
 
 async function onFetchEvent(event: FetchEvent): Promise<Response> {
-    console.log(event.request.url);
+    console.log("onFetchEvent", event.request.url);
     return fetch(event.request);
 }

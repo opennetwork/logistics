@@ -7,6 +7,7 @@ import {PushAsyncIterableIterator} from "@virtualstate/promise/src/push";
 import {isLike, ok} from "../../is";
 import {WORKER_BREAK, WORKER_INITIATED, WORKER_MESSAGE, WORKER_TERMINATE} from "./constants";
 import {anAsyncThing, TheAsyncThing} from "@virtualstate/promise/the-thing";
+import type {TransferListItem as NodeTransferListItem, MessageChannel as NodeMessageChannel} from "node:worker_threads";
 
 export function getServiceWorkerWorkerWorker(options?: WorkerOptions) {
     return getNodeWorkerForImportURL("./default-worker.js", import.meta.url, {
@@ -14,7 +15,7 @@ export function getServiceWorkerWorkerWorker(options?: WorkerOptions) {
     });
 }
 
-function assertPushAsyncIterableIterator<T>(iterator: AsyncIterableIterator<T>): asserts iterator is PushAsyncIterableIterator<T> {
+export function assertPushAsyncIterableIterator<T>(iterator: AsyncIterableIterator<T>): asserts iterator is PushAsyncIterableIterator<T> {
     ok(
         isLike<PushAsyncIterableIterator<T>>(iterator) &&
         typeof iterator.clone === "function"
@@ -33,10 +34,11 @@ export interface Pushable<T, R> {
     close(): Promise<void>
 }
 
-export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>> {
+export async function createServiceWorkerWorker(): Promise<Pushable<ServiceWorkerWorkerData, unknown>> {
     console.log("Getting worker");
-    const { MessageChannel } = await import("node:worker_threads");
-    const { port1, port2 } = new MessageChannel();
+    const { MessageChannel: NodeMessageChannel } = await import("node:worker_threads");
+    const defaultChannel = new NodeMessageChannel();
+    const { port1, port2 } = defaultChannel;
     const worker = await getServiceWorkerWorkerWorker({
         workerData: port2,
         transferList: [
@@ -53,43 +55,67 @@ export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>>
         close
     }
 
-    function push(data: T): TheAsyncThing<R> {
-        const messages = new Push<R>();
+    function push(data: ServiceWorkerWorkerData): TheAsyncThing {
+        let channel: NodeMessageChannel = defaultChannel;
+        const transfer = [];
+        let message = data;
+
+        if (data.channel) {
+            channel = data.channel;
+            data.port = channel.port2;
+            transfer.push(channel.port2);
+            message = {
+                ...message,
+                channel: undefined
+            };
+        }
+
+        const messages = new Push();
 
         function pushClose() {
-            port2.off("message", onMessage);
+            channel.port1.off("message", onMessage);
             messages.close();
-            port2.close();
-            port1.close();
+            defaultChannel.port1.off("message", onDefaultMessage);
+            // Note we are closing this off
+            // Even though its externally provided...
+            if (channel !== defaultChannel) {
+                channel.port1.close();
+                channel.port2.close();
+            }
+        }
+
+        function onDefaultMessage(message: unknown) {
+            if (message === WORKER_TERMINATE) {
+                pushClose();
+                void close();
+                return true;
+            }
+            if (!messages.open || message === WORKER_BREAK) {
+                pushClose()
+                return true;
+            }
+            return false;
         }
 
         function onMessage(message: unknown) {
-            console.log("Message from worker", message);
-            if (message === WORKER_TERMINATE) {
-                pushClose();
-                return close();
+            if (onDefaultMessage(message)) {
+                return;
             }
-            if (!messages.open || message === WORKER_BREAK) {
-                return pushClose();
-            }
-            ok<R>(message);
+            // Could be a void message
             messages.push(message);
         }
-        console.log("Listening on worker message");
-        port1.on("message", onMessage);
+        channel.port1.on("message", onMessage);
+        defaultChannel.port1.on("message", onDefaultMessage);
 
-        console.log("Posting worker message");
-        worker.postMessage(data);
-        console.log("Posted worker message");
+        ok<NodeTransferListItem[]>(transfer);
+        worker.postMessage(message, transfer);
 
         return anAsyncThing(onMessages());
 
         async function *onMessages() {
-            console.log("Waiting on worker messages");
             try {
                 yield * messages;
             } finally {
-                console.log("Finished listening to worker messages");
                 pushClose();
             }
         }
@@ -101,23 +127,25 @@ export async function createServiceWorkerWorker<T, R>(): Promise<Pushable<T, R>>
     async function close() {
         worker.postMessage(WORKER_TERMINATE);
         await worker.terminate();
+        port2.close();
+        port1.close();
     }
 
     function onInitiated() {
         return new Promise<void>(resolve => {
             port1.on("message", onMessage)
             worker.on("message", onMessage)
-            console.log("Listening on initiation worker message");
+            // console.log("Listening on initiation worker message");
 
-            const interval = setInterval(() => {
-                console.log("Parent interval")
-            }, 250);
+            // const interval = setInterval(() => {
+            //     console.log("Parent interval")
+            // }, 250);
 
             function onMessage(message: unknown) {
-                console.log("message received", message);
                 if (message !== WORKER_INITIATED) return;
                 port1.off("message", onMessage);
-                clearInterval(interval);
+                worker.off("message", onMessage);
+                // clearInterval(interval);
                 resolve();
             }
         })
