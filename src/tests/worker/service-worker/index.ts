@@ -60,7 +60,7 @@ async function waitForServiceWorker(registration: DurableServiceWorkerRegistrati
     const registration = await serviceWorker.register(worker);
     const url = "https://example.com";
 
-    const response = await executeServiceWorkerFetch(registration.durable.serviceWorkerId, {
+    const response = await executeServiceWorkerFetch(registration, {
         url
     })
 
