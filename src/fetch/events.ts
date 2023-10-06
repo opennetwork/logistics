@@ -1,6 +1,7 @@
 import {DurableEventData, DurableRequest, DurableRequestData} from "../data";
 import {on} from "../events";
 import {isLike, ok} from "../is";
+import {FetchRespondWith} from "./dispatch";
 
 export const FETCH = "fetch" as const;
 type ScheduleFetchEventType = typeof FETCH;
@@ -25,10 +26,8 @@ export interface DurableFetchEventData extends DurableEventData {
     cache?: string | DurableFetchEventCache;
 }
 
-export interface FetchEvent extends Omit<DurableFetchEventData, "request"> {
-    handled: Promise<void>;
+export interface FetchEvent extends Omit<DurableFetchEventData, "request">, FetchRespondWith {
     request: Request;
-    respondWith(response: Response | Promise<Response>): void;
     waitUntil(promise: Promise<void | unknown>): void;
 }
 

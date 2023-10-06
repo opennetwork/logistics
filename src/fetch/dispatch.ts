@@ -1,5 +1,5 @@
-import {defer} from "@virtualstate/promise";
-import {isLike, isPromise, isSignalled, ok} from "../is";
+import {defer, Promise} from "@virtualstate/promise";
+import {isLike, isPromise, isSignalled, ok, Signalled} from "../is";
 import {
     DurableBody,
     DurableEventData,
@@ -22,8 +22,52 @@ export function isDurableFetchEventCache(value: unknown): value is DurableFetchE
     );
 }
 
-export function createRespondWith() {
-    const { promise: handled, resolve, reject } = defer<Response>();
+export interface GenericRespondWith<R> {
+    handled: Promise<void>
+    respondWith(value: R | Promise<R>): void
+}
+
+export interface WaitUntil {
+    waitUntil(promise: Promise<void | unknown>): void
+}
+
+interface InternalWaitUntil extends WaitUntil {
+    wait(): Promise<void>;
+}
+
+export interface FetchRespondWith extends GenericRespondWith<Response> {
+
+}
+
+interface InternalFetchRespondWith extends FetchRespondWith {
+    promise: Promise<Response>
+}
+
+interface InternalSignalled extends Signalled {
+    controller: AbortController;
+}
+
+function isRespondWith<R>(event: unknown): event is GenericRespondWith<R> {
+    return (
+        isLike<GenericRespondWith<R>>(event) &&
+        typeof event.respondWith === "function" &&
+        !!event.handled
+    );
+}
+
+function isWaitUntil(event: unknown): event is WaitUntil {
+    return (
+        isLike<WaitUntil>(event) &&
+        typeof event.waitUntil === "function"
+    )
+}
+
+export function createRespondWith(event?: unknown): FetchRespondWith & Partial<InternalFetchRespondWith> {
+    if (isRespondWith<Response>(event)) {
+        return event;
+    }
+
+    const { promise, resolve, reject } = defer<Response>();
 
     function respondWith(response: Response | Promise<Response>) {
         if (isPromise(response)) {
@@ -33,12 +77,17 @@ export function createRespondWith() {
     }
 
     return {
-        handled,
+        promise,
+        handled: promise.then<void>(() => undefined),
         respondWith
     }
 }
 
-export function createWaitUntil() {
+export function createWaitUntil(event?: unknown): WaitUntil & Partial<InternalWaitUntil> {
+    if (isWaitUntil(event)) {
+        return event;
+    }
+
     let promises: Promise<unknown>[] = [];
 
     function waitUntil(promise: Promise<unknown>) {
@@ -63,6 +112,17 @@ export function createWaitUntil() {
     }
 }
 
+function createSignal(event?: unknown): Signalled & Partial<InternalSignalled> {
+    if (isSignalled(event)) {
+        return event;
+    }
+    const controller = new AbortController();
+    return {
+        signal: controller.signal,
+        controller
+    } as const;
+}
+
 
 function isDurableFetchEventData(event?: DurableEventData): event is DurableFetchEventData {
     return !!(
@@ -73,17 +133,66 @@ function isDurableFetchEventData(event?: DurableEventData): event is DurableFetc
     );
 }
 
+async function onFetchResponse(event: DurableFetchEventData, request: Request, response: Response) {
+    let durableEventDispatch: DurableEventData;
+    if (event.dispatch) {
+        durableEventDispatch = {
+            durableEventId: v4(),
+            ...event.dispatch
+        };
+    }
+    const isRetain = durableEventDispatch || (event.durableEventId && event.retain !== false);
+    let body: DurableBody;
+    const givenCache = typeof event.cache === "string" ? { name: event.cache } : isDurableFetchEventCache(event.cache) ? event.cache : undefined;
+    const cache =  givenCache ?? (isRetain ? { name: "fetch" } : undefined);
+    if (cache) {
+        const { name, always } = cache;
+        if (response.ok || always) {
+            const store = await caches.open(name);
+            await store.put(request, response);
+            body = {
+                type: "cache",
+                value: name,
+                url: request.url
+            };
+        }
+    }
+    let durableRequest: DurableRequest;
+    if (isRetain) {
+        const durableRequestData = await fromRequestResponse(request, response, {
+            body
+        });
+        durableRequest = await setDurableRequestForEvent(durableRequestData, durableEventDispatch || event);
+        if (durableEventDispatch) {
+            const { response, ...request } = durableRequest;
+            await dispatchEvent({
+                ...durableEventDispatch,
+                request,
+                response
+            });
+        }
+    }
+    const { response: givenFns } = getConfig();
+    const responseFns = Array.isArray(givenFns) ? givenFns : (givenFns ? [givenFns] : []);
+    if (responseFns.length) {
+        await Promise.all(
+            responseFns.map(async (fn) => fn(response.clone(), request, durableRequest))
+        );
+    }
+}
+
 export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, dispatch) => {
-    const { signal, controller } = getSignal();
+    const { signal, controller } = createSignal(event);
     ok(isDurableFetchEventData(event));
     const {
+        promise,
         handled,
         respondWith
-    } = createRespondWith();
+    } = createRespondWith(event);
     const {
         wait,
         waitUntil
-    } = createWaitUntil();
+    } = createWaitUntil(event);
     const request = await fromDurableRequest(event.request);
     try {
         await dispatch({
@@ -94,51 +203,19 @@ export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, d
             respondWith,
             waitUntil
         });
-        const response = await handled;
-        let durableEventDispatch: DurableEventData;
-        if (event.dispatch) {
-            durableEventDispatch = {
-                durableEventId: v4(),
-                ...event.dispatch
-            };
-        }
-        const isRetain = durableEventDispatch || (event.durableEventId && event.retain !== false);
-        let body: DurableBody;
-        const givenCache = typeof event.cache === "string" ? { name: event.cache } : isDurableFetchEventCache(event.cache) ? event.cache : undefined;
-        const cache =  givenCache ?? (isRetain ? { name: "fetch" } : undefined);
-        if (cache) {
-            const { name, always } = cache;
-            if (response.ok || always) {
-                const store = await caches.open(name);
-                await store.put(request, response);
-                body = {
-                    type: "cache",
-                    value: name,
-                    url: request.url
-                };
-            }
-        }
-        let durableRequest: DurableRequest;
-        if (isRetain) {
-            const durableRequestData = await fromRequestResponse(request, response, {
-                body
-            });
-            durableRequest = await setDurableRequestForEvent(durableRequestData, durableEventDispatch || event);
-            if (durableEventDispatch) {
-                const { response, ...request } = durableRequest;
-                await dispatchEvent({
-                    ...durableEventDispatch,
-                    request,
-                    response
-                });
-            }
-        }
-        const { response: givenFns } = getConfig();
-        const responseFns = Array.isArray(givenFns) ? givenFns : (givenFns ? [givenFns] : []);
-        if (responseFns.length) {
-            await Promise.all(
-                responseFns.map(async (fn) => fn(response.clone(), request, durableRequest))
+        // We may not get a response as it is being handled elsewhere
+        if (promise) {
+            const response = await promise;
+            await onFetchResponse(
+                event,
+                request,
+                response
             );
+        } else {
+            await handled;
+        }
+        if (!signal.aborted) {
+            await wait?.();
         }
     } catch (error) {
         if (!signal.aborted) {
@@ -146,19 +223,8 @@ export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, d
         }
     } finally {
         if (!signal.aborted) {
+            await wait?.();
             controller?.abort();
         }
-        await wait();
-    }
-
-    function getSignal() {
-        if (isSignalled(event)) {
-            return { signal: event.signal, controller: undefined } as const;
-        }
-        const controller = new AbortController();
-        return {
-            signal: controller.signal,
-            controller
-        } as const;
     }
 })
