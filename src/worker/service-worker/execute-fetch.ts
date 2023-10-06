@@ -3,14 +3,14 @@ import {DurableRequestData, fromDurableResponse, fromRequest, getFetchHeadersObj
 import {executeServiceWorkerWorker} from "./execute";
 import {isLike, ok} from "../../is";
 import type {FetchResponseMessage} from "./dispatch";
-import {serviceWorker} from "./container";
+import {DurableServiceWorkerRegistration, serviceWorker} from "./container";
 
 export async function registerServiceWorkerFetch(worker: string, options?: RegistrationOptions) {
     const registration = await serviceWorker.register(worker, options);
-    return createServiceWorkerFetch(registration.durable.serviceWorkerId);
+    return createServiceWorkerFetch(registration);
 }
 
-export function createServiceWorkerFetch(serviceWorkerId: string): typeof fetch {
+export function createServiceWorkerFetch(registration: DurableServiceWorkerRegistration): typeof fetch {
     return (input: RequestInfo, init?: RequestInit) => {
         let request: Request | DurableRequestData;
         if (input instanceof Request) {
@@ -27,14 +27,14 @@ export function createServiceWorkerFetch(serviceWorkerId: string): typeof fetch 
             };
         }
         return executeServiceWorkerFetch(
-            serviceWorkerId,
+            registration,
             request
         );
     }
 }
 
-export async function executeServiceWorkerFetch(serviceWorkerId: string, request: Request | DurableRequestData) {
-    return executeServiceWorkerFetchEvent(serviceWorkerId, {
+export async function executeServiceWorkerFetch(registration: DurableServiceWorkerRegistration, request: Request | DurableRequestData) {
+    return executeServiceWorkerFetchEvent(registration, {
         type: "fetch",
         request: request instanceof Request ?
             await fromRequest(request) :
@@ -43,12 +43,12 @@ export async function executeServiceWorkerFetch(serviceWorkerId: string, request
     });
 }
 
-export async function executeServiceWorkerFetchEvent(serviceWorkerId: string, event: DurableFetchEventData) {
+export async function executeServiceWorkerFetchEvent(registration: DurableServiceWorkerRegistration, event: DurableFetchEventData) {
     const { ReadableStream } = await import("node:stream/web");
     const { MessageChannel } = await import("node:worker_threads");
 
     const data = executeServiceWorkerWorker({
-        serviceWorkerId,
+        serviceWorkerId: registration.durable.serviceWorkerId,
         event,
         channel: new MessageChannel()
     });
