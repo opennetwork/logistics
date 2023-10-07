@@ -244,6 +244,7 @@ export interface DurableEventData extends Record<string, unknown>, DurableEventT
     schedule?: DurableEventSchedule;
     retain?: boolean;
     virtual?: boolean;
+    serviceWorkerId?: string;
 }
 
 export interface DurableEvent extends DurableEventData {
