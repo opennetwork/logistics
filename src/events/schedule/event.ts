@@ -1,6 +1,7 @@
 import {addDurableEvent, deleteDurableEvent, DurableEventData, getDurableEvent} from "../../data";
 import {getConfig} from "../../config";
 import {dispatchDefaultSchedule, dispatchSchedule, isDurableEventDefaultSchedule} from "./update";
+import {dispatchServiceWorkerEvent} from "../../worker/service-worker/execute";
 
 export interface DispatchEventConfig {
     dispatchEvent?(event: DurableEventData): void | unknown | Promise<void | unknown>

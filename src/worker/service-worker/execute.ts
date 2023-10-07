@@ -1,6 +1,5 @@
 import {ServiceWorkerWorkerData} from "./worker";
-import {getWorkerPoolForImportURL} from "../pool";
-import {SHARE_ENV, WorkerOptions} from "node:worker_threads";
+import {WorkerOptions} from "node:worker_threads";
 import {getNodeWorkerForImportURL} from "../worker";
 import {Push} from "@virtualstate/promise";
 import {PushAsyncIterableIterator} from "@virtualstate/promise/src/push";
@@ -8,6 +7,7 @@ import {isLike, ok} from "../../is";
 import {WORKER_BREAK, WORKER_INITIATED, WORKER_MESSAGE, WORKER_TERMINATE} from "./constants";
 import {anAsyncThing, TheAsyncThing} from "@virtualstate/promise/the-thing";
 import type {TransferListItem as NodeTransferListItem, MessageChannel as NodeMessageChannel} from "node:worker_threads";
+import type {DurableEventData} from "../../data";
 
 export function getServiceWorkerWorkerWorker(options?: WorkerOptions) {
     return getNodeWorkerForImportURL("./default-worker.js", import.meta.url, {
@@ -162,4 +162,11 @@ export async function * executeServiceWorkerWorker(data?: ServiceWorkerWorkerDat
         await worker.close();
     }
 
+}
+
+export async function dispatchServiceWorkerEvent(event: DurableEventData) {
+    await executeServiceWorkerWorkerMessage({
+        serviceWorkerId: event.serviceWorkerId,
+        event
+    });
 }

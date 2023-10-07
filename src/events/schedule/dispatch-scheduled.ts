@@ -66,15 +66,33 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
     }
 
     async function dispatchEvent(event: DurableEventData) {
-        const done = await lock(`dispatchEvent:${event.type}:${event.durableEventId || "no-event-id"}`);
+
+        let isMainThread = true;
+        if (event.serviceWorkerId) {
+            const threads = await import("node:worker_threads");
+            isMainThread = threads.isMainThread;
+        }
+        const done = isMainThread ?
+            await lock(`dispatchEvent:${event.type}:${event.durableEventId || "no-event-id"}`) :
+            undefined;
         // TODO detect if this event tries to dispatch again
         try {
-            await dispatchEventToHandlers(event);
-            if (!event.retain && !event.virtual) {
+            let isMainThread = true;
+            if (event.serviceWorkerId) {
+                if (isMainThread) {
+                    const { dispatchServiceWorkerEvent } = await import("../../worker/service-worker/execute");
+                    await dispatchServiceWorkerEvent(event);
+                } else {
+                    await dispatchEventToHandlers(event);
+                }
+            } else {
+                await dispatchEventToHandlers(event);
+            }
+            if (!event.retain && !event.virtual && isMainThread) {
                 await deleteDurableEvent(event);
             }
         } finally {
-            await done();
+            await done?.();
         }
     }
 
