@@ -1,4 +1,4 @@
-import { start } from "../listen";
+import { listen } from "../listen";
 import {getOrigin} from "../listen/config";
 import {Client} from "../client";
 import {Chance} from "chance"
@@ -8,7 +8,7 @@ const chance = new Chance();
 
 {
 
-  const close = await start();
+  const close = await listen();
 
   const url = getOrigin();
 

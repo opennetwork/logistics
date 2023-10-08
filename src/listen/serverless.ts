@@ -5,9 +5,9 @@ import "../references";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const { create } = await import("./start");
+const { createFastifyApplication } = await import("./listen");
 
-const app = await create();
+const app = await createFastifyApplication();
 
 export default async function handler(request: unknown, response: unknown) {
     await app.ready();

@@ -1,4 +1,4 @@
-import fastify, {FastifyInstance, FastifyPluginAsync} from "fastify";
+import fastify, {FastifyPluginAsync} from "fastify";
 import { routes } from "./routes";
 import { setupSwagger } from "./swagger";
 import blippPlugin from "fastify-blipp";
@@ -6,36 +6,24 @@ import corsPlugin from "@fastify/cors";
 import { getPort } from "./config";
 import { fastifyRequestContext } from "@fastify/request-context";
 import helmet from "@fastify/helmet";
-import { readFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { bearerAuthentication } from "./authentication";
 import bearerAuthPlugin from "@fastify/bearer-auth";
 import authPlugin from "@fastify/auth";
-import { autoSeed, seed, stopData } from "../data";
+import { autoSeed, stopData } from "../data";
 import {
-    commitAt, commitAuthor,
-    commitMessage,
+    commitAt,
     commitShort,
-    importmapRoot,
-    importmapRootName,
     name,
     packageIdentifier
 } from "../package";
 import cookie from "@fastify/cookie";
-import { isLike, ok } from "../is";
 import multipart from "@fastify/multipart";
 import formbody from "@fastify/formbody";
-import qs from "qs";
-import { REACT_CLIENT_DIRECTORY } from "../view";
-import files from "@fastify/static";
 import { errorHandler } from "../view/error";
-import etag from "@fastify/etag";
 import { parseStringFields } from "./body-parser";
-import {Config, getConfig, setConfig, withConfig} from "../config";
+import {Config, getConfig, withConfig} from "../config";
 import rawBody from "fastify-raw-body";
-
-const { pathname } = new URL(import.meta.url);
-const directory = dirname(pathname);
 
 export interface FastifyConfig {
     routes?: FastifyPluginAsync
@@ -120,20 +108,12 @@ export async function createFastifyApplication() {
     return app;
 }
 
-export async function create(config?: Partial<Config>): ReturnType<typeof createFastifyApplication> {
+export async function listen(config?: Partial<Config>): Promise<() => Promise<void>> {
     if (config) {
-        return withConfig(getConfig(config), () => create());
+        return withConfig(getConfig(config), () => listen());
     }
 
-    return createFastifyApplication();
-}
-
-export async function start(config?: Partial<Config>): Promise<() => Promise<void>> {
-    if (config) {
-        return withConfig(getConfig(config), () => start());
-    }
-
-    const app = await create(config);
+    const app = await createFastifyApplication();
 
     // Before we start, we should seed
     await autoSeed();

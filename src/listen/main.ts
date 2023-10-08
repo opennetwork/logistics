@@ -8,6 +8,6 @@ import "../tracing";
 
 await import("../scheduled");
 
-const { start } = await import("./start");
+const { listen } = await import("./listen");
 
-await start();
+export const close = await listen();

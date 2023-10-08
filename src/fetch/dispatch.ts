@@ -193,11 +193,6 @@ export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, d
         wait,
         waitUntil
     } = createWaitUntil(event);
-    console.log({
-        promise,
-        handled,
-        respondWith
-    })
     const request = await fromDurableRequest(event.request);
     try {
         await dispatch({
@@ -223,7 +218,6 @@ export const removeFetchDispatcherFunction = dispatcher("fetch", async (event, d
             await wait?.();
         }
     } catch (error) {
-        console.error(error)
         if (!signal.aborted) {
             controller?.abort(error);
         }
