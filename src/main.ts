@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import "../references";
 
 import * as dotenv from "dotenv";

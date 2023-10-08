@@ -10,9 +10,11 @@ export async function start(config?: Partial<Config>): Promise<() => Promise<voi
 
     const tracing = await import("./tracing");
     const listen = await import("./listen/main");
+    const worker = await import("./worker/service-worker/main");
 
     return async function close() {
         await listen.close();
         await tracing.shutdown();
+        await worker.close();
     }
 }
