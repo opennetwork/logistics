@@ -34,3 +34,4 @@ export * from "./service";
 export * from "./durable-event";
 export * from "./durable-request";
 export * from "./location";
+export * from "./appointment-availability";
