@@ -5,3 +5,6 @@ export * from "./list-appointment-availability";
 export * from "./add-appointment-availability";
 export * from "./set-appointment-availability";
 export * as appointmentAvailabilitySchema from "./schema";
+export * from "./get-appointment-availability-tree";
+export * from "./create-appointment-availability-happening-context";
+export * from "./list-appointment-availability-trees";

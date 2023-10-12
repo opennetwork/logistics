@@ -92,6 +92,16 @@ export interface Appointment extends AppointmentData {
   history: AppointmentHistoryItem[];
 }
 
+export interface AppointmentAvailabilityData extends AppointmentData {
+
+}
+
+export interface AppointmentAvailability extends AppointmentAvailabilityData {
+  appointmentAvailabilityId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AttendeeData extends Record<string, unknown> {
     reference: string;
     name?: string;
