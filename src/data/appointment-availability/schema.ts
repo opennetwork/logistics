@@ -1,4 +1,3 @@
-import {identifierSchema} from "../identifier";
 import {appointmentSchema} from "../appointment";
 
 export const appointmentAvailabilityData = {
@@ -23,5 +22,5 @@ export const appointment = {
       type: "string",
     },
   },
-  required: ["appointmentId", "createdAt", "updatedAt", "status"],
+  required: ["appointmentId", "createdAt", "updatedAt"],
 } as const;

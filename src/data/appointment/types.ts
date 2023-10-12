@@ -2,13 +2,16 @@ import {HappeningData, HappeningEventData} from "../happening";
 
 export type AppointmentType =
     | "appointment"
+    | string
 
 export type AppointmentStatus =
+    | "pending"
     | "confirmed"
     | "scheduled"
     | "deferred"
     | "cancelled"
     | "completed"
+    | string
 
 export interface AppointmentHistoryItem extends HappeningEventData {
   status: AppointmentStatus;

@@ -2,22 +2,13 @@ import {identifierSchema} from "../identifier";
 import {happeningSchema} from "../happening";
 import {attendeeSchema} from "../attendee";
 
-const statusEnum = [
-    "scheduled",
-    "confirmed",
-    "deferred",
-    "cancelled",
-    "completed"
-];
-
 export const appointmentHistoryItem = {
   type: "object",
   properties: {
     ...happeningSchema.happeningEventData.properties,
     status: {
       type: "string",
-      nullable: true,
-      enum: statusEnum
+      nullable: true
     },
     statusAt: {
       type: "string",
@@ -57,8 +48,7 @@ export const appointmentData = {
     },
     status: {
       type: "string",
-      nullable: true,
-      enum: statusEnum
+      nullable: true
     },
     locationId: {
       type: "string",
@@ -81,14 +71,10 @@ export const appointment = {
     updatedAt: {
       type: "string",
     },
-    status: {
-      type: "string",
-      enum: statusEnum
-    },
     history: {
       type: "array",
       items: appointmentHistoryItem
     }
   },
-  required: ["appointmentId", "createdAt", "updatedAt", "status"],
+  required: ["appointmentId", "createdAt", "updatedAt"],
 } as const;
