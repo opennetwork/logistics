@@ -118,8 +118,7 @@ export async function dispatchQStash(event: DurableEventData) {
     if (isSingleMessage) {
         url.pathname = `${baseUrl.pathname}/publish/${targetUrl.toString()}`
     } else {
-        url.pathname = `${baseUrl.pathname}/schedules`;
-        headers.set("Upstash-Callback", targetUrl.toString());
+        url.pathname = `${baseUrl.pathname}/schedules/${targetUrl.toString()}`;
     }
 
     const background: BackgroundQuery = {
