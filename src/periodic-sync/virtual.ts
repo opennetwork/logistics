@@ -3,6 +3,7 @@ import {listDurableEventIds} from "../data/durable-event/list-durable-event-ids"
 import {DurableEventSchedule, getDurableEvent, setDurableEvent} from "../data";
 import {isMatchingObjects} from "../is";
 import {getPeriodicSyncSchedule} from "./schedule";
+import {isScheduleRepeating} from "../events/schedule/update";
 
 async function * generatePeriodicSyncVirtualEvents() {
     const schedules = await getPeriodicSyncSchedule();
@@ -30,7 +31,8 @@ async function * generatePeriodicSyncVirtualEvents() {
                 durableEventId: tag,
                 type,
                 tag,
-                schedule
+                schedule,
+                retain: isScheduleRepeating(schedule)
             })
         };
     }

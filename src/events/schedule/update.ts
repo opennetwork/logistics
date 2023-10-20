@@ -1,6 +1,6 @@
 import {virtual} from "../virtual/virtual";
 import {DURABLE_EVENTS_INDEX_SCHEDULE, getConfig, KEY_VALUE_STORE_INDEX, DURABLE_EVENTS_IMMEDIATE} from "../../config";
-import {DurableEventData, getDurableEventStore, listDurableEventTypes} from "../../data";
+import {DurableEventData, DurableEventSchedule, getDurableEventStore, listDurableEventTypes} from "../../data";
 
 export interface EventScheduleConfig {
     dispatchSchedules?(): Promise<void>
@@ -64,3 +64,7 @@ export async function dispatchSchedules() {
 }
 
 export const removeScheduleVirtualFunction = virtual(dispatchSchedules);
+
+export function isScheduleRepeating(schedule: DurableEventSchedule) {
+    return !!schedule.cron;
+}
