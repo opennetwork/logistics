@@ -4,6 +4,10 @@ import {getDurableEventStore} from "./store";
 import {ok} from "../../is";
 
 export async function addDurableEvent(event: DurableEventData) {
+    return setDurableEvent(event);
+}
+
+export async function setDurableEvent(event: DurableEventData) {
     const createdAt = new Date().toISOString();
     const eventId = event.durableEventId || v4();
     const durable: DurableEvent = {

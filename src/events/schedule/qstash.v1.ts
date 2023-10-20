@@ -136,7 +136,9 @@ export async function deleteDispatchQStash(event: DurableEventData) {
                 Authorization: `Bearer ${QSTASH_TOKEN}`
             }
         }
-    )
-    ok(response.ok, "Could not delete dispatch QStash message");
+    );
+    if (response.status !== 404) {
+        ok(response.ok, "Could not delete dispatch QStash message");
+    }
     await store.delete(SCHEDULE_KEY);
 }

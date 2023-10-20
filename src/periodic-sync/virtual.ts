@@ -1,6 +1,6 @@
 import {virtual} from "../events/virtual/virtual";
 import {listDurableEventIds} from "../data/durable-event/list-durable-event-ids";
-import {addDurableEvent, DurableEventData, DurableEventSchedule, getDurableEvent} from "../data";
+import {DurableEventSchedule, getDurableEvent, setDurableEvent} from "../data";
 import {isMatchingObjects} from "../is";
 import {getPeriodicSyncSchedule} from "./schedule";
 
@@ -26,7 +26,7 @@ async function * generatePeriodicSyncVirtualEvents() {
     for (const { tag, schedule } of schedules) {
         yield {
             type: "dispatch",
-            dispatch: await addDurableEvent({
+            dispatch: await setDurableEvent({
                 durableEventId: tag,
                 type,
                 tag,
