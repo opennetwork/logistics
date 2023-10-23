@@ -53,6 +53,8 @@ jobs:
           node-version: "18.x"
           registry-url: "https://registry.npmjs.org"
       - run: |
+          touch .env.test
+          touch .env
           yarn install
       - run: yarn build
       # yarn coverage === c8 + yarn test
