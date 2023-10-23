@@ -10,7 +10,7 @@ export interface PeriodicSyncTag extends SyncTag, PeriodicSyncOptions {
 
 }
 
-const STORE_NAME = "syncTag";
+const STORE_NAME = "periodicSyncTag";
 
 function getPeriodicSyncTagStore() {
     return getKeyValueStore<PeriodicSyncTag>(STORE_NAME, {
@@ -21,7 +21,7 @@ function getPeriodicSyncTagStore() {
 export async function getPeriodicSyncTagRegistration(tag: string) {
     const store = getPeriodicSyncTagStore();
     const existing = await store.get(tag);
-    ok(existing, "Expected to find registered sync tag");
+    ok(existing, "Expected to find registered periodic sync tag");
     return existing;
 }
 

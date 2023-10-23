@@ -4,6 +4,7 @@ import {
 } from "./redis-client";
 import {isRedisMemory} from "./redis-memory";
 import {getRedisUrl, isRedis} from "./redis-client-helpers";
+import {isFalseString, isTrueString} from "../../is";
 
 const DEFAULT_TIMEOUT = 2500;
 const DEFAULT_RETRY_DELAY = 25;
@@ -12,6 +13,18 @@ const GLOBAL_LOCKS = new Map<string, LockFn>();
 
 export function isLocking() {
   return !!getGlobalLock();
+}
+
+export function isConfigurableNameLocking(name: string) {
+  const key = `LOCK_${name.toUpperCase().replace(/[^a-z]+/g, "_")}`;
+  return isTrueString(process.env[key]);
+}
+
+export async function configurableLock(name: string): Promise<UnlockFn> {
+  if (!isConfigurableNameLocking(name)) {
+    return createFakeLock();
+  }
+  return lock(name);
 }
 
 export async function lock(name: string): Promise<UnlockFn> {

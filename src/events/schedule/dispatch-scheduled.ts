@@ -6,7 +6,14 @@ import {
     ScheduledOptions
 } from "./schedule";
 
-import {DurableEventData, getDurableEvent, listDurableEvents, deleteDurableEvent, lock} from "../../data";
+import {
+    DurableEventData,
+    getDurableEvent,
+    listDurableEvents,
+    deleteDurableEvent,
+    lock,
+    configurableLock
+} from "../../data";
 import {limited} from "../../limited";
 import {isSignalled} from "../../is";
 
@@ -28,7 +35,7 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
     const dispatcher = getDispatcherFunction(options);
     const correlation = getScheduledCorrelation(options);
 
-    const done = await lock(`${correlation}:limited => dispatchEvent`);
+    const done = await configurableLock(`${correlation}:limited => dispatchEvent`);
 
     const controller = new AbortController();
     const { signal } = controller;

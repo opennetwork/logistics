@@ -49,6 +49,24 @@ export function isNumberString(value?: unknown): value is `${number}` | number {
   );
 }
 
+export function isTrueString(value?: unknown): value is `${1 | true}` {
+    return (
+        value === 1 ||
+        value === true ||
+        value === "1" ||
+        value === "true"
+    );
+}
+
+export function isFalseString(value?: unknown): value is `${0 | false}` {
+    return (
+        value === 0 ||
+        value === false ||
+        value === "0" ||
+        value === "false"
+    );
+}
+
 export interface Signalled {
   signal: AbortSignal;
 }

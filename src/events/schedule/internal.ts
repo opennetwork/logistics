@@ -1,6 +1,6 @@
 import {DurableEventData, DurableEventSchedule} from "../../data";
 import {DURABLE_EVENTS_INTERNAL_SCHEDULE, DURABLE_EVENTS_INTERNAL_SCHEDULE_DEFAULT_DELAY} from "../../config";
-import { Cron } from "croner";
+import { Cron, CronOptions } from "croner";
 import {isNumberString} from "../../is";
 import timestring from "timestring";
 
@@ -76,13 +76,27 @@ export async function dispatchInternalSchedule(event: DurableEventData) {
         }
     }
 
+    function getCronOptions(): CronOptions {
+        return {
+            name: key
+        }
+    }
+
     function scheduleCron(cron: string) {
-        const job = Cron(cron, onRunEvent);
+        const job = Cron(
+            cron,
+            getCronOptions(),
+            onRunEvent
+        );
         return createClose(job);
     }
 
     function scheduleDate(after: Date) {
-        const job = Cron(after, onRunEvent);
+        const job = Cron(
+            after,
+            getCronOptions(),
+            onRunEvent
+        );
         return createClose(job);
     }
 
