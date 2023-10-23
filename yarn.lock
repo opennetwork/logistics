@@ -3818,6 +3818,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/timestring@^6.0.4":
+  version "6.0.4"
+  resolved "https://registry.yarnpkg.com/@types/timestring/-/timestring-6.0.4.tgz#6f2ec70417f6a6053975bf33c6823b6d1e409bde"
+  integrity sha512-dH4FlIn2s6EJw8PsAzanFGYZKu/4VcqIb7gMglB9bLDfgb5rkHulXzJLhxpxQXmu2IC+V8qV+Ut7Ejmw9JtVgw==
+
 "@types/uuid@^8.3.3":
   version "8.3.4"
   resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-8.3.4.tgz#bd86a43617df0594787d38b735f55c805becf1bc"
@@ -4996,6 +5001,11 @@ create-require@^1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/create-require/-/create-require-1.1.1.tgz#c1d7e8f1e5f6cfc9ff65f9cd352d37348756c333"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
+
+croner@^7.0.4:
+  version "7.0.4"
+  resolved "https://registry.yarnpkg.com/croner/-/croner-7.0.4.tgz#8f83a5b720f42a7f9865a3947dbe31036a0eeaa0"
+  integrity sha512-P8Zd88km8oQ0xH8Es0u75GtOnFyCNopuAhlFv5kAnbcTuXd0xNvRTgnxnJEs63FicCOsHTL7rpu4BHzY3cMq4w==
 
 cross-fetch@^3.1.5:
   version "3.1.8"
@@ -9451,6 +9461,11 @@ time-span@4.0.0:
   integrity sha512-MyqZCTGLDZ77u4k+jqg4UlrzPTPZ49NDlaekU6uuFaJLzPIN1woaRXCbGeqOfxwc3Y37ZROGAJ614Rdv7Olt+g==
   dependencies:
     convert-hrtime "^3.0.0"
+
+timestring@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/timestring/-/timestring-7.0.0.tgz#4099b589387c63fbd1ae76b1e7b20ded836af4b2"
+  integrity sha512-U7ttxEdKWqHYJ96OGoJJR5gU8Nwkl3tlY0n7Jr4vcpLD2RkVZLE1Ph9k8ZRrZ7LYX9QCtd3M9OUaR9P8Z37QNg==
 
 tiny-lru@^11.0.1:
   version "11.0.1"

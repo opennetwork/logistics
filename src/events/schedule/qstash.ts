@@ -160,13 +160,18 @@ export async function deleteDispatchQStash(event: DurableEventData) {
     if (!schedule?.scheduleId) {
         return;
     }
+    await deleteDispatchQStashScheduledKey(schedule.scheduleId);
+    await store.delete(SCHEDULE_KEY);
+}
+
+async function deleteDispatchQStashScheduledKey(key: string) {
     const baseUrl = getQStashURL();
     const {
         QSTASH_TOKEN
     } = process.env;
     ok(QSTASH_TOKEN, "Expected QSTASH_TOKEN");
     const url = new URL(baseUrl);
-    url.pathname = `${baseUrl.pathname}/schedules/${schedule.scheduleId}`
+    url.pathname = `${baseUrl.pathname}/schedules/${key}`
     const response = await fetch(
         url.toString(),
         {
@@ -179,5 +184,40 @@ export async function deleteDispatchQStash(event: DurableEventData) {
     if (response.status !== 404) {
         ok(response.ok, "Could not delete dispatch QStash message");
     }
-    await store.delete(SCHEDULE_KEY);
+}
+
+async function listDispatchQStashScheduledKeys() {
+    const baseUrl = getQStashURL();
+    const {
+        QSTASH_TOKEN
+    } = process.env;
+    const url = new URL(baseUrl);
+    url.pathname = `${baseUrl.pathname}/schedules`;
+    const response = await fetch(
+        url.toString(),
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${QSTASH_TOKEN}`
+            }
+        }
+    );
+    ok(response.ok, "Unexpected response from QStash");
+    const schedules: { scheduleId: string }[] = await response.json();
+    ok(Array.isArray(schedules), "Unexpected response from QStash");
+    return schedules.map(
+        ({ scheduleId }) => scheduleId
+    );
+}
+
+export async function clearDispatchQStash() {
+    const keys = await listDispatchQStashScheduledKeys();
+    if (!keys.length) {
+        return;
+    }
+    const promises = keys.map(deleteDispatchQStashScheduledKey);
+    // Doing allSettled + all means we will delete all we can, and then, we will throw
+    // an aggregated error of anything that failed together.
+    await Promise.allSettled(promises);
+    await Promise.all(promises);
 }

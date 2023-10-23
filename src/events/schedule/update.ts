@@ -13,17 +13,18 @@ export function isDurableEventDefaultSchedule() {
 
 export async function dispatchDefaultSchedule(event: DurableEventData) {
     const {dispatchScheduledDurableEvents} = await import("./dispatch-scheduled");
+    const {dispatchInternalSchedule, isInternalSchedule} = await import("./internal");
     const {dispatchQStash, isQStash} = await import("./qstash");
     if (event.schedule.immediate) {
         await dispatchScheduledDurableEvents({
             event
         });
+    } else if (isInternalSchedule()) {
+        await dispatchInternalSchedule(event);
     } else if (isQStash()) {
         await dispatchQStash(event);
-    } else if (DURABLE_EVENTS_IMMEDIATE) {
-        await dispatchScheduledDurableEvents({
-            event
-        });
+    } else {
+        await dispatchInternalSchedule(event);
     }
 }
 
