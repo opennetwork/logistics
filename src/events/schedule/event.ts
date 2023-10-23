@@ -36,11 +36,6 @@ export async function dispatchEvent(event: DurableEventData) {
         });
     } else if (durable.schedule) {
         await dispatchSchedule(durable);
-    } else {
-        const {dispatchScheduledDurableEvents} = await import("./dispatch-scheduled");
-        await dispatchScheduledDurableEvents({
-            event
-        });
     }
 
     return durable;
