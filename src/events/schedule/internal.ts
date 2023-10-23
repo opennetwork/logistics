@@ -79,9 +79,6 @@ export async function dispatchInternalSchedule(event: DurableEventData) {
 
     function createClose(job: Cron) {
         return function closeSchedule() {
-            if (job.isRunning()) {
-                console.warn(`Warning, function for event ${event.type} is currently running, but job is being stopped`);
-            }
             job.stop();
         }
     }
