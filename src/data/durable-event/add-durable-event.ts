@@ -8,7 +8,7 @@ export async function addDurableEvent(event: DurableEventData) {
 }
 
 export async function setDurableEvent(event: DurableEventData) {
-    const createdAt = new Date().toISOString();
+    const createdAt = event.createdAt || new Date().toISOString();
     const eventId = event.durableEventId || v4();
     const durable: DurableEvent = {
         timeStamp: Date.now(),

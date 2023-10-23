@@ -26,8 +26,12 @@ function getInternalScheduleKey(event: DurableEventData) {
 }
 
 export async function dispatchInternalSchedule(event: DurableEventData) {
-    const { schedule } = event;
+    const { schedule = { } } = event;
     const key = getInternalScheduleKey(event);
+
+    const createdAt = typeof event.createdAt === "string" ?
+        event.createdAt :
+        new Date(event.timeStamp ?? undefined).toISOString()
 
     closeInternalSchedule(key);
 
@@ -51,6 +55,12 @@ export async function dispatchInternalSchedule(event: DurableEventData) {
             console.error("Error while dispatching internally scheduled event", event.type, event.durableEventId);
             console.error(error);
             void error;
+        }
+
+        if (!schedule.cron) {
+            if (SCHEDULES.get(key) === internal) {
+                closeInternalSchedule(key);
+            }
         }
     }
 
@@ -107,7 +117,14 @@ export async function dispatchInternalSchedule(event: DurableEventData) {
         } else {
             delay = timestring(givenDelay, "ms");
         }
-        return scheduleMillisecondDelay(delay);
+        const createdAtTime = new Date(createdAt).getTime();
+        const timeSince = Date.now() - createdAtTime;
+        const intervalsSince = Math.floor(timeSince / delay);
+        const nextInterval = Math.max(
+            1,
+            intervalsSince + 1
+        );
+        return scheduleMillisecondDelay(nextInterval * delay);
     }
 
     function scheduleMillisecondDelay(givenDelay: number) {

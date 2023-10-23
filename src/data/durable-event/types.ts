@@ -9,6 +9,8 @@ export interface DurableEventSchedule {
     immediate?: boolean;
     cron?: string;
     delay?: number | string;
+    // Once delay has completed, repeat
+    repeat?: boolean;
 }
 
 export interface UnknownEvent {
@@ -26,6 +28,7 @@ export interface DurableEventData extends Record<string, unknown>, DurableEventT
     retain?: boolean;
     virtual?: boolean;
     serviceWorkerId?: string;
+    createdAt?: string;
 }
 
 export interface DurableEvent extends DurableEventData {

@@ -33,9 +33,9 @@ export interface DispatchSyncEventOptions {
 export async function dispatchSyncEvent(options: DispatchSyncEventOptions) {
     const { event, setRegistrationState, getRegistrationState, dispatch, deregister } = options;
     const { tag, lastChance = false } = event;
-    const initialState = await getRegistrationState(tag);
+    // const initialState = await getRegistrationState(tag);
     // Note that waiting or pending are allowed initial states
-    ok(initialState === "pending" || initialState === "waiting", "Expected event to be in pending state");
+    // ok(initialState === "pending" || initialState === "waiting", "Expected event to be in pending state");
     const { signal, controller } = getSignal();
     const {
         wait,

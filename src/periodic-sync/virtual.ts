@@ -1,6 +1,6 @@
 import {virtual} from "../events/virtual/virtual";
 import {listDurableEventIds} from "../data/durable-event/list-durable-event-ids";
-import {DurableEventSchedule, getDurableEvent, setDurableEvent} from "../data";
+import {DurableEventData, DurableEventSchedule, getDurableEvent, setDurableEvent} from "../data";
 import {isMatchingObjects} from "../is";
 import {getPeriodicSyncSchedule} from "./schedule";
 import {isScheduleRepeating} from "../events/schedule/update";
@@ -25,15 +25,22 @@ async function * generatePeriodicSyncVirtualEvents() {
         }
     }
     for (const { tag, schedule } of schedules) {
+        const event: DurableEventData = {
+            durableEventId: tag,
+            type,
+            tag,
+            schedule,
+            retain: isScheduleRepeating(schedule)
+        };
+        // Get existing so we are able to retain all event context data, like first created
+        const existing = await getDurableEvent(event);
+        const dispatch = await setDurableEvent({
+            ...existing,
+            ...event
+        })
         yield {
             type: "dispatch",
-            dispatch: await setDurableEvent({
-                durableEventId: tag,
-                type,
-                tag,
-                schedule,
-                retain: isScheduleRepeating(schedule)
-            })
+            dispatch
         };
     }
 }

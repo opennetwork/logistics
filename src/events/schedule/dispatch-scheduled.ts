@@ -1,6 +1,6 @@
 import {
-    getDispatcherFunction, getScheduledCorrelation,
-    getScheduledFunctionCorrelation,
+    getDispatcherFunction,
+    getScheduledCorrelation,
     getScheduledFunctions,
     ScheduledFunctionOptions,
     ScheduledOptions
@@ -46,11 +46,18 @@ export async function dispatchScheduledDurableEvents(options: BackgroundSchedule
         if (!signal.aborted) {
             controller.abort(error);
         }
+        throw error;
     } finally {
         if (!signal.aborted) {
             controller.abort("dispatchScheduledEvent finalised");
         }
         await done();
+    }
+
+    // Only repeat on success, external scheduler might have optional retries
+    if (event.schedule?.repeat && event.schedule?.delay) {
+        const { dispatchEvent } = await import("./event");
+        await dispatchEvent(event);
     }
 
     async function dispatchScheduledEvent(event: DurableEventData) {

@@ -71,7 +71,7 @@ export async function dispatchSchedules() {
 export const removeScheduleVirtualFunction = virtual(dispatchSchedules);
 
 export function isScheduleRepeating(schedule: DurableEventSchedule) {
-    return !!schedule.cron;
+    return !!schedule.cron || schedule.repeat;
 }
 
 export async function deleteDispatchSchedule(event: DurableEventData) {

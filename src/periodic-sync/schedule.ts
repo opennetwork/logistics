@@ -1,8 +1,9 @@
 import type {DurableEventSchedule} from "../data";
 import type {DurablePeriodicSyncManager} from "./manager";
-import {getConfig} from "../config";
+import {DURABLE_EVENTS_INTERNAL_SCHEDULE_DEFAULT_DELAY, getConfig} from "../config";
 import {getPeriodicSyncTagRegistration} from "./manager";
 import {DAY_MS, HOUR_MS, MINUTE_MS, MONTH_MS} from "../data";
+import {isNumberString} from "../is";
 
 export interface PeriodicSyncSchedule {
     tag: string;
@@ -48,8 +49,14 @@ function getCronExpressionFromInterval(interval: number) {
 export async function getDefaultDurableEventScheduleForPeriodicSyncTag(tag: string): Promise<DurableEventSchedule> {
     const { minInterval, createdAt } = await getPeriodicSyncTagRegistration(tag);
     if (!minInterval) {
+        // Default Periodic Sync
+        let delay = 60000;
+        if (isNumberString(DURABLE_EVENTS_INTERNAL_SCHEDULE_DEFAULT_DELAY)) {
+            delay = +DURABLE_EVENTS_INTERNAL_SCHEDULE_DEFAULT_DELAY;
+        }
         return {
-            immediate: true
+            delay,
+            repeat: true
         };
     }
     const cron = getCronExpressionFromInterval(minInterval);
@@ -58,14 +65,9 @@ export async function getDefaultDurableEventScheduleForPeriodicSyncTag(tag: stri
             cron
         }
     }
-    const createdAtTime = new Date(createdAt).getTime();
-    const timeSince = Date.now() - createdAtTime;
-    const intervalsSince = Math.floor(timeSince / minInterval);
-    const nextInterval = intervalsSince + 1;
-    const nextIntervalTime = createdAtTime + (nextInterval * minInterval);
-    const nextIntervalAt = new Date(nextIntervalTime).toISOString();
     return {
-        after: nextIntervalAt
+        delay: minInterval,
+        repeat: true
     };
 }
 
@@ -76,7 +78,7 @@ export async function getDefaultPeriodicSyncSchedule(manager: DurablePeriodicSyn
             async (tag): Promise<PeriodicSyncSchedule> => {
                 return {
                     tag,
-                    schedule: await getDefaultDurableEventScheduleForPeriodicSyncTag(tag)
+                    schedule: await getDefaultDurableEventScheduleForPeriodicSyncTag(tag),
                 }
             }
         )
