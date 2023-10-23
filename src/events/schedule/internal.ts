@@ -117,11 +117,10 @@ export async function dispatchInternalSchedule(event: DurableEventData) {
         const createdAtTime = new Date(createdAt).getTime();
         const timeSince = Date.now() - createdAtTime;
         const intervalsSince = Math.floor(timeSince / delay);
-        const nextInterval = Math.max(
-            1,
-            intervalsSince + 1
-        );
-        return scheduleMillisecondDelay(nextInterval * delay);
+        const nextInterval = Math.max(1, intervalsSince + 1);
+        const nextIntervalAtTime = createdAtTime + (nextInterval * delay);
+        const nextIntervalAt = new Date(nextIntervalAtTime);
+        return scheduleDate(nextIntervalAt);
     }
 
     function scheduleMillisecondDelay(givenDelay: number) {
