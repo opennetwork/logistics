@@ -1,10 +1,14 @@
 import {virtual} from "../virtual/virtual";
 import {DURABLE_EVENTS_INDEX_SCHEDULE, getConfig, KEY_VALUE_STORE_INDEX, DURABLE_EVENTS_IMMEDIATE} from "../../config";
 import {DurableEventData, DurableEventSchedule, getDurableEventStore, listDurableEventTypes} from "../../data";
+import {clearDispatchQStash, isQStash} from "./qstash";
+import {clearDispatchInternalSchedule} from "./internal";
 
 export interface EventScheduleConfig {
     dispatchSchedules?(): Promise<void>
     dispatchSchedule?(event: DurableEventData): Promise<void>
+    deleteDispatchSchedule?(event: DurableEventData): Promise<void>
+    clearDispatchSchedule?(): Promise<void>
 }
 
 export function isDurableEventDefaultSchedule() {
@@ -68,4 +72,37 @@ export const removeScheduleVirtualFunction = virtual(dispatchSchedules);
 
 export function isScheduleRepeating(schedule: DurableEventSchedule) {
     return !!schedule.cron;
+}
+
+export async function deleteDispatchSchedule(event: DurableEventData) {
+    const config = getConfig();
+    const fn = config.deleteDispatchSchedule ?? deleteDefaultDispatchSchedule;
+    return fn(event);
+}
+
+export async function clearDispatchSchedule() {
+    const config = getConfig();
+    const fn = config.clearDispatchSchedule ?? clearDefaultDispatchSchedule;
+    return fn();
+}
+
+
+async function deleteDefaultDispatchSchedule(event: DurableEventData) {
+    const {deleteDispatchInternalSchedule} = await import("./internal");
+    const {deleteDispatchQStash, isQStash} = await import("./qstash");
+    if (isQStash()) {
+        await deleteDispatchQStash(event);
+    } else {
+        await deleteDispatchInternalSchedule(event);
+    }
+}
+
+async function clearDefaultDispatchSchedule() {
+    const {clearDispatchInternalSchedule} = await import("./internal");
+    const {clearDispatchQStash, isQStash} = await import("./qstash");
+    if (isQStash()) {
+        await clearDispatchQStash();
+    } else {
+        await clearDispatchInternalSchedule();
+    }
 }
